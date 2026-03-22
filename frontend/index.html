@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mychat — Private · Encrypted · Zero Trace</title>
+  <meta name="description" content="Mychat v7 — End-to-end encrypted P2P messaging. No servers. No logs. Total privacy." />
+  <meta name="theme-color" content="#080810" />
+
+  <!-- Fonts CDN -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="assets/css/main.css?v=20260321e" />
+  <link rel="stylesheet" href="assets/css/home.css?v=20260321e" />
+  <link rel="stylesheet" href="assets/css/anti-surveillance.css?v=20260321e" />
+</head>
+<body data-page="home">
+
+  <!-- System overlays -->
+  <div id="network-banner">⚠ No internet connection</div>
+  <div id="cold-start-banner" aria-live="polite">
+    <span class="cold-start-text">⏳ Server waking up — please wait (~30s)</span>
+    <div class="cold-start-bar"></div>
+  </div>
+  <div id="toast-container"></div>
+
+  <!-- Optional wipe screen (triggered by surveillance) -->
+  <div id="wipe-screen">
+    <div class="wipe-icon">🔒</div>
+    <div class="wipe-title">SESSION WIPED</div>
+    <div class="wipe-sub">All data cleared. Redirecting...</div>
+  </div>
+
+  <!-- HOME CONTENT -->
+  <main class="home-wrapper">
+
+    <!-- Header -->
+    <div class="home-header">
+      <div class="home-brand">
+        <div class="home-logo">🔒</div>
+        <div>
+          <div class="home-title">Mychat</div>
+          <div class="home-tagline">Private · Encrypted · Zero Trace</div>
+        </div>
+      </div>
+      <div class="home-header-right" style="display:flex; gap:0.5rem; align-items:center;">
+        <button id="show-auth-btn" class="btn btn-ghost" style="padding:0.4rem 0.8rem; font-size:0.8rem;">Sign In</button>
+        <div id="user-profile-dropdown" style="display:none; color:var(--text); font-weight:600; font-size:0.85rem; cursor:pointer;"></div>
+        <span class="badge badge-green">
+          <span class="dot dot-green"></span> P2P
+        </span>
+        <span class="version-pill">v7</span>
+      </div>
+    </div>
+
+    <!-- Card 1: Private Room -->
+    <div class="room-card">
+      <div class="card-label">🔒 Private Room</div>
+      <div class="card-desc">Direct P2P connection. End-to-end encrypted. 2 people max.</div>
+      <button class="btn btn-primary w-100" id="create-private-btn" style="margin-bottom:1rem">
+        ◉ Create Private Room
+      </button>
+      <div class="divider">or join</div>
+      <div style="display:flex;flex-direction:column;gap:0.5rem;margin-top:0.75rem">
+        <input type="text" class="input-field" id="join-room-id" placeholder="Room ID" autocomplete="off" spellcheck="false" />
+        <input type="text" class="input-field" id="join-username" placeholder="Your name" autocomplete="off" maxlength="20" />
+        <button class="btn btn-ghost w-100" id="join-private-btn">→ Join Room</button>
+      </div>
+    </div>
+
+    <!-- Card 2: Group Room -->
+    <div class="room-card">
+      <div class="card-label">👥 Group Room</div>
+      <div class="card-desc">Star topology. Host relays messages. Up to 50 participants.</div>
+      <button class="btn btn-primary w-100" id="create-group-btn" style="margin-bottom:1rem">
+        ◎ Create Group Room
+      </button>
+      <div class="divider">or join</div>
+      <div style="display:flex;flex-direction:column;gap:0.5rem;margin-top:0.75rem">
+        <input type="text" class="input-field" id="join-group-id"       placeholder="Group Room ID" autocomplete="off" />
+        <input type="text" class="input-field" id="join-group-username" placeholder="Your name" autocomplete="off" maxlength="20" />
+        <button class="btn btn-ghost w-100" id="join-group-btn">→ Join Group</button>
+      </div>
+    </div>
+
+    <!-- Card 3: Permanent Room -->
+    <div class="room-card room-card-perm">
+      <div class="card-label">⚡ Permanent Room</div>
+      <div class="card-desc">Register a custom Room ID that's yours forever. Password protected. Stored on server.</div>
+
+      <!-- Logged out view -->
+      <div id="perm-logged-out-view">
+        <center style="margin: 1.5rem 0;">
+          <p style="font-size: 0.85rem; color: var(--text-dim); margin-bottom: 1rem;">Sign in to create & manage your permanent rooms.</p>
+          <button class="btn btn-primary w-100" onclick="showModal('auth-modal')">Sign in / Register</button>
+        </center>
+      </div>
+
+      <!-- Logged in view -->
+      <div id="perm-logged-in-view" style="display:none;">
+        <button class="btn btn-primary w-100" id="open-dashboard-btn" style="margin-top:0.75rem; margin-bottom:1rem">
+          ◎ Open Dashboard
+        </button>
+      </div>
+
+      <div class="divider">or join existing</div>
+
+      <!-- Join sub-section -->
+      <div style="display:flex;flex-direction:column;gap:0.5rem;margin-top:0.75rem">
+        <input type="text" class="input-field" id="join-perm-id" placeholder="Room ID" autocomplete="off" spellcheck="false" maxlength="8" />
+        <div class="input-pw-wrap">
+          <input type="password" class="input-field" id="join-perm-pw" placeholder="Password" autocomplete="current-password" />
+          <button class="pw-toggle" type="button" title="Show/hide password">👁</button>
+        </div>
+        <input type="text" class="input-field" id="join-perm-username" placeholder="Your name" autocomplete="off" maxlength="20" />
+        <div class="inline-error" id="join-perm-error"></div>
+        <button class="btn btn-ghost w-100" id="join-perm-btn">→ Join Room</button>
+      </div>
+    </div>
+
+    <div class="home-footer">Mychat v7 · All data P2P · No server logs · Free forever</div>
+  </main>
+
+  <!-- Success Modal (after register) -->
+  <div class="modal-backdrop" id="success-modal">
+    <div class="modal-box">
+      <div class="modal-title">✓ Room Registered!</div>
+      <div class="modal-subtitle">Your permanent room is ready. Save your owner token — it cannot be recovered.</div>
+
+      <div style="margin-bottom:0.75rem">
+        <div class="input-label" style="margin-bottom:0.35rem">Room ID</div>
+        <div class="code-display">
+          <span class="code-display-text" id="success-slug"></span>
+          <button class="copy-btn" id="copy-slug-btn">Copy</button>
+        </div>
+      </div>
+
+      <div style="margin-bottom:0.75rem">
+        <div class="input-label" style="margin-bottom:0.35rem">Owner Token</div>
+        <div class="code-display" style="flex-direction:column;align-items:stretch;gap:0.5rem">
+          <span class="token-display" id="success-token"></span>
+          <button class="copy-btn" id="copy-token-btn">Copy</button>
+        </div>
+      </div>
+
+      <div class="success-warning">
+        ⚠ SAVE YOUR OWNER TOKEN — it cannot be recovered if lost. This token proves you own this room.
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-ghost" onclick="hideModal('success-modal')">Close</button>
+        <button class="btn btn-primary" id="enter-room-btn">Enter Room →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- User Auth Modal -->
+  <div class="modal-backdrop" id="auth-modal">
+    <div class="modal-box" style="width: 320px;">
+      <div class="modal-title" style="text-align: center; margin-bottom: 1rem;">Sign In / Register</div>
+      <div style="display:flex;flex-direction:column;gap:0.75rem;">
+        <input type="text" class="input-field" id="auth-username" placeholder="Username (3-32 chars)" autocomplete="off" spellcheck="false" maxlength="32" />
+        <input type="password" class="input-field" id="auth-password" placeholder="Password" />
+        <div class="inline-error" id="auth-error" style="text-align:center;"></div>
+        <button class="btn btn-primary w-100" id="auth-login-btn">Log In</button>
+        <button class="btn btn-ghost w-100" id="auth-register-btn" style="margin-top:-0.25rem;">Create Account</button>
+      </div>
+      <button class="btn btn-ghost" style="position: absolute; top:10px; right:10px; border:none; padding:10px;" onclick="hideModal('auth-modal')">✕</button>
+    </div>
+  </div>
+
+  <!-- Permanent Rooms Dashboard -->
+  <div class="modal-backdrop" id="dashboard-modal">
+    <div class="modal-box" style="width: 440px; max-height: 90vh; overflow-y: auto;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+        <div class="modal-title">Your Permanent Rooms</div>
+        <button class="btn btn-ghost" style="border:none; padding:10px;" onclick="hideModal('dashboard-modal')">✕</button>
+      </div>
+      
+      <!-- Create Room Form inside Dashboard -->
+      <div class="card-desc" style="margin-bottom:1rem;">Create a new permanent room:</div>
+      <div style="display:flex;flex-direction:column;gap:0.5rem; margin-bottom:1.5rem; padding:1rem; background:rgba(255,255,255,0.03); border-radius:var(--r-md); border:1px solid rgba(255,255,255,0.08);">
+        <input type="text" class="input-field" id="dashboard-new-slug" placeholder="Room ID (3-8 chars, a-z 0-9)" maxlength="8" autocomplete="off" spellcheck="false" />
+        <div class="input-pw-wrap">
+          <input type="password" class="input-field" id="dashboard-new-pw" placeholder="Room Password" />
+          <button class="pw-toggle" type="button" title="Show/hide password">👁</button>
+        </div>
+        <div class="inline-error" id="dashboard-new-error"></div>
+        <button class="btn btn-primary w-100" id="dashboard-create-btn">◎ Register & Host</button>
+      </div>
+
+      <div class="card-desc">Your Active Rooms:</div>
+      <div id="dashboard-rooms-list" style="display:flex; flex-direction:column; gap:0.5rem; margin-top:0.75rem;">
+        <!-- Injected dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <!-- User Settings Modal -->
+  <div class="modal-backdrop" id="user-settings-modal">
+    <div class="modal-box" style="width: 320px;">
+      <div class="modal-title" style="text-align: center; margin-bottom: 1rem;">Account Settings</div>
+      <div style="display:flex;flex-direction:column;gap:0.75rem;">
+        <button class="btn btn-ghost w-100" id="settings-logout-btn">Log Out</button>
+        <button class="btn btn-ghost w-100" id="settings-delete-account-btn" style="color:var(--red);">Delete Account & Rooms</button>
+      </div>
+      <button class="btn btn-ghost" style="position: absolute; top:10px; right:10px; border:none; padding:10px;" onclick="hideModal('user-settings-modal')">✕</button>
+    </div>
+  </div>
+
+  <!-- Scripts (order matters) -->
+  <script src="assets/js/config.js?v=20260321e"></script>
+  <script src="assets/js/crypto.js?v=20260321e"></script>
+  <script src="assets/js/rooms.js?v=20260321e"></script>
+  <script src="assets/js/ui.js?v=20260321e"></script>
+  <script src="assets/js/peer.js?v=20260321e"></script>
+  <script src="assets/js/surveillance.js?v=20260321e"></script>
+  <script src="assets/js/app.js?v=20260321e"></script>
+</body>
+</html>

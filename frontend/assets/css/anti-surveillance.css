@@ -1,0 +1,176 @@
+/* ══════════════════════════════════════════════
+   ANTI-SURVEILLANCE CSS
+   ══════════════════════════════════════════════ */
+
+/* 1. CSS anti-capture animation — sub-pixel shift breaks screenshot timing */
+.msg-text {
+  animation: antiCapture 0.15s steps(1) infinite;
+}
+@keyframes antiCapture {
+  0%, 100% { letter-spacing: normal; word-spacing: normal; }
+  50%       { letter-spacing: 0.001px; word-spacing: 0.001px; }
+}
+
+/* 2. Chat area — no text selection, no print color adjustment */
+#chat-feed {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  user-select: none;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+/* 3. Blur Shield Overlay */
+#blur-shield {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  backdrop-filter: blur(40px) brightness(0.25) saturate(0.5);
+  -webkit-backdrop-filter: blur(40px) brightness(0.25) saturate(0.5);
+  background: rgba(8, 8, 16, 0.9);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 1.25rem;
+  text-align: center;
+  padding: 1.5rem;
+}
+#blur-shield.shield-visible {
+  display: flex;
+  animation: shield-in 0.2s var(--ease-snap);
+}
+@keyframes shield-in {
+  from { opacity: 0; backdrop-filter: blur(0px); }
+  to   { opacity: 1; }
+}
+.blur-shield-icon {
+  font-size: 3.5rem;
+  filter: drop-shadow(0 0 20px rgba(139, 92, 246, 0.6));
+  animation: shield-pulse 2s ease-in-out infinite;
+}
+@keyframes shield-pulse {
+  0%, 100% { filter: drop-shadow(0 0 20px rgba(139, 92, 246, 0.6)); }
+  50%       { filter: drop-shadow(0 0 40px rgba(139, 92, 246, 0.9)); }
+}
+.blur-shield-title {
+  font-family: var(--ff-head);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-white);
+  letter-spacing: 1px;
+}
+.blur-shield-reason {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  font-family: var(--ff-mono);
+}
+.blur-shield-tap {
+  font-size: 0.78rem;
+  color: var(--accent-bright);
+  margin-top: 0.5rem;
+  opacity: 0.7;
+}
+
+/* 4. Wipe Screen */
+#wipe-screen {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 99998;
+  background: #080810;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 1rem;
+}
+#wipe-screen.wipe-visible { display: flex; }
+.wipe-icon {
+  font-size: 3rem;
+  animation: wipe-spin 0.5s ease-in-out;
+}
+@keyframes wipe-spin {
+  from { transform: rotate(0deg) scale(0.5); opacity: 0; }
+  to   { transform: rotate(360deg) scale(1); opacity: 1; }
+}
+.wipe-title {
+  font-family: var(--ff-head);
+  font-size: 1.1rem;
+  color: var(--accent-red);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+.wipe-sub {
+  font-size: 0.82rem;
+  color: var(--text-dim);
+}
+
+/* 5. Screenshot Warning Banner */
+.screenshot-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  margin: 0.5rem;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: var(--r-md);
+  font-size: 0.82rem;
+  color: var(--accent-red);
+  animation: banner-slide 0.3s var(--ease-snap);
+}
+@keyframes banner-slide {
+  from { opacity: 0; transform: translateY(-10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.screenshot-banner button {
+  background: none;
+  border: none;
+  color: var(--accent-red);
+  cursor: pointer;
+  font-size: 1rem;
+  opacity: 0.6;
+  flex-shrink: 0;
+}
+.screenshot-banner button:hover { opacity: 1; }
+
+/* 6. Print Block */
+@media print {
+  body * { display: none !important; }
+  body::after {
+    content: "🔒 This content is protected by Mychat v7 — printing is not allowed.";
+    display: block !important;
+    text-align: center;
+    margin-top: 120px;
+    font-size: 1.2rem;
+    font-family: sans-serif;
+    color: #444;
+  }
+}
+
+/* 7. Shield Indicator colors */
+.shield-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  transition: background 0.4s, box-shadow 0.4s;
+}
+.shield-green {
+  background: var(--accent-green);
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+}
+.shield-amber {
+  background: var(--accent-amber);
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.6);
+  animation: shield-flicker 1.5s ease-in-out infinite;
+}
+.shield-red {
+  background: var(--accent-red);
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
+  animation: shield-flicker 0.8s ease-in-out infinite;
+}
+@keyframes shield-flicker {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}

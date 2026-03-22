@@ -1,0 +1,701 @@
+'use strict';
+
+// ════════════════════════════════════════════
+// APP ENTRY POINT
+// ════════════════════════════════════════════
+
+document.addEventListener('DOMContentLoaded', () => {
+  initKeepAlive();
+  initNetworkWatcher();
+
+  const page = document.body.dataset.page;
+  if (page === 'home') initHomePage();
+  if (page === 'chat') initChatPage();
+});
+
+// ── Keep-alive (prevents Render free tier sleep) ──────────────────
+function initKeepAlive() {
+  fetch(CONFIG.API_BASE + '/health').catch(() => {});
+  setInterval(() => fetch(CONFIG.API_BASE + '/health').catch(() => {}), CONFIG.KEEPALIVE_MS);
+}
+
+function parseInviteHash(rawHash) {
+  const hash = (rawHash || '').trim();
+  if (!hash) return null;
+
+  const [roomPart, legacyKey = ''] = hash.split('|');
+  const typedMatch = roomPart.match(/^(private|group|permanent):(.+)$/i);
+  if (typedMatch) {
+    return {
+      type: typedMatch[1].toLowerCase(),
+      roomId: typedMatch[2],
+      key: legacyKey
+    };
+  }
+
+  return {
+    type: 'private',
+    roomId: roomPart,
+    key: legacyKey
+  };
+}
+
+function buildInviteUrl(roomId, type) {
+  const currentUrl = window.location.href.split('#')[0].split('?')[0];
+  const localBase = currentUrl.replace(/(chat|index)\.html$/i, 'index.html');
+  const base = window.location.origin && window.location.origin !== 'null'
+    ? `${window.location.origin}/index.html`
+    : localBase;
+  return `${base}#${type}:${roomId}`;
+}
+
+// ════════════════════════════════════════════
+// HOME PAGE
+// ════════════════════════════════════════════
+
+async function initHomePage() {
+  // Run cold-start check in background — don't block UI
+  // Private/Group room buttons work without backend (P2P only)
+  // Only Permanent room operations need the backend
+  initWithColdStartHandling().catch(() => {});
+
+  // Pre-fill join inputs from shared invite hash.
+  const invite = parseInviteHash(window.location.hash.slice(1));
+  if (invite?.roomId) {
+    if (invite.type === 'group') {
+      const groupEl = document.getElementById('join-group-id');
+      if (groupEl) groupEl.value = invite.roomId;
+    } else if (invite.type === 'permanent') {
+      const permEl = document.getElementById('join-perm-id');
+      if (permEl) permEl.value = invite.roomId;
+    } else {
+      const privateEl = document.getElementById('join-room-id');
+      if (privateEl) privateEl.value = invite.roomId;
+    }
+  }
+
+  // ── User Auth State ──────────────────────────────
+  refreshAuthState();
+
+  document.getElementById('show-auth-btn')?.addEventListener('click', () => {
+    showModal('auth-modal');
+  });
+
+  const dd = document.getElementById('user-profile-dropdown');
+  if (dd) {
+    dd.addEventListener('click', () => {
+      showModal('user-settings-modal');
+    });
+  }
+
+  document.getElementById('settings-logout-btn')?.addEventListener('click', () => {
+    clearUserSession();
+    refreshAuthState();
+    hideModal('user-settings-modal');
+  });
+
+  document.getElementById('settings-delete-account-btn')?.addEventListener('click', async () => {
+    if (confirm('Are you ABSOLUTELY sure you want to delete your account? All your permanent rooms will be wiped forever.')) {
+      const btn = document.getElementById('settings-delete-account-btn');
+      btn.disabled = true; btn.textContent = 'Deleting...';
+      try {
+        const u = getUserSession();
+        if (!u) throw new Error('Not logged in');
+        const res = await fetch(`${CONFIG.API_BASE}/users/account?username=${encodeURIComponent(u.username)}&token=${encodeURIComponent(u.token)}`, {
+          method: 'DELETE'
+        });
+        const data = await res.json();
+        if (!data.success) throw new Error(data.error || 'Deletion failed');
+        
+        clearUserSession();
+        refreshAuthState();
+        hideModal('user-settings-modal');
+        showToast('Account and rooms permanently deleted', 'success');
+      } catch (e) {
+        showToast(e.message, 'error');
+      } finally {
+        btn.disabled = false; btn.textContent = 'Delete Account & Rooms';
+      }
+    }
+  });
+
+  const loginBtn = document.getElementById('auth-login-btn');
+  const regBtn   = document.getElementById('auth-register-btn');
+  const uInput   = document.getElementById('auth-username');
+  const pInput   = document.getElementById('auth-password');
+  const aErr     = document.getElementById('auth-error');
+
+  const handleAuth = async (isLogin) => {
+    const u = uInput?.value.trim();
+    const p = pInput?.value;
+    if (!u || !p) { if (aErr) aErr.textContent = 'Please fill all fields'; return; }
+    
+    if (aErr) { aErr.textContent = ''; aErr.classList.remove('visible'); }
+    loginBtn.disabled = true; regBtn.disabled = true;
+    try {
+      const fn = isLogin ? loginUser : registerUser;
+      const res = await fn(u, p);
+      setUserSession(res.username, res.token);
+      hideModal('auth-modal');
+      showToast('Welcome, ' + res.username, 'success');
+      refreshAuthState();
+    } catch (e) {
+      if (aErr) { aErr.textContent = e.message; aErr.classList.add('visible'); }
+    } finally {
+      loginBtn.disabled = false; regBtn.disabled = false;
+    }
+  };
+
+  loginBtn?.addEventListener('click', () => handleAuth(true));
+  regBtn?.addEventListener('click', () => handleAuth(false));
+
+  function refreshAuthState() {
+    const session = getUserSession();
+    const sBtn = document.getElementById('show-auth-btn');
+    const uDD  = document.getElementById('user-profile-dropdown');
+    const pOut = document.getElementById('perm-logged-out-view');
+    const pIn  = document.getElementById('perm-logged-in-view');
+
+    if (session) {
+      if (sBtn) sBtn.style.display = 'none';
+      if (uDD)  { uDD.style.display = 'block'; uDD.innerHTML = `<span class="user-avatar" style="width:24px;height:24px;font-size:0.7rem;display:inline-flex;margin-right:8px;vertical-align:middle;">${session.username.slice(0,2).toUpperCase()}</span>${session.username} ▼`; }
+      if (pOut) pOut.style.display = 'none';
+      if (pIn)  pIn.style.display = 'block';
+    } else {
+      if (sBtn) sBtn.style.display = 'inline-flex';
+      if (uDD)  uDD.style.display = 'none';
+      if (pOut) pOut.style.display = 'block';
+      if (pIn)  pIn.style.display = 'none';
+    }
+  }
+
+  // ── Dashboard Setup ──────────────────────────────
+  document.getElementById('open-dashboard-btn')?.addEventListener('click', async () => {
+    showModal('dashboard-modal');
+    await loadDashboardRooms();
+  });
+
+  document.getElementById('dashboard-create-btn')?.addEventListener('click', async () => {
+    const slug = document.getElementById('dashboard-new-slug')?.value.trim();
+    const pw   = document.getElementById('dashboard-new-pw')?.value;
+    const btn  = document.getElementById('dashboard-create-btn');
+    const err  = document.getElementById('dashboard-new-error');
+
+    if (!slug || slug.length < 3) { err.textContent = 'Room ID must be 3-8 characters'; return; }
+    if (!pw || pw.length < 4) { err.textContent = 'Password must be at least 4 characters'; return; }
+
+    btn.disabled = true; btn.textContent = 'Registering...';
+    try {
+      await registerPermanentRoom(slug, pw);
+      sessionStorage.setItem('joinPassword_' + slug, pw);
+      document.getElementById('dashboard-new-slug').value = '';
+      document.getElementById('dashboard-new-pw').value = '';
+      err.textContent = '';
+      await loadDashboardRooms();
+      showToast('Room ' + slug + ' created!', 'success');
+    } catch (e) {
+      err.textContent = e.message;
+    } finally {
+      btn.disabled = false; btn.textContent = '◎ Register & Host';
+    }
+  });
+
+  async function loadDashboardRooms() {
+    const list = document.getElementById('dashboard-rooms-list');
+    if (!list) return;
+    list.innerHTML = '<center>Loading...</center>';
+    try {
+      const rooms = await fetchUserRooms();
+      if (rooms.length === 0) {
+        list.innerHTML = '<center style="color:var(--text-dim);font-size:0.85rem;">You have no active rooms.</center>';
+        return;
+      }
+      
+      list.innerHTML = '';
+      rooms.forEach(r => {
+        const d = document.createElement('div');
+        d.style = 'display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.05); padding:0.75rem; border-radius:var(--r-md);';
+        d.innerHTML = `
+          <div style="font-weight:600; font-family:var(--ff-mono);">${r.slug}</div>
+          <div style="display:flex; gap:0.5rem;">
+            <button class="btn btn-ghost btn-sm" onclick="joinDashboardRoom('${r.slug}')">Host / Join</button>
+            <button class="btn btn-ghost btn-sm" style="color:var(--red);" onclick="attemptDeleteRoom('${r.slug}')">🗑</button>
+          </div>
+        `;
+        list.appendChild(d);
+      });
+    } catch (e) {
+      list.innerHTML = '<center style="color:var(--red);">Failed to load rooms</center>';
+    }
+  }
+
+  window.joinDashboardRoom = (slug) => {
+    const pw = prompt('Enter room password to join/host:');
+    if (!pw) return;
+    const session = getUserSession();
+    // Use session username as joining name, or 'Host' if host
+    // We will just verify the password and join as host if they own it, but practically they are host if they have the password.
+    verifyRoomPassword(slug, pw).then(valid => {
+      if (valid) {
+        sessionStorage.setItem('joinPassword_' + slug, pw);
+        navigateToChat(slug, 'permanent', session ? session.username : 'User', 'host');
+      }
+      else showToast('Incorrect password', 'error');
+    }).catch(() => showToast('Error joining', 'error'));
+  };
+
+  window.attemptDeleteRoom = async (slug) => {
+    if (confirm(`Are you sure you want to PERMANENTLY delete room "${slug}"?`)) {
+      try {
+        await deleteUserRoom(slug);
+        showToast('Room deleted', 'success');
+        loadDashboardRooms();
+      } catch (e) {
+        showToast(e.message, 'error');
+      }
+    }
+  };
+
+  // ── Private Room ─────────────────────────────
+  document.getElementById('create-private-btn')?.addEventListener('click', async () => {
+    const btn = document.getElementById('create-private-btn');
+    btn.disabled = true; btn.textContent = 'Creating...';
+    const room = createTempRoom('private');
+    const username = 'Host_' + randomToken(2);
+    navigateToChat(room.id, 'private', username, 'host');
+  });
+
+  document.getElementById('join-private-btn')?.addEventListener('click', async () => {
+    const id = document.getElementById('join-room-id')?.value.trim();
+    if (!id || id.length < 4) {
+      showToast('Enter a valid Room ID', 'warning'); return;
+    }
+    const username = document.getElementById('join-username')?.value.trim() || 'Guest_' + randomToken(2);
+    const legacyKey = invite?.type === 'private' && invite.roomId === id ? invite.key : '';
+    navigateToChat(id, 'private', username, 'guest', legacyKey || undefined);
+  });
+
+  // ── Group Room ───────────────────────────────
+  document.getElementById('create-group-btn')?.addEventListener('click', () => {
+    const room = createTempRoom('group');
+    const username = 'Host_' + randomToken(2);
+    navigateToChat(room.id, 'group', username, 'host');
+  });
+
+  document.getElementById('join-group-btn')?.addEventListener('click', () => {
+    const id   = document.getElementById('join-group-id')?.value.trim();
+    const name = document.getElementById('join-group-username')?.value.trim();
+    if (!id)   { showToast('Enter Room ID', 'warning'); return; }
+    if (!name) { showToast('Enter a username', 'warning'); return; }
+    const legacyKey = invite?.type === 'group' && invite.roomId === id ? invite.key : '';
+    navigateToChat(id, 'group', name, 'guest', legacyKey || undefined);
+  });
+
+  // ── Permanent Room — availability check ──────
+  const slugInput = document.getElementById('perm-slug');
+  if (slugInput) {
+    slugInput.addEventListener('input', () => {
+      slugInput.value = slugInput.value.toLowerCase().replace(/[^a-z0-9]/g, '');
+    });
+    let _availTimer;
+    slugInput.addEventListener('input', () => {
+      clearTimeout(_availTimer);
+      const val = slugInput.value.trim();
+      const ind = document.getElementById('slug-indicator');
+      if (!ind) return;
+      if (val.length < CONFIG.PERMANENT_ID_MIN) { ind.textContent = ''; ind.className = 'availability-indicator'; return; }
+      ind.textContent = '● CHECKING...'; ind.className = 'availability-indicator indicator-amber';
+      _availTimer = setTimeout(async () => {
+        try {
+          const ok = await checkRoomAvailability(val);
+          ind.textContent = ok ? '● AVAILABLE' : '● TAKEN';
+          ind.className   = 'availability-indicator ' + (ok ? 'indicator-green' : 'indicator-red');
+        } catch (e) {
+          ind.textContent = '● ERROR'; ind.className = 'availability-indicator indicator-red';
+        }
+      }, 500);
+    });
+  }
+
+  // ── Password strength ─────────────────────────
+  const permPw = document.getElementById('perm-password');
+  if (permPw) {
+    permPw.addEventListener('input', () => {
+      const strength = getPasswordStrength(permPw.value);
+      const fill = document.getElementById('pw-strength-fill');
+      if (fill) {
+        fill.className = 'pw-strength-fill';
+        if (strength === 1) fill.classList.add('pw-strength-weak');
+        if (strength === 2) fill.classList.add('pw-strength-medium');
+        if (strength === 3) fill.classList.add('pw-strength-strong');
+      }
+    });
+  }
+
+  // ── Password show/hide ────────────────────────
+  document.querySelectorAll('.pw-toggle').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const input = btn.previousElementSibling;
+      if (!input) return;
+      const show = input.type === 'password';
+      input.type = show ? 'text' : 'password';
+      btn.textContent = show ? '🙈' : '👁';
+    });
+  });
+
+  // ── Register permanent room ───────────────────
+  document.getElementById('register-btn')?.addEventListener('click', async () => {
+    const slug = document.getElementById('perm-slug')?.value.trim();
+    const pw   = document.getElementById('perm-password')?.value;
+    const btn  = document.getElementById('register-btn');
+    const err  = document.getElementById('register-error');
+
+    const showErr = msg => { if (err) { err.textContent = msg; err.classList.add('visible'); } };
+    if (err) err.classList.remove('visible');
+
+    if (!slug || slug.length < CONFIG.PERMANENT_ID_MIN) { showErr('Room ID must be 3-8 characters'); return; }
+    if (!pw || pw.length < 4)                            { showErr('Password must be at least 4 characters'); return; }
+
+    btn.disabled = true; btn.textContent = 'Registering...';
+    try {
+      const result = await registerPermanentRoom(slug, pw);
+      sessionStorage.setItem('joinPassword_' + slug, pw);
+      showSuccessModal(result.slug, result.ownerToken);
+    } catch (e) {
+      showErr(e.message || 'Registration failed');
+      btn.disabled = false; btn.textContent = '◎ Register & Host';
+    }
+  });
+
+  // ── Join permanent room ───────────────────────
+  document.getElementById('join-perm-btn')?.addEventListener('click', async () => {
+    const slug = document.getElementById('join-perm-id')?.value.trim();
+    const pw   = document.getElementById('join-perm-pw')?.value;
+    const name = document.getElementById('join-perm-username')?.value.trim();
+    const err  = document.getElementById('join-perm-error');
+    const btn  = document.getElementById('join-perm-btn');
+
+    const showErr = msg => { if (err) { err.textContent = msg; err.classList.add('visible'); } };
+    if (err) err.classList.remove('visible');
+
+    if (!slug) { showErr('Enter Room ID'); return; }
+    if (!pw)   { showErr('Enter password'); return; }
+    if (!name) { showErr('Enter a username'); return; }
+
+    btn.disabled = true; btn.textContent = 'Verifying...';
+    try {
+      const valid = await verifyRoomPassword(slug, pw);
+      if (!valid) { showErr('Incorrect password'); btn.disabled = false; btn.textContent = '→ Join Room'; return; }
+      sessionStorage.setItem('joinPassword_' + slug, pw);
+      const role = await resolvePermanentRoomRole(slug, 'guest');
+      navigateToChat(slug, 'permanent', name, role);
+    } catch (e) {
+      showErr('Verification failed — is the server awake?');
+      btn.disabled = false; btn.textContent = '→ Join Room';
+    }
+  });
+
+  // ── Success modal logic ───────────────────────
+  function showSuccessModal(slug, ownerToken) {
+    const session = getUserSession();
+    document.getElementById('success-slug').textContent   = slug;
+    document.getElementById('success-token').textContent  = ownerToken;
+
+    document.getElementById('copy-slug-btn').onclick = e =>
+      copyToClipboard(slug, e.currentTarget);
+    document.getElementById('copy-token-btn').onclick = e =>
+      copyToClipboard(ownerToken, e.currentTarget);
+    document.getElementById('enter-room-btn').onclick = () => {
+      hideModal('success-modal');
+      navigateToChat(slug, 'permanent', session?.username || 'Host', 'host');
+    };
+    showModal('success-modal');
+  }
+}
+
+// ════════════════════════════════════════════
+// CHAT PAGE
+// ════════════════════════════════════════════
+
+let permanentHistoryCursor = 0;
+let permanentHistoryTimer = null;
+let currentPermanentPassword = '';
+let handledPermanentEventIds = new Set();
+
+function stopPermanentHistoryPolling() {
+  if (permanentHistoryTimer) {
+    clearInterval(permanentHistoryTimer);
+    permanentHistoryTimer = null;
+  }
+}
+
+async function persistCurrentRoomEvent(event) {
+  if (currentRoomType !== 'permanent' || !currentRoomId || !currentPermanentPassword) return;
+  const eventId = buildPermanentEventId(event);
+  try {
+    if (eventId) handledPermanentEventIds.add(eventId);
+    await persistPermanentRoomEvent(currentRoomId, currentPermanentPassword, event);
+  } catch (e) {
+    if (eventId) handledPermanentEventIds.delete(eventId);
+    console.warn('Failed to persist permanent room event', e);
+  }
+}
+
+async function loadPermanentHistoryOnce(roomId, password) {
+  if (!roomId || !password) return;
+  try {
+    while (true) {
+      const events = await fetchPermanentRoomEvents(roomId, password, permanentHistoryCursor);
+      if (!events.length) break;
+      for (const event of events) {
+        permanentHistoryCursor = Math.max(permanentHistoryCursor, event.cursor || 0);
+        if (event.eventId && handledPermanentEventIds.has(event.eventId)) continue;
+        if (event.eventId) handledPermanentEventIds.add(event.eventId);
+        const decrypted = await aesDecrypt(password, event.ciphertext);
+        const payload = JSON.parse(decrypted);
+        if (typeof applyPersistedRoomEvent === 'function') applyPersistedRoomEvent(payload);
+      }
+      if (events.length < 500) break;
+    }
+  } catch (e) {
+    console.warn('Failed to load permanent room history', e);
+  }
+}
+
+function startPermanentHistoryPolling(roomId, password) {
+  stopPermanentHistoryPolling();
+  permanentHistoryTimer = setInterval(() => {
+    loadPermanentHistoryOnce(roomId, password);
+  }, CONFIG.PERMANENT_HISTORY_POLL_MS);
+}
+
+function leaveCurrentRoom() {
+  stopPermanentHistoryPolling();
+  if (currentRoomType === 'private' && myRole === 'host') {
+    endRoom(true);
+    return;
+  }
+  destroyPeer();
+  navigateHome();
+}
+
+function handlePageUnload() {
+  stopPermanentHistoryPolling();
+  if (currentRoomType === 'private' && myRole === 'host') {
+    endRoom(false);
+  } else {
+    destroyPeer();
+  }
+  stopAllMediaStreams();
+}
+
+async function initChatPage() {
+  const params = getChatParams();
+  if (!params.roomId || !params.username) { navigateHome(); return; }
+
+  currentRoomType = params.type || 'private';
+  const isPerm  = params.type === 'permanent';
+  let isHost  = params.role === 'host';
+  const hId     = hostPeerId(params.roomId, isPerm);
+  const gId     = guestPeerId(params.roomId, isPerm);
+  let storedPermPassword = isPerm ? (sessionStorage.getItem('joinPassword_' + params.roomId) || '') : '';
+
+  if (isPerm && !storedPermPassword) {
+    const promptedPassword = prompt(`Enter the password for permanent room "${params.roomId}"`);
+    if (!promptedPassword) { navigateHome(); return; }
+
+    try {
+      const valid = await verifyRoomPassword(params.roomId, promptedPassword);
+      if (!valid) {
+        showToast('Incorrect room password', 'error');
+        setTimeout(navigateHome, 1500);
+        return;
+      }
+      sessionStorage.setItem('joinPassword_' + params.roomId, promptedPassword);
+      storedPermPassword = promptedPassword;
+    } catch (e) {
+      showToast('Could not verify room password', 'error');
+      setTimeout(navigateHome, 1500);
+      return;
+    }
+  }
+
+  if (isPerm) {
+    isHost = await resolvePermanentRoomRole(params.roomId, isHost ? 'host' : 'guest') === 'host';
+    currentPermanentPassword = storedPermPassword;
+  } else {
+    currentPermanentPassword = '';
+  }
+  permanentHistoryCursor = 0;
+  handledPermanentEventIds = new Set();
+  stopPermanentHistoryPolling();
+
+  const fallbackRoomKeys = [];
+  const e2eeKey = isPerm ? storedPermPassword : (params.key || params.roomId);
+  if (!isPerm && params.key && params.key !== params.roomId) fallbackRoomKeys.push(params.roomId);
+  if (isPerm && params.roomId && params.roomId !== e2eeKey) fallbackRoomKeys.push(params.roomId);
+
+  // Update top bar
+  const ridEl = document.getElementById('room-id-display');
+  if (ridEl) {
+    ridEl.textContent = params.roomId;
+    ridEl.addEventListener('click', () => copyToClipboard(params.roomId));
+  }
+  const badge = document.querySelector('.room-type-badge');
+  if (badge) badge.textContent = (params.type || 'PRIVATE').toUpperCase();
+
+  // Add self to user panel
+  addUserToPanel('self', params.username, isHost ? 'host' : 'guest');
+  updateOnlineCount(1);
+  
+  if (currentRoomType === 'group') {
+    const callBtn = document.getElementById('call-btn');
+    if (callBtn) callBtn.style.display = 'none';
+  }
+
+  // Init peer
+  if (isHost) {
+    await initAsHost(hId, params.username, params.roomId, e2eeKey, fallbackRoomKeys);
+    updateHostUI();
+  } else {
+    await initAsGuest(hId, gId, params.username, params.roomId, isPerm ? storedPermPassword : null, e2eeKey, fallbackRoomKeys);
+    updateGuestUI();
+  }
+
+  if (isPerm && storedPermPassword) {
+    await loadPermanentHistoryOnce(params.roomId, storedPermPassword);
+    startPermanentHistoryPolling(params.roomId, storedPermPassword);
+  }
+
+  // Protect chat feed
+  initChatProtection(document.getElementById('chat-feed'));
+
+  // ── Input bar events ──────────────────────────
+  const input = document.getElementById('msg-input');
+
+  // Auto-resize textarea
+  input?.addEventListener('input', () => {
+    input.style.height = '44px';
+    input.style.height = Math.min(input.scrollHeight, 110) + 'px';
+    sendTypingIndicator();
+  });
+
+  input?.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      const t = input.value.trim();
+      if (t) { sendTextMessage(t); input.value = ''; input.style.height = '44px'; }
+    }
+  });
+
+  document.getElementById('send-btn')?.addEventListener('click', () => {
+    const t = input?.value.trim();
+    if (t) { sendTextMessage(t); input.value = ''; input.style.height = '44px'; }
+  });
+
+  // File picker
+  document.getElementById('file-input')?.addEventListener('change', e => {
+    const file = e.target.files?.[0];
+    if (file) { sendFile(file); e.target.value = ''; }
+  });
+
+  // Mic button
+  const micBtn = document.getElementById('mic-btn');
+  micBtn?.addEventListener('mousedown',  startVoiceRecording);
+  micBtn?.addEventListener('touchstart', e => { e.preventDefault(); startVoiceRecording(); });
+  micBtn?.addEventListener('mouseup',    stopVoiceRecording);
+  micBtn?.addEventListener('touchend',   stopVoiceRecording);
+  micBtn?.addEventListener('mouseleave', stopVoiceRecording);
+
+  // Call button
+  document.getElementById('call-btn')?.addEventListener('click', initiateCall);
+
+  // Clear chat
+  document.getElementById('clear-btn')?.addEventListener('click', broadcastClearChat);
+
+  // Leave button
+  document.getElementById('leave-btn')?.addEventListener('click', () => {
+    leaveCurrentRoom();
+  });
+
+  // Back button
+  document.getElementById('back-btn')?.addEventListener('click', () => {
+    leaveCurrentRoom();
+  });
+
+  // User panel toggle
+  document.getElementById('users-btn')?.addEventListener('click', () => {
+    document.getElementById('user-panel')?.classList.toggle('panel-open');
+  });
+  document.getElementById('close-panel-btn')?.addEventListener('click', () => {
+    document.getElementById('user-panel')?.classList.remove('panel-open');
+  });
+
+  // Search toggle
+  let searchOpen = false;
+  document.getElementById('search-btn')?.addEventListener('click', () => {
+    searchOpen = !searchOpen;
+    const sb = document.getElementById('search-bar');
+    if (sb) {
+      sb.classList.toggle('search-visible', searchOpen);
+      if (searchOpen) document.getElementById('search-input')?.focus();
+    }
+  });
+  document.getElementById('search-input')?.addEventListener('input', e => {
+    searchMessages(e.target.value);
+  });
+
+  // Sound toggle
+  document.getElementById('sound-btn')?.addEventListener('click', e => {
+    toggleSound(e.currentTarget);
+  });
+
+  // Copy room ID icon in top bar
+  document.getElementById('copy-room-btn')?.addEventListener('click', () => {
+    copyToClipboard(params.roomId);
+  });
+
+  // Call bar: mute / end
+  document.getElementById('mute-btn')?.addEventListener('click', toggleMicInCall);
+  document.getElementById('end-call-btn')?.addEventListener('click', endCall);
+
+  // Host-only: lock room, end room
+  document.getElementById('lock-btn')?.addEventListener('click',     lockRoom);
+  document.getElementById('end-room-btn')?.addEventListener('click', endRoom);
+
+  // Timer modal options
+  document.querySelectorAll('.timer-opt').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const seconds = parseInt(btn.dataset.seconds);
+      const modal   = document.getElementById('timer-modal');
+      const msgId   = modal?.dataset.targetMsg;
+      if (msgId && seconds) {
+        setMessageTimer(msgId, seconds);
+        broadcastOrRelay({ type: 'set_timer', messageId: msgId, seconds });
+      }
+      hideModal('timer-modal');
+      showToast(`Message self-destructs in ${btn.textContent}`, 'info');
+    });
+  });
+
+  // QR code button
+  document.getElementById('qr-btn')?.addEventListener('click', () => {
+    const url = buildInviteUrl(params.roomId, params.type || 'private');
+    const qr  = document.getElementById('qr-container');
+    if (qr && window.QRCode) {
+      qr.innerHTML = '';
+      new QRCode(qr, { text: url, width: 180, height: 180, colorDark: '#6D28D9', colorLight: '#fff' });
+    }
+    showModal('qr-modal');
+  });
+
+  // Clean up on page hide
+  window.addEventListener('beforeunload', handlePageUnload);
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) activateBlurShield('Tab switched');
+    else                 deactivateBlurShield();
+  });
+
+  // Initial shield — green
+  setShieldIndicator('green');
+}

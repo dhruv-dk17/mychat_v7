@@ -1,0 +1,246 @@
+/* ══════════════════════════════════════════════
+   HOME PAGE — index.html
+   ══════════════════════════════════════════════ */
+
+/* Animated background gradient */
+body[data-page="home"] {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  /* justify-content: center;  <-- Removed to allow natural top-to-bottom flow */
+  padding: 2rem 1.5rem;
+  background: var(--bg);
+  overflow-y: auto; /* Allow scrolling */
+}
+
+/* Subtle radial glow in background */
+body[data-page="home"]::before {
+  content: '';
+  position: fixed;
+  top: -20%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80vw;
+  height: 80vw;
+  background: radial-gradient(ellipse at center, rgba(109, 40, 217, 0.08) 0%, transparent 65%);
+  pointer-events: none;
+  z-index: 0;
+}
+body[data-page="home"]::after {
+  content: '';
+  position: fixed;
+  bottom: -20%;
+  right: -10%;
+  width: 50vw;
+  height: 50vw;
+  background: radial-gradient(ellipse at center, rgba(139, 92, 246, 0.05) 0%, transparent 60%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Page wrapper */
+.home-wrapper {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 480px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  margin-top: auto;
+  margin-bottom: auto;
+  animation: page-in 0.5s var(--ease-snap);
+}
+@keyframes page-in {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Header ──────────────────────────────────────── */
+.home-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+.home-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.home-logo {
+  width: 38px;
+  height: 38px;
+  background: var(--grad-accent);
+  border-radius: var(--r-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.15rem;
+  box-shadow: var(--glow-accent);
+  flex-shrink: 0;
+}
+.home-title {
+  font-family: var(--ff-head);
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--text-white);
+  letter-spacing: -0.3px;
+}
+.home-tagline {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  letter-spacing: 0.3px;
+}
+.home-header-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.version-pill {
+  font-family: var(--ff-mono);
+  font-size: 0.68rem;
+  color: var(--accent-bright);
+  background: var(--accent-dim);
+  border: 1px solid rgba(139, 92, 246, 0.25);
+  border-radius: var(--r-pill);
+  padding: 0.2rem 0.55rem;
+}
+
+/* ── Room Cards ──────────────────────────────────── */
+.room-card {
+  background: var(--surface);
+  border: 1px solid var(--border-dim);
+  border-radius: var(--r-2xl);
+  padding: 1.5rem;
+  transition: border-color 0.25s, box-shadow 0.25s;
+  position: relative;
+  overflow: hidden;
+}
+.room-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(139, 92, 246, 0.4), transparent);
+  opacity: 0;
+  transition: opacity 0.25s;
+}
+.room-card:hover { border-color: var(--border); }
+.room-card:hover::before { opacity: 1; }
+
+.card-label {
+  font-family: var(--ff-mono);
+  font-size: 0.65rem;
+  font-weight: 500;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--accent-bright);
+  margin-bottom: 0.4rem;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+.card-desc {
+  font-size: 0.82rem;
+  color: var(--text-dim);
+  margin-bottom: 1.25rem;
+  line-height: 1.5;
+}
+
+/* Card with gradient border (permanent room) */
+.room-card-perm {
+  border-color: transparent;
+  background:
+    linear-gradient(var(--surface), var(--surface)) padding-box,
+    linear-gradient(135deg, rgba(109, 40, 217, 0.5), rgba(139, 92, 246, 0.3), rgba(167, 139, 250, 0.5)) border-box;
+}
+.room-card-perm:hover {
+  background:
+    linear-gradient(var(--surface), var(--surface)) padding-box,
+    linear-gradient(135deg, rgba(109, 40, 217, 0.8), rgba(139, 92, 246, 0.5), rgba(167, 139, 250, 0.8)) border-box;
+}
+
+/* Join row — input + button side by side */
+.join-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: stretch;
+}
+.join-row .input-field {
+  flex: 1;
+}
+.join-row .btn {
+  flex-shrink: 0;
+}
+
+/* Availability indicator */
+.availability-indicator {
+  font-family: var(--ff-mono);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  min-height: 1.2rem;
+  transition: color 0.2s;
+}
+.indicator-green  { color: var(--accent-green); }
+.indicator-red    { color: var(--accent-red); }
+.indicator-amber  { color: var(--accent-amber); }
+.indicator-hidden { visibility: hidden; }
+
+/* Perm card sections */
+.perm-section-title {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 0.75rem;
+}
+
+/* ── Success Modal ────────────────────────────────── */
+.success-warning {
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  border-radius: var(--r-md);
+  padding: 0.75rem 1rem;
+  font-size: 0.82rem;
+  color: var(--accent-amber);
+  line-height: 1.5;
+  margin: 0.75rem 0;
+}
+.token-display {
+  font-family: var(--ff-mono);
+  font-size: 0.78rem;
+  word-break: break-all;
+  line-height: 1.6;
+  color: var(--accent-bright);
+}
+
+/* ── Error Messages ──────────────────────────────── */
+.inline-error {
+  font-size: 0.8rem;
+  color: var(--accent-red);
+  margin-top: 0.35rem;
+  display: none;
+}
+.inline-error.visible { display: block; }
+
+/* ── Stagger animations (per card) ──────────────── */
+.home-wrapper .room-card:nth-child(1) { animation: card-in 0.5s 0.05s var(--ease-snap) both; }
+.home-wrapper .room-card:nth-child(2) { animation: card-in 0.5s 0.1s var(--ease-snap) both; }
+.home-wrapper .room-card:nth-child(3) { animation: card-in 0.5s 0.15s var(--ease-snap) both; }
+@keyframes card-in {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Footer ──────────────────────────────────────── */
+.home-footer {
+  text-align: center;
+  font-size: 0.72rem;
+  color: var(--text-faint);
+  margin-top: 0.25rem;
+  letter-spacing: 0.5px;
+}

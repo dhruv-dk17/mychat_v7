@@ -1,0 +1,10 @@
+backend/node_modules/
+backend/.env
+.env
+.DS_Store
+Thumbs.db
+*.log
+npm-debug.log*
+.vscode/
+.idea/
+backend/.env.example

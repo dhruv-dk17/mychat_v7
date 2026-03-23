@@ -13,8 +13,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
 
   <!-- CSS -->
-  <link rel="stylesheet" href="assets/css/main.css?v=20260321e" />
-  <link rel="stylesheet" href="assets/css/home.css?v=20260321e" />
+  <link rel="stylesheet" href="assets/css/main.css?v=20260323" />
+  <link rel="stylesheet" href="assets/css/home.css?v=20260323" />
   <link rel="stylesheet" href="assets/css/anti-surveillance.css?v=20260321e" />
 </head>
 <body data-page="home">
@@ -34,95 +34,160 @@
     <div class="wipe-sub">All data cleared. Redirecting...</div>
   </div>
 
-  <!-- HOME CONTENT -->
-  <main class="home-wrapper">
+  <!-- ═══════════════════════════════════════
+       APP SHELL — Sidebar + Content
+  ════════════════════════════════════════ -->
+  <div class="app-shell">
 
-    <!-- Header -->
-    <div class="home-header">
-      <div class="home-brand">
+    <!-- ── LEFT SIDEBAR ── -->
+    <aside class="home-sidebar" id="home-sidebar">
+
+      <!-- Brand -->
+      <div class="sidebar-brand">
         <div class="home-logo">🔒</div>
-        <div>
+        <div class="sidebar-brand-text">
           <div class="home-title">Mychat</div>
-          <div class="home-tagline">Private · Encrypted · Zero Trace</div>
+          <div class="home-tagline">Private · Encrypted</div>
         </div>
       </div>
-      <div class="home-header-right" style="display:flex; gap:0.5rem; align-items:center;">
-        <button id="show-auth-btn" class="btn btn-ghost" style="padding:0.4rem 0.8rem; font-size:0.8rem;">Sign In</button>
-        <div id="user-profile-dropdown" style="display:none; color:var(--text); font-weight:600; font-size:0.85rem; cursor:pointer;"></div>
-        <span class="badge badge-green">
-          <span class="dot dot-green"></span> P2P
-        </span>
-        <span class="version-pill">v7</span>
-      </div>
-    </div>
 
-    <!-- Card 1: Private Room -->
-    <div class="room-card">
-      <div class="card-label">🔒 Private Room</div>
-      <div class="card-desc">Direct P2P connection. End-to-end encrypted. 2 people max.</div>
-      <button class="btn btn-primary w-100" id="create-private-btn" style="margin-bottom:1rem">
-        ◉ Create Private Room
-      </button>
-      <div class="divider">or join</div>
-      <div style="display:flex;flex-direction:column;gap:0.5rem;margin-top:0.75rem">
-        <input type="text" class="input-field" id="join-room-id" placeholder="Room ID" autocomplete="off" spellcheck="false" />
-        <input type="text" class="input-field" id="join-username" placeholder="Your name" autocomplete="off" maxlength="20" />
-        <button class="btn btn-ghost w-100" id="join-private-btn">→ Join Room</button>
-      </div>
-    </div>
-
-    <!-- Card 2: Group Room -->
-    <div class="room-card">
-      <div class="card-label">👥 Group Room</div>
-      <div class="card-desc">Star topology. Host relays messages. Up to 50 participants.</div>
-      <button class="btn btn-primary w-100" id="create-group-btn" style="margin-bottom:1rem">
-        ◎ Create Group Room
-      </button>
-      <div class="divider">or join</div>
-      <div style="display:flex;flex-direction:column;gap:0.5rem;margin-top:0.75rem">
-        <input type="text" class="input-field" id="join-group-id"       placeholder="Group Room ID" autocomplete="off" />
-        <input type="text" class="input-field" id="join-group-username" placeholder="Your name" autocomplete="off" maxlength="20" />
-        <button class="btn btn-ghost w-100" id="join-group-btn">→ Join Group</button>
-      </div>
-    </div>
-
-    <!-- Card 3: Permanent Room -->
-    <div class="room-card room-card-perm">
-      <div class="card-label">⚡ Permanent Room</div>
-      <div class="card-desc">Register a custom Room ID that's yours forever. Password protected. Stored on server.</div>
-
-      <!-- Logged out view -->
-      <div id="perm-logged-out-view">
-        <center style="margin: 1.5rem 0;">
-          <p style="font-size: 0.85rem; color: var(--text-dim); margin-bottom: 1rem;">Sign in to create & manage your permanent rooms.</p>
-          <button class="btn btn-primary w-100" onclick="showModal('auth-modal')">Sign in / Register</button>
-        </center>
-      </div>
-
-      <!-- Logged in view -->
-      <div id="perm-logged-in-view" style="display:none;">
-        <button class="btn btn-primary w-100" id="open-dashboard-btn" style="margin-top:0.75rem; margin-bottom:1rem">
-          ◎ Open Dashboard
+      <!-- Nav -->
+      <nav class="sidebar-nav">
+        <div class="sidebar-section-label">Rooms</div>
+        <button class="sidebar-nav-item active" data-room="private" id="nav-private">
+          <span class="sidebar-nav-icon">🔒</span>
+          <span class="sidebar-nav-label">Private Room</span>
         </button>
-      </div>
+        <button class="sidebar-nav-item" data-room="group" id="nav-group">
+          <span class="sidebar-nav-icon">👥</span>
+          <span class="sidebar-nav-label">Group Room</span>
+        </button>
+        <button class="sidebar-nav-item" data-room="permanent" id="nav-permanent">
+          <span class="sidebar-nav-icon">⚡</span>
+          <span class="sidebar-nav-label">Permanent Room</span>
+        </button>
+      </nav>
 
-      <div class="divider">or join existing</div>
+      <!-- Spacer -->
+      <div class="sidebar-spacer"></div>
 
-      <!-- Join sub-section -->
-      <div style="display:flex;flex-direction:column;gap:0.5rem;margin-top:0.75rem">
-        <input type="text" class="input-field" id="join-perm-id" placeholder="Room ID" autocomplete="off" spellcheck="false" maxlength="8" />
-        <div class="input-pw-wrap">
-          <input type="password" class="input-field" id="join-perm-pw" placeholder="Password" autocomplete="current-password" />
-          <button class="pw-toggle" type="button" title="Show/hide password">👁</button>
+      <!-- Footer / Auth -->
+      <div class="sidebar-footer">
+        <div class="sidebar-status">
+          <span class="badge badge-green"><span class="dot dot-green"></span> P2P</span>
+          <span class="version-pill">v7</span>
         </div>
-        <input type="text" class="input-field" id="join-perm-username" placeholder="Your name" autocomplete="off" maxlength="20" />
-        <div class="inline-error" id="join-perm-error"></div>
-        <button class="btn btn-ghost w-100" id="join-perm-btn">→ Join Room</button>
+        <div class="sidebar-auth">
+          <button id="show-auth-btn" class="btn btn-ghost sidebar-auth-btn">Sign In</button>
+          <div id="user-profile-dropdown" style="display:none; cursor:pointer;"></div>
+        </div>
       </div>
-    </div>
+    </aside>
 
-    <div class="home-footer">Mychat v7 · All data P2P · No server logs · Free forever</div>
-  </main>
+    <!-- Mobile sidebar overlay -->
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+    <!-- ── MAIN CONTENT ── -->
+    <main class="home-content">
+
+      <!-- Mobile top bar -->
+      <div class="mobile-topbar">
+        <button class="btn-icon" id="sidebar-toggle" title="Menu">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <div class="mobile-brand">
+          <div class="home-logo" style="width:28px;height:28px;font-size:0.9rem;">🔒</div>
+          <span class="home-title" style="font-size:1.1rem;">Mychat</span>
+        </div>
+        <div style="display:flex;gap:0.5rem;align-items:center;">
+          <span class="badge badge-green" style="font-size:0.6rem;"><span class="dot dot-green"></span> P2P</span>
+          <span class="version-pill">v7</span>
+        </div>
+      </div>
+
+      <!-- Content area heading -->
+      <div class="content-header" id="content-header">
+        <div class="content-header-icon" id="content-header-icon">🔒</div>
+        <div>
+          <div class="content-header-title" id="content-header-title">Private Room</div>
+          <div class="content-header-sub" id="content-header-sub">Direct P2P connection. End-to-end encrypted. 2 people max.</div>
+        </div>
+      </div>
+
+      <!-- ── PRIVATE ROOM PANEL ── -->
+      <div class="room-panel active" id="panel-private">
+        <div class="room-card">
+          <button class="btn btn-primary w-100" id="create-private-btn" style="margin-bottom:1rem">
+            ◉ Create Private Room
+          </button>
+          <div class="divider">or join</div>
+          <div style="display:flex;flex-direction:column;gap:0.5rem;margin-top:0.75rem">
+            <input type="text" class="input-field" id="join-room-id" placeholder="Room ID" autocomplete="off" spellcheck="false" />
+            <input type="text" class="input-field" id="join-username" placeholder="Your name" autocomplete="off" maxlength="20" />
+            <button class="btn btn-ghost w-100" id="join-private-btn">→ Join Room</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── GROUP ROOM PANEL ── -->
+      <div class="room-panel" id="panel-group">
+        <div class="room-card">
+          <button class="btn btn-primary w-100" id="create-group-btn" style="margin-bottom:1rem">
+            ◎ Create Group Room
+          </button>
+          <div class="divider">or join</div>
+          <div style="display:flex;flex-direction:column;gap:0.5rem;margin-top:0.75rem">
+            <input type="text" class="input-field" id="join-group-id" placeholder="Group Room ID" autocomplete="off" />
+            <input type="text" class="input-field" id="join-group-username" placeholder="Your name" autocomplete="off" maxlength="20" />
+            <button class="btn btn-ghost w-100" id="join-group-btn">→ Join Group</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── PERMANENT ROOM PANEL ── -->
+      <div class="room-panel" id="panel-permanent">
+        <div class="room-card room-card-perm">
+
+          <!-- Logged out view -->
+          <div id="perm-logged-out-view">
+            <center style="margin: 1.5rem 0;">
+              <p style="font-size: 0.85rem; color: var(--text-dim); margin-bottom: 1rem;">Sign in to create &amp; manage your permanent rooms.</p>
+              <button class="btn btn-primary w-100" onclick="showModal('auth-modal')">Sign in / Register</button>
+            </center>
+          </div>
+
+          <!-- Logged in view -->
+          <div id="perm-logged-in-view" style="display:none;">
+            <button class="btn btn-primary w-100" id="open-dashboard-btn" style="margin-top:0.75rem; margin-bottom:1rem">
+              ◎ Open Dashboard
+            </button>
+          </div>
+
+          <div class="divider">or join existing</div>
+
+          <!-- Join sub-section -->
+          <div style="display:flex;flex-direction:column;gap:0.5rem;margin-top:0.75rem">
+            <input type="text" class="input-field" id="join-perm-id" placeholder="Room ID" autocomplete="off" spellcheck="false" maxlength="8" />
+            <div class="input-pw-wrap">
+              <input type="password" class="input-field" id="join-perm-pw" placeholder="Password" autocomplete="current-password" />
+              <button class="pw-toggle" type="button" title="Show/hide password">👁</button>
+            </div>
+            <input type="text" class="input-field" id="join-perm-username" placeholder="Your name" autocomplete="off" maxlength="20" />
+            <div class="inline-error" id="join-perm-error"></div>
+            <button class="btn btn-ghost w-100" id="join-perm-btn">→ Join Room</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="home-footer">Mychat v7 · All data P2P · No server logs · Free forever</div>
+
+    </main>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       MODALS (unchanged)
+  ════════════════════════════════════════ -->
 
   <!-- Success Modal (after register) -->
   <div class="modal-backdrop" id="success-modal">
@@ -189,7 +254,7 @@
           <button class="pw-toggle" type="button" title="Show/hide password">👁</button>
         </div>
         <div class="inline-error" id="dashboard-new-error"></div>
-        <button class="btn btn-primary w-100" id="dashboard-create-btn">◎ Register & Host</button>
+        <button class="btn btn-primary w-100" id="dashboard-create-btn">◎ Register &amp; Host</button>
       </div>
 
       <div class="card-desc">Your Active Rooms:</div>
@@ -205,19 +270,62 @@
       <div class="modal-title" style="text-align: center; margin-bottom: 1rem;">Account Settings</div>
       <div style="display:flex;flex-direction:column;gap:0.75rem;">
         <button class="btn btn-ghost w-100" id="settings-logout-btn">Log Out</button>
-        <button class="btn btn-ghost w-100" id="settings-delete-account-btn" style="color:var(--red);">Delete Account & Rooms</button>
+        <button class="btn btn-ghost w-100" id="settings-delete-account-btn" style="color:var(--accent-red);">Delete Account &amp; Rooms</button>
       </div>
       <button class="btn btn-ghost" style="position: absolute; top:10px; right:10px; border:none; padding:10px;" onclick="hideModal('user-settings-modal')">✕</button>
     </div>
   </div>
 
   <!-- Scripts (order matters) -->
-  <script src="assets/js/config.js?v=20260321e"></script>
-  <script src="assets/js/crypto.js?v=20260321e"></script>
-  <script src="assets/js/rooms.js?v=20260321e"></script>
-  <script src="assets/js/ui.js?v=20260321e"></script>
-  <script src="assets/js/peer.js?v=20260321e"></script>
-  <script src="assets/js/surveillance.js?v=20260321e"></script>
-  <script src="assets/js/app.js?v=20260321e"></script>
+  <script src="assets/js/config.js?v=20260323"></script>
+  <script src="assets/js/crypto.js?v=20260323"></script>
+  <script src="assets/js/rooms.js?v=20260323"></script>
+  <script src="assets/js/ui.js?v=20260323"></script>
+  <script src="assets/js/peer.js?v=20260323"></script>
+  <script src="assets/js/surveillance.js?v=20260323"></script>
+  <script src="assets/js/app.js?v=20260323"></script>
+
+  <!-- Sidebar nav switcher -->
+  <script>
+    (function() {
+      const panels = {
+        private: { icon: '🔒', title: 'Private Room', sub: 'Direct P2P connection. End-to-end encrypted. 2 people max.' },
+        group:   { icon: '👥', title: 'Group Room',   sub: 'Star topology. Host relays messages. Up to 50 participants.' },
+        permanent:{ icon: '⚡', title: 'Permanent Room', sub: 'Register a custom Room ID that\'s yours forever. Password protected.' }
+      };
+
+      function switchPanel(room) {
+        document.querySelectorAll('.sidebar-nav-item').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.room-panel').forEach(el => el.classList.remove('active'));
+        const btn = document.getElementById('nav-' + room);
+        const panel = document.getElementById('panel-' + room);
+        if (btn) btn.classList.add('active');
+        if (panel) panel.classList.add('active');
+        const info = panels[room];
+        if (info) {
+          document.getElementById('content-header-icon').textContent = info.icon;
+          document.getElementById('content-header-title').textContent = info.title;
+          document.getElementById('content-header-sub').textContent = info.sub;
+        }
+        // Close mobile sidebar
+        document.getElementById('home-sidebar')?.classList.remove('sidebar-open');
+        document.getElementById('sidebar-overlay')?.classList.remove('overlay-visible');
+      }
+
+      document.querySelectorAll('.sidebar-nav-item').forEach(btn => {
+        btn.addEventListener('click', () => switchPanel(btn.dataset.room));
+      });
+
+      // Mobile sidebar toggle
+      document.getElementById('sidebar-toggle')?.addEventListener('click', () => {
+        document.getElementById('home-sidebar')?.classList.toggle('sidebar-open');
+        document.getElementById('sidebar-overlay')?.classList.toggle('overlay-visible');
+      });
+      document.getElementById('sidebar-overlay')?.addEventListener('click', () => {
+        document.getElementById('home-sidebar')?.classList.remove('sidebar-open');
+        document.getElementById('sidebar-overlay')?.classList.remove('overlay-visible');
+      });
+    })();
+  </script>
 </body>
 </html>

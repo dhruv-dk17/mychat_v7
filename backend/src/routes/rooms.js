@@ -100,7 +100,8 @@ async function authorizeRoomByPasswordHash(slug, passwordHash) {
 
 // GET /api/rooms/user
 router.get('/user', async (req, res) => {
-  const { username, token } = req.query;
+  const username = req.get('X-Auth-Username');
+  const token    = req.get('X-Auth-Token');
   if (!username || !token) return res.status(401).json({ error: 'Unauthorized' });
   try {
     const u = await pool.query('SELECT username FROM users WHERE username = $1 AND token = $2', [username.toLowerCase(), token]);
@@ -184,8 +185,9 @@ router.post('/:slug/messages', async (req, res) => {
 
 // DELETE /api/rooms/:slug
 router.delete('/:slug', async (req, res) => {
-  const slug = req.params.slug?.toLowerCase();
-  const { username, token } = req.query;
+  const slug     = req.params.slug?.toLowerCase();
+  const username = req.get('X-Auth-Username');
+  const token    = req.get('X-Auth-Token');
   if (!username || !token) return res.status(401).json({ error: 'Unauthorized' });
   try {
     const u = await pool.query('SELECT username FROM users WHERE username = $1 AND token = $2', [username.toLowerCase(), token]);

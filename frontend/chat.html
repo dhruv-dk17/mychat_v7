@@ -13,8 +13,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
 
   <!-- CSS -->
-  <link rel="stylesheet" href="assets/css/main.css?v=20260321e" />
-  <link rel="stylesheet" href="assets/css/chat.css?v=20260321e" />
+  <link rel="stylesheet" href="assets/css/main.css?v=20260323" />
+  <link rel="stylesheet" href="assets/css/chat.css?v=20260323" />
   <link rel="stylesheet" href="assets/css/anti-surveillance.css?v=20260321e" />
 </head>
 <body data-page="chat">
@@ -39,42 +39,7 @@
   </div>
 
   <!-- ═══════════════════════════════════════
-       TOP BAR
-  ════════════════════════════════════════ -->
-  <header id="top-bar">
-    <div class="top-bar-left">
-      <button class="btn-icon" id="back-btn" title="Leave room">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
-      </button>
-      <div>
-        <span id="room-id-display" title="Click to copy Room ID"></span>
-      </div>
-      <span class="room-type-badge">PRIVATE</span>
-      <span class="online-count" id="online-count">
-        <span class="dot dot-green"></span> 1 online
-      </span>
-    </div>
-
-    <div class="top-bar-right">
-      <!-- Shield indicator -->
-      <div class="shield-indicator" title="Anti-surveillance shield">
-        🛡 <span class="shield-dot shield-green"></span>
-      </div>
-      <!-- Host badge (hidden for guests) -->
-      <span class="badge badge-amber" id="host-badge" style="display:none">👑 Host</span>
-      <!-- Controls -->
-      <button class="btn-icon" id="search-btn" title="Search messages">🔍</button>
-      <button class="btn-icon" id="sound-btn"  title="Toggle sound">🔔</button>
-      <button class="btn-icon" id="qr-btn"     title="QR code">⬛</button>
-      <button class="btn-icon" id="users-btn"  title="Participants">👥</button>
-      <!-- Host-only controls -->
-      <button class="btn-icon host-only" id="lock-btn"     title="Lock/unlock room" style="display:none">🔐</button>
-      <button class="btn-icon host-only" id="end-room-btn" title="End room for all"  style="display:none">⏹</button>
-    </div>
-  </header>
-
-  <!-- ═══════════════════════════════════════
-       ACTIVE CALL BAR
+       ACTIVE CALL BAR (full-width, above layout)
   ════════════════════════════════════════ -->
   <div id="call-bar">
     <div class="call-bar-info">
@@ -88,108 +53,220 @@
   </div>
 
   <!-- ═══════════════════════════════════════
-       MAIN LAYOUT
+       MAIN CHAT SHELL — Sidebar + Content
   ════════════════════════════════════════ -->
-  <div class="chat-layout">
+  <div class="chat-shell">
 
-    <!-- Chat main -->
-    <div id="chat-main">
+    <!-- ── LEFT SIDEBAR ── -->
+    <aside class="chat-sidebar" id="chat-sidebar">
 
-      <!-- Search bar (hidden by default) -->
-      <div id="search-bar">
-        <input type="text" id="search-input" placeholder="Search messages..." autocomplete="off" />
-        <button class="btn-icon" onclick="searchMessages('');document.getElementById('search-input').value=''">✕</button>
+      <!-- Sidebar Top Bar (mobile close) -->
+      <div class="csidebar-topbar">
+        <div class="csidebar-brand">🔒 Mychat</div>
+        <button class="btn-icon" id="close-chat-sidebar-btn" title="Close sidebar">✕</button>
       </div>
 
-      <!-- Typing indicator -->
-      <div id="typing-indicator">
-        <div class="typing-dots"><span></span><span></span><span></span></div>
-        <span id="typing-name"></span> is typing...
-      </div>
-
-      <!-- Message feed -->
-      <div id="chat-feed" role="log" aria-live="polite" aria-label="Chat messages"></div>
-
-      <!-- Multi-select bar (hidden by default) -->
-      <div id="multi-select-bar" style="display:none; position:absolute; bottom: 80px; left:50%; transform:translateX(-50%); background:var(--surface-high); padding:0.5rem 1rem; border-radius:var(--r-full); box-shadow:0 10px 30px rgba(0,0,0,0.8); z-index:100; align-items:center; gap:1rem; border:1px solid rgba(255,255,255,0.1);">
-        <span id="select-count" style="font-size:0.85rem;font-weight:600;">0 selected</span>
-        <button class="btn btn-danger-ghost" style="padding:0.4rem 0.8rem;font-size:0.8rem;" id="multi-delete-btn">🗑 Delete</button>
-        <button class="btn btn-ghost" style="padding:0.4rem 0.8rem;font-size:0.8rem;" id="multi-cancel-btn">✕ Cancel</button>
-      </div>
-
-      <!-- Input bar -->
-      <footer id="input-bar">
-        <div id="extra-bar">
-          <button class="extra-action danger" id="clear-btn" title="Clear chat for everyone">🗑 Clear Chat</button>
-          <button class="extra-action" id="copy-room-btn" title="Copy Room ID">🔗 Copy ID</button>
+      <!-- Room Info -->
+      <div class="csidebar-section">
+        <div class="csidebar-section-label">Room</div>
+        <div class="csidebar-room-info">
+          <div class="csidebar-room-id-wrap">
+            <span id="room-id-display" title="Click to copy Room ID"></span>
+            <span class="room-type-badge"></span>
+          </div>
+          <div class="csidebar-online">
+            <span class="online-count" id="online-count">
+              <span class="dot dot-green"></span> 1 online
+            </span>
+          </div>
         </div>
-        <div class="input-row">
-          <!-- File attachment -->
-          <label class="btn-icon" for="file-input" title="Share file" style="cursor:pointer">
-            📎
-            <input type="file" id="file-input" style="display:none" />
-          </label>
-          <!-- Rich Media Button -->
-          <button class="btn-icon" id="media-drawer-btn" title="Emojis, GIFs, Stickers">😀</button>
-          <!-- Mic (voice message) -->
-          <button class="btn-icon" id="mic-btn" title="Hold to record voice message">🎤</button>
-          <!-- Text input -->
-          <textarea
-            id="msg-input"
-            placeholder="Message..."
-            rows="1"
-            autocomplete="off"
-            spellcheck="true"
-            aria-label="Type a message"
-          ></textarea>
-          <!-- Voice call -->
-          <button class="btn-icon" id="call-btn" title="Start voice call">📞</button>
-          <!-- Send -->
-          <button id="send-btn" title="Send message" aria-label="Send">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        <!-- Host badge -->
+        <span class="badge badge-amber" id="host-badge" style="display:none; margin-top:0.5rem;">👑 Host</span>
+      </div>
+
+      <!-- Shield status -->
+      <div class="csidebar-section">
+        <div class="csidebar-section-label">Security</div>
+        <div class="shield-indicator" title="Anti-surveillance shield">
+          🛡 Shield <span class="shield-dot shield-green"></span>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="csidebar-section">
+        <div class="csidebar-section-label">Actions</div>
+        <nav class="csidebar-actions">
+          <button class="csidebar-action-btn" id="search-btn" title="Search messages">
+            🔍 <span>Search</span>
           </button>
+          <button class="csidebar-action-btn" id="sound-btn" title="Toggle sound">
+            🔔 <span>Sound</span>
+          </button>
+          <button class="csidebar-action-btn" id="qr-btn" title="QR code">
+            ⬛ <span>QR Code</span>
+          </button>
+          <button class="csidebar-action-btn" id="users-btn" title="Participants">
+            👥 <span>Members</span>
+          </button>
+        </nav>
+      </div>
+
+      <!-- Host Controls (shown via JS when host) -->
+      <div class="csidebar-section csidebar-host-section" id="host-controls-section" style="display:none;">
+        <div class="csidebar-section-label">Host Controls</div>
+        <nav class="csidebar-actions">
+          <button class="csidebar-action-btn host-only" id="lock-btn" title="Lock/unlock room" style="display:none;">
+            🔐 <span>Lock Room</span>
+          </button>
+          <button class="csidebar-action-btn host-only danger" id="end-room-btn" title="End room for all" style="display:none;">
+            ⏹ <span>End Room</span>
+          </button>
+        </nav>
+      </div>
+
+      <!-- Spacer -->
+      <div style="flex:1;"></div>
+
+      <!-- Leave -->
+      <div class="csidebar-section" style="padding-bottom: 1rem;">
+        <button class="csidebar-action-btn danger" id="back-btn" title="Leave room">
+          ← <span>Leave Room</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Mobile sidebar overlay -->
+    <div class="chat-sidebar-overlay" id="chat-sidebar-overlay"></div>
+
+    <!-- ── CHAT MAIN ── -->
+    <div class="chat-main-wrap">
+
+      <!-- Top Bar (simplified for desktop, full on mobile) -->
+      <header id="top-bar">
+        <div class="top-bar-left">
+          <!-- Mobile: sidebar toggle -->
+          <button class="btn-icon mobile-only" id="chat-sidebar-toggle" title="Menu">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+          </button>
+          <!-- Room identifier (always visible) -->
+          <div class="top-bar-room-info">
+            <span class="top-bar-hash">#</span>
+            <span id="top-bar-room-id-mirror" class="top-bar-room-name">...</span>
+          </div>
+          <!-- Mobile: quick counts -->
+          <span class="online-count mobile-only" id="online-count-mobile" style="display:none;">
+            <span class="dot dot-green"></span>
+          </span>
         </div>
-      </footer>
+        <div class="top-bar-right">
+          <!-- Mobile-only icons (desktop uses sidebar) -->
+          <button class="btn-icon mobile-only" id="search-btn-mobile" title="Search">🔍</button>
+          <button class="btn-icon mobile-only" id="users-btn-mobile" title="Members">👥</button>
+          <!-- Shield always visible -->
+          <div class="shield-indicator desktop-only" title="Anti-surveillance shield">
+            🛡 <span class="shield-dot shield-green"></span>
+          </div>
+        </div>
+      </header>
+
+      <!-- ══ Chat Content ══ -->
+      <div id="chat-main">
+
+        <!-- Search bar (hidden by default) -->
+        <div id="search-bar">
+          <input type="text" id="search-input" placeholder="Search messages..." autocomplete="off" />
+          <button class="btn-icon" onclick="searchMessages('');document.getElementById('search-input').value=''">✕</button>
+        </div>
+
+        <!-- Typing indicator -->
+        <div id="typing-indicator">
+          <div class="typing-dots"><span></span><span></span><span></span></div>
+          <span id="typing-name"></span> is typing...
+        </div>
+
+        <!-- Message feed -->
+        <div id="chat-feed" role="log" aria-live="polite" aria-label="Chat messages"></div>
+
+        <!-- Multi-select bar (hidden by default) -->
+        <div id="multi-select-bar" style="display:none; position:absolute; bottom: 80px; left:50%; transform:translateX(-50%); background:var(--surface-high); padding:0.5rem 1rem; border-radius:var(--r-full); box-shadow:0 10px 30px rgba(0,0,0,0.8); z-index:100; align-items:center; gap:1rem; border:1px solid rgba(255,255,255,0.1);">
+          <span id="select-count" style="font-size:0.85rem;font-weight:600;">0 selected</span>
+          <button class="btn btn-danger-ghost" style="padding:0.4rem 0.8rem;font-size:0.8rem;" id="multi-delete-btn">🗑 Delete</button>
+          <button class="btn btn-ghost" style="padding:0.4rem 0.8rem;font-size:0.8rem;" id="multi-cancel-btn">✕ Cancel</button>
+        </div>
+
+        <!-- Input bar -->
+        <footer id="input-bar">
+          <div id="extra-bar">
+            <button class="extra-action danger" id="clear-btn" title="Clear chat for everyone">🗑 Clear Chat</button>
+            <button class="extra-action" id="copy-room-btn" title="Copy Room ID">🔗 Copy ID</button>
+          </div>
+          <div class="input-row">
+            <!-- File attachment -->
+            <label class="btn-icon" for="file-input" title="Share file" style="cursor:pointer">
+              📎
+              <input type="file" id="file-input" style="display:none" />
+            </label>
+            <!-- Rich Media Button -->
+            <button class="btn-icon" id="media-drawer-btn" title="Emojis, GIFs, Stickers">😀</button>
+            <!-- Mic (voice message) -->
+            <button class="btn-icon" id="mic-btn" title="Hold to record voice message">🎤</button>
+            <!-- Text input -->
+            <textarea
+              id="msg-input"
+              placeholder="Message..."
+              rows="1"
+              autocomplete="off"
+              spellcheck="true"
+              aria-label="Type a message"
+            ></textarea>
+            <!-- Voice call -->
+            <button class="btn-icon" id="call-btn" title="Start voice call">📞</button>
+            <!-- Send -->
+            <button id="send-btn" title="Send message" aria-label="Send">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            </button>
+          </div>
+        </footer>
+      </div>
+
+      <!-- User panel (slide from right) -->
+      <aside id="user-panel" aria-label="Participants">
+        <div class="user-panel-header">
+          <span class="user-panel-title">Participants</span>
+          <button class="btn-icon" id="close-panel-btn">✕</button>
+        </div>
+        <div id="user-list" role="list"></div>
+      </aside>
+
+      <!-- Rich Media Drawer -->
+      <aside id="media-drawer" style="display:none; position:absolute; bottom:65px; left:1rem; right:1rem; max-width:400px; height:350px; background:var(--surface-high); border-radius:var(--r-lg); border:1px solid rgba(255,255,255,0.1); box-shadow:0 -10px 40px rgba(0,0,0,0.5); z-index:90; flex-direction:column; overflow:hidden;">
+        <div style="display:flex; border-bottom:1px solid rgba(255,255,255,0.05);">
+          <button class="btn btn-ghost w-100 media-tab active" data-tab="emoji" style="border-radius:0;">Emojis</button>
+          <button class="btn btn-ghost w-100 media-tab" data-tab="gif" style="border-radius:0;">GIFs</button>
+          <button class="btn btn-ghost w-100 media-tab" data-tab="sticker" style="border-radius:0;">Stickers</button>
+        </div>
+
+        <!-- Emojis -->
+        <div class="media-tab-content" id="tab-emoji" style="flex:1; overflow-y:auto; padding:0.5rem; display:grid; grid-template-columns:repeat(auto-fill, minmax(36px, 1fr)); gap:0.25rem;">
+          <!-- Filled via JS -->
+        </div>
+
+        <!-- GIFs -->
+        <div class="media-tab-content" id="tab-gif" style="display:none; flex:1; overflow-y:auto; padding:0.5rem; flex-direction:column; gap:0.5rem;">
+          <input type="text" id="gif-search" class="input-field" placeholder="Search Giphy..." autocomplete="off" />
+          <div id="gif-results" style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem;"></div>
+        </div>
+
+        <!-- Stickers -->
+        <div class="media-tab-content" id="tab-sticker" style="display:none; flex:1; overflow-y:auto; padding:0.5rem; flex-direction:column;">
+          <div style="display:flex; gap:0.5rem; margin-bottom:0.5rem;">
+            <button class="btn btn-ghost btn-sm active" id="sticker-type-all">All</button>
+            <button class="btn btn-ghost btn-sm" id="sticker-type-fav">⭐ Favs</button>
+          </div>
+          <div id="sticker-results" style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:0.5rem;"></div>
+        </div>
+      </aside>
     </div>
-
-    <!-- User panel (slide from right) -->
-    <aside id="user-panel" aria-label="Participants">
-      <div class="user-panel-header">
-        <span class="user-panel-title">Participants</span>
-        <button class="btn-icon" id="close-panel-btn">✕</button>
-      </div>
-      <div id="user-list" role="list"></div>
-    </aside>
-
-    <!-- Rich Media Drawer (slide from bottom/above input) -->
-    <aside id="media-drawer" style="display:none; position:absolute; bottom:65px; left:1rem; right:1rem; max-width:400px; height:350px; background:var(--surface-high); border-radius:var(--r-lg); border:1px solid rgba(255,255,255,0.1); box-shadow:0 -10px 40px rgba(0,0,0,0.5); z-index:90; flex-direction:column; overflow:hidden;">
-      <div style="display:flex; border-bottom:1px solid rgba(255,255,255,0.05);">
-        <button class="btn btn-ghost w-100 media-tab active" data-tab="emoji" style="border-radius:0;">Emojis</button>
-        <button class="btn btn-ghost w-100 media-tab" data-tab="gif" style="border-radius:0;">GIFs</button>
-        <button class="btn btn-ghost w-100 media-tab" data-tab="sticker" style="border-radius:0;">Stickers</button>
-      </div>
-      
-      <!-- Emojis -->
-      <div class="media-tab-content" id="tab-emoji" style="flex:1; overflow-y:auto; padding:0.5rem; display:grid; grid-template-columns:repeat(auto-fill, minmax(36px, 1fr)); gap:0.25rem;">
-        <!-- Filled via JS -->
-      </div>
-
-      <!-- GIFs -->
-      <div class="media-tab-content" id="tab-gif" style="display:none; flex:1; overflow-y:auto; padding:0.5rem; flex-direction:column; gap:0.5rem;">
-        <input type="text" id="gif-search" class="input-field" placeholder="Search Giphy..." autocomplete="off" />
-        <div id="gif-results" style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem;"></div>
-      </div>
-
-      <!-- Stickers -->
-      <div class="media-tab-content" id="tab-sticker" style="display:none; flex:1; overflow-y:auto; padding:0.5rem; flex-direction:column;">
-        <div style="display:flex; gap:0.5rem; margin-bottom:0.5rem;">
-          <button class="btn btn-ghost btn-sm active" id="sticker-type-all">All</button>
-          <button class="btn btn-ghost btn-sm" id="sticker-type-fav">⭐ Favs</button>
-        </div>
-        <div id="sticker-results" style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:0.5rem;"></div>
-      </div>
-    </aside>
-
   </div>
 
   <!-- ═══════════════════════════════════════
@@ -262,19 +339,50 @@
     </div>
   </div>
 
-  <!-- QRCode.js CDN (lazy loaded only on QR modal open) -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
+  <!-- QRCode.js CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"
+    integrity="sha512-FewrvjZjeEFUrQzBySD9MLloAgQngBFQAo5Guyh3bJt4f4UT3K5P6HurUkNZuH66HB+RQNSiMPjuMdMpVnBbA=="
+    crossorigin="anonymous" defer></script>
 
   <!-- App scripts (order matters) -->
-  <script src="assets/js/config.js?v=20260321e"></script>
-  <script src="assets/js/crypto.js?v=20260321e"></script>
-  <script src="assets/js/rooms.js?v=20260321e"></script>
-  <script src="assets/js/ui.js?v=20260321e"></script>
-  <script src="assets/js/peer.js?v=20260321e"></script>
-  <script src="assets/js/surveillance.js?v=20260321e"></script>
-  <script src="assets/js/chat.js?v=20260321e"></script>
-  <script src="assets/js/media.js?v=20260321e"></script>
-  <script src="assets/js/rich-media.js?v=20260321e"></script>
-  <script src="assets/js/app.js?v=20260321e"></script>
+  <script src="assets/js/config.js?v=20260323"></script>
+  <script src="assets/js/crypto.js?v=20260323"></script>
+  <script src="assets/js/rooms.js?v=20260323"></script>
+  <script src="assets/js/ui.js?v=20260323"></script>
+  <script src="assets/js/peer.js?v=20260323"></script>
+  <script src="assets/js/surveillance.js?v=20260323"></script>
+  <script src="assets/js/chat.js?v=20260323"></script>
+  <script src="assets/js/media.js?v=20260323"></script>
+  <script src="assets/js/rich-media.js?v=20260323"></script>
+  <script src="assets/js/app.js?v=20260323"></script>
+
+  <!-- Chat sidebar toggle (mobile) + mirror room ID to top bar -->
+  <script>
+    (function() {
+      // Mobile sidebar toggle
+      document.getElementById('chat-sidebar-toggle')?.addEventListener('click', () => {
+        document.getElementById('chat-sidebar')?.classList.toggle('csidebar-open');
+        document.getElementById('chat-sidebar-overlay')?.classList.toggle('overlay-visible');
+      });
+      document.getElementById('close-chat-sidebar-btn')?.addEventListener('click', () => {
+        document.getElementById('chat-sidebar')?.classList.remove('csidebar-open');
+        document.getElementById('chat-sidebar-overlay')?.classList.remove('overlay-visible');
+      });
+      document.getElementById('chat-sidebar-overlay')?.addEventListener('click', () => {
+        document.getElementById('chat-sidebar')?.classList.remove('csidebar-open');
+        document.getElementById('chat-sidebar-overlay')?.classList.remove('overlay-visible');
+      });
+      // Mirror room-id-display text to top bar
+      const ridEl = document.getElementById('room-id-display');
+      const mirrorEl = document.getElementById('top-bar-room-id-mirror');
+      if (ridEl && mirrorEl) {
+        const observer = new MutationObserver(() => { mirrorEl.textContent = ridEl.textContent; });
+        observer.observe(ridEl, { childList: true, characterData: true, subtree: true });
+      }
+      // Wire mobile search/users to sidebar buttons
+      document.getElementById('search-btn-mobile')?.addEventListener('click', () => document.getElementById('search-btn')?.click());
+      document.getElementById('users-btn-mobile')?.addEventListener('click', () => document.getElementById('users-btn')?.click());
+    })();
+  </script>
 </body>
 </html>

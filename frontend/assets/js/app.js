@@ -291,46 +291,6 @@ async function initHomePage() {
     navigateToChat(id, 'group', name, 'guest', legacyKey || undefined);
   });
 
-  // ── Permanent Room — availability check ──────
-  const slugInput = document.getElementById('perm-slug');
-  if (slugInput) {
-    slugInput.addEventListener('input', () => {
-      slugInput.value = slugInput.value.toLowerCase().replace(/[^a-z0-9]/g, '');
-    });
-    let _availTimer;
-    slugInput.addEventListener('input', () => {
-      clearTimeout(_availTimer);
-      const val = slugInput.value.trim();
-      const ind = document.getElementById('slug-indicator');
-      if (!ind) return;
-      if (val.length < CONFIG.PERMANENT_ID_MIN) { ind.textContent = ''; ind.className = 'availability-indicator'; return; }
-      ind.textContent = '● CHECKING...'; ind.className = 'availability-indicator indicator-amber';
-      _availTimer = setTimeout(async () => {
-        try {
-          const ok = await checkRoomAvailability(val);
-          ind.textContent = ok ? '● AVAILABLE' : '● TAKEN';
-          ind.className   = 'availability-indicator ' + (ok ? 'indicator-green' : 'indicator-red');
-        } catch (e) {
-          ind.textContent = '● ERROR'; ind.className = 'availability-indicator indicator-red';
-        }
-      }, 500);
-    });
-  }
-
-  // ── Password strength ─────────────────────────
-  const permPw = document.getElementById('perm-password');
-  if (permPw) {
-    permPw.addEventListener('input', () => {
-      const strength = getPasswordStrength(permPw.value);
-      const fill = document.getElementById('pw-strength-fill');
-      if (fill) {
-        fill.className = 'pw-strength-fill';
-        if (strength === 1) fill.classList.add('pw-strength-weak');
-        if (strength === 2) fill.classList.add('pw-strength-medium');
-        if (strength === 3) fill.classList.add('pw-strength-strong');
-      }
-    });
-  }
 
   // ── Password show/hide ────────────────────────
   document.querySelectorAll('.pw-toggle').forEach(btn => {
@@ -341,30 +301,6 @@ async function initHomePage() {
       input.type = show ? 'text' : 'password';
       btn.textContent = show ? '🙈' : '👁';
     });
-  });
-
-  // ── Register permanent room ───────────────────
-  document.getElementById('register-btn')?.addEventListener('click', async () => {
-    const slug = document.getElementById('perm-slug')?.value.trim();
-    const pw   = document.getElementById('perm-password')?.value;
-    const btn  = document.getElementById('register-btn');
-    const err  = document.getElementById('register-error');
-
-    const showErr = msg => { if (err) { err.textContent = msg; err.classList.add('visible'); } };
-    if (err) err.classList.remove('visible');
-
-    if (!slug || slug.length < CONFIG.PERMANENT_ID_MIN) { showErr('Room ID must be 3-8 characters'); return; }
-    if (!pw || pw.length < 4)                            { showErr('Password must be at least 4 characters'); return; }
-
-    btn.disabled = true; btn.textContent = 'Registering...';
-    try {
-      const result = await registerPermanentRoom(slug, pw);
-      sessionStorage.setItem('joinPassword_' + slug, pw);
-      showSuccessModal(result.slug, result.ownerToken);
-    } catch (e) {
-      showErr(e.message || 'Registration failed');
-      btn.disabled = false; btn.textContent = '◎ Register & Host';
-    }
   });
 
   // ── Join permanent room ───────────────────────
@@ -390,7 +326,7 @@ async function initHomePage() {
       const role = await resolvePermanentRoomRole(slug, 'guest');
       navigateToChat(slug, 'permanent', name, role);
     } catch (e) {
-      showErr('Verification failed — is the server awake?');
+      showErr('Network error — is the server awake?');
       btn.disabled = false; btn.textContent = '→ Join Room';
     }
   });

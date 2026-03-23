@@ -130,7 +130,12 @@ function clearUserSession() {
 async function fetchUserRooms() {
   const u = getUserSession();
   if (!u) throw new Error('Not logged in');
-  const res = await fetch(`${CONFIG.API_BASE}/rooms/user?username=${encodeURIComponent(u.username)}&token=${encodeURIComponent(u.token)}`);
+  const res = await fetch(`${CONFIG.API_BASE}/rooms/user`, {
+    headers: {
+      'X-Auth-Username': u.username,
+      'X-Auth-Token': u.token
+    }
+  });
   const data = await res.json();
   if (data.error) throw new Error(data.error);
   return data.rooms || [];
@@ -139,8 +144,12 @@ async function fetchUserRooms() {
 async function deleteUserRoom(slug) {
   const u = getUserSession();
   if (!u) throw new Error('Not logged in');
-  const res = await fetch(`${CONFIG.API_BASE}/rooms/${encodeURIComponent(slug)}?username=${encodeURIComponent(u.username)}&token=${encodeURIComponent(u.token)}`, {
-    method: 'DELETE'
+  const res = await fetch(`${CONFIG.API_BASE}/rooms/${encodeURIComponent(slug)}`, {
+    method: 'DELETE',
+    headers: {
+      'X-Auth-Username': u.username,
+      'X-Auth-Token': u.token
+    }
   });
   const data = await res.json();
   if (!data.success) throw new Error(data.error || 'Deletion failed');

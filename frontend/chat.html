@@ -238,34 +238,6 @@
         <div id="user-list" role="list"></div>
       </aside>
 
-      <!-- Rich Media Drawer -->
-      <aside id="media-drawer" style="display:none; position:absolute; bottom:65px; left:1rem; right:1rem; max-width:400px; height:350px; background:var(--surface-high); border-radius:var(--r-lg); border:1px solid rgba(255,255,255,0.1); box-shadow:0 -10px 40px rgba(0,0,0,0.5); z-index:90; flex-direction:column; overflow:hidden;">
-        <div style="display:flex; border-bottom:1px solid rgba(255,255,255,0.05);">
-          <button class="btn btn-ghost w-100 media-tab active" data-tab="emoji" style="border-radius:0;">Emojis</button>
-          <button class="btn btn-ghost w-100 media-tab" data-tab="gif" style="border-radius:0;">GIFs</button>
-          <button class="btn btn-ghost w-100 media-tab" data-tab="sticker" style="border-radius:0;">Stickers</button>
-        </div>
-
-        <!-- Emojis -->
-        <div class="media-tab-content" id="tab-emoji" style="flex:1; overflow-y:auto; padding:0.5rem; display:grid; grid-template-columns:repeat(auto-fill, minmax(36px, 1fr)); gap:0.25rem;">
-          <!-- Filled via JS -->
-        </div>
-
-        <!-- GIFs -->
-        <div class="media-tab-content" id="tab-gif" style="display:none; flex:1; overflow-y:auto; padding:0.5rem; flex-direction:column; gap:0.5rem;">
-          <input type="text" id="gif-search" class="input-field" placeholder="Search Giphy..." autocomplete="off" />
-          <div id="gif-results" style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem;"></div>
-        </div>
-
-        <!-- Stickers -->
-        <div class="media-tab-content" id="tab-sticker" style="display:none; flex:1; overflow-y:auto; padding:0.5rem; flex-direction:column;">
-          <div style="display:flex; gap:0.5rem; margin-bottom:0.5rem;">
-            <button class="btn btn-ghost btn-sm active" id="sticker-type-all">All</button>
-            <button class="btn btn-ghost btn-sm" id="sticker-type-fav">⭐ Favs</button>
-          </div>
-          <div id="sticker-results" style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:0.5rem;"></div>
-        </div>
-      </aside>
     </div>
   </div>
 
@@ -341,7 +313,6 @@
 
   <!-- QRCode.js CDN -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"
-    integrity="sha512-FewrvjZjeEFUrQzBySD9MLloAgQngBFQAo5Guyh3bJt4f4UT3K5P6HurUkNZuH66HB+RQNSiMPjuMdMpVnBbA=="
     crossorigin="anonymous" defer></script>
 
   <!-- App scripts (order matters) -->
@@ -355,6 +326,34 @@
   <script src="assets/js/media.js?v=20260323"></script>
   <script src="assets/js/rich-media.js?v=20260323"></script>
   <script src="assets/js/app.js?v=20260323"></script>
+
+  <!-- Rich Media Drawer (Giphy/Emoji) -->
+  <aside id="media-drawer">
+    <div class="media-tabs">
+      <button class="media-tab active" data-tab="emoji">Emoji</button>
+      <button class="media-tab" data-tab="gif">GIFs</button>
+      <button class="media-tab" data-tab="sticker">Stickers</button>
+    </div>
+    
+    <div class="media-search-wrap">
+      <input type="text" id="media-search-input" placeholder="Search emojis, gifs, stickers..." autocomplete="off">
+    </div>
+
+    <!-- Emojis -->
+    <div class="media-tab-content" id="tab-emoji">
+      <!-- Filled via JS -->
+    </div>
+
+    <!-- GIFs -->
+    <div class="media-tab-content" id="tab-gif" style="display:none;">
+      <div id="gif-results" class="media-results-grid"></div>
+    </div>
+
+    <!-- Stickers -->
+    <div class="media-tab-content" id="tab-sticker" style="display:none;">
+      <div id="sticker-results" class="media-results-grid"></div>
+    </div>
+  </aside>
 
   <!-- Chat sidebar toggle (mobile) + mirror room ID to top bar -->
   <script>

@@ -58,21 +58,26 @@ function renderMessage(msg, isOwn) {
 
   // Group consecutive messages from same sender
   const last = feed.lastElementChild;
-  const showFrom = !isOwn && (!last || last.dataset.sender !== msg.from || last.classList.contains('msg-system'));
+  const isCts = last && last.dataset.sender === msg.from && !last.classList.contains('msg-system');
+  
+  if (isCts) last.classList.add('msg-cts');
 
   const el = document.createElement('div');
   el.className   = 'msg ' + (isOwn ? 'msg-out' : 'msg-in');
+  if (isCts) el.classList.add('msg-cts-next');
   el.dataset.msgId  = msg.id;
   el.dataset.sender = msg.from;
 
+  const showFrom = !isOwn && !isCts;
+
   el.innerHTML = `
-    ${showFrom ? `<span class="msg-from">${escHtml(msg.from)}</span>` : ''}
+    ${showFrom ? `<span class="msg-user">${escHtml(msg.from)}</span>` : ''}
     <div class="msg-bubble">
       <p class="msg-text">${escHtml(msg.text)}</p>
     </div>
     <span class="msg-time">${fmtTime(msg.ts)}</span>
     <div class="msg-reactions" id="reactions-${msg.id}"></div>
-    <div class="msg-checkbox" style="display:none; position:absolute; top:-5px; left:-5px; width:20px; height:20px; background:var(--primary); border-radius:50%; align-items:center; justify-content:center; color:white; font-size:12px; font-weight:bold; border:2px solid var(--surface-low); z-index:10; pointer-events:none;">✓</div>
+    <div class="msg-checkbox" style="display:none;">✓</div>
   `;
 
   // Click handler for multi-select
@@ -383,21 +388,25 @@ function renderRichMediaMessage(msg, isOwn) {
   if (!feed) return;
 
   const last = feed.lastElementChild;
-  const showFrom = !isOwn && (!last || last.dataset.sender !== msg.from || last.classList.contains('msg-system'));
+  const isCts = last && last.dataset.sender === msg.from && !last.classList.contains('msg-system');
+  if (isCts) last.classList.add('msg-cts');
 
   const el = document.createElement('div');
   el.className   = 'msg ' + (isOwn ? 'msg-out' : 'msg-in');
+  if (isCts) el.classList.add('msg-cts-next');
   el.dataset.msgId  = msg.id;
   el.dataset.sender = msg.from;
 
+  const showFrom = !isOwn && !isCts;
+
   el.innerHTML = `
-    ${showFrom ? `<span class="msg-from">${escHtml(msg.from)}</span>` : ''}
-    <div class="msg-bubble" style="background:transparent; padding:0; border:none; box-shadow:none;">
-      <img src="${msg.url}" style="max-width:200px; border-radius:12px;" loading="lazy">
+    ${showFrom ? `<span class="msg-user">${escHtml(msg.from)}</span>` : ''}
+    <div class="msg-bubble media-bubble">
+      <img src="${msg.url}" style="max-width:240px; border-radius:12px; transition: transform 0.2s;" loading="lazy" onclick="window.open('${msg.url}', '_blank')">
     </div>
     <span class="msg-time">${fmtTime(msg.ts)}</span>
     <div class="msg-reactions" id="reactions-${msg.id}"></div>
-    <div class="msg-checkbox" style="display:none; position:absolute; top:-5px; left:-5px; width:20px; height:20px; background:var(--primary); border-radius:50%; align-items:center; justify-content:center; color:white; font-size:12px; font-weight:bold; border:2px solid var(--surface-low); z-index:10; pointer-events:none;">✓</div>
+    <div class="msg-checkbox" style="display:none;">✓</div>
   `;
 
   el.addEventListener('click', e => {

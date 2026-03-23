@@ -1,19 +1,20 @@
 'use strict';
 
+// ══════════════════════════════════════════════
+// RICH MEDIA — Emojis, Giphy GIFs, Stickers
+// ══════════════════════════════════════════════
+
 const EMOJI_LIST = [
-  '😀','😂','🥺','😍','🥰','😎','😭','😊','😉','😘','😜','🤪','🤔','🙄','😏','😴','😷','🤢',
-  '❤️','🔥','✨','👍','👎','👏','🙌','🙏','💪','🎂','🎉','🎈','💯','✅','❌','⚠️','🤔',
-  '☕','🍕','🍔','🍟','🍺','🥂','🍎','🍓','🍉','🐶','🐱','🐭','🐰','🐻','🐼','🐨','🐯',
-  '🚗','🚕','🚙','🚌','🚓','🚑','🚒','🚜','🚲','🛴','🛵','🏍','🚨','🚀','🛸','🚁','🛶'
+  '😀','😂','🥺','😍','🥰','😎','😭','😊','😉','😘','😜','🤪','🤔','🙄','😏','😴','🤫','🤭',
+  '❤️','🔥','✨','⭐','🌟','🌈','☁️','⚡','❄️','🌈','🌊','🎨','🎭','🎬','🎤','🎧','🎹','🎸',
+  '👍','👎','👏','🙌','🙏','💪','🤝','✌️','🤞','🤟','🤘','🤙','🖐️','✋','🖖','👌','🤏','👉',
+  '🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐨','🐯','🦁','🐮','🐷','🐸','🐵','🐔','🐧','🐦',
+  '🍎','🍓','🍒','🍑','🍍','🥥','🥝','🍕','🍔','🍟','🌭','🍿','🍩','🍪','🎂','🍰','🍦','🍧',
+  '🚗','🚕','🚙','🚌','🏎️','🚓','🚑','🚒','🚐','🚚','🚛','🚜','🛵','🏍️','🚲','🛴','🛹','🚨',
+  '🚀','🛸','🚁','🛶','⛵','🚢','✈️','🛩️','🛰️','🪐','🌏','🌑','🌕','☀️','🌦️','⛈️','🌩️','🌋'
 ];
 
-const STICKER_LIST = [
-  'https://media2.giphy.com/media/l41lOclFq9T1A1BBu/200.gif', // example cat
-  'https://media0.giphy.com/media/JIX9t2j0ZTN9S/200.gif',
-  'https://media1.giphy.com/media/ICOgUNjpvO0PC/200.gif',
-  'https://media2.giphy.com/media/VbnUQpnihPSIgIXuZv/200.gif',
-  'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExemkzbmtnaTgwNHI0eWRmZXJxcHA4aXp5YWlzcndocXdzMTMzNzE2ZSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/MDJ9IbxxvDUQM/giphy.gif'
-];
+const GIPHY_API_KEY = 'dc6zaTOxFJmzC'; // Public beta key
 
 document.addEventListener('DOMContentLoaded', () => {
   const drawerBtn = document.getElementById('media-drawer-btn');
@@ -21,113 +22,138 @@ document.addEventListener('DOMContentLoaded', () => {
   if (!drawerBtn || !drawer) return;
 
   // Toggle drawer
-  drawerBtn.addEventListener('click', () => {
-    const isVisible = drawer.style.display !== 'none';
-    drawer.style.display = isVisible ? 'none' : 'flex';
-    if (!isVisible && document.getElementById('tab-emoji').children.length === 0) {
-      loadEmojis();
+  drawerBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const isVisible = drawer.classList.contains('drawer-active');
+    if (isVisible) {
+      drawer.classList.remove('drawer-active');
+    } else {
+      drawer.classList.add('drawer-active');
+      if (document.getElementById('tab-emoji').children.length === 0) loadEmojis();
+      loadTrending('gifs'); // Load trending on open
     }
   });
 
-  // Close when clicking outside
+  // Close on outside click
   document.addEventListener('click', e => {
-    if (drawer.style.display === 'flex' && !drawer.contains(e.target) && e.target !== drawerBtn) {
-      drawer.style.display = 'none';
+    if (drawer.classList.contains('drawer-active') && !drawer.contains(e.target) && e.target !== drawerBtn) {
+      drawer.classList.remove('drawer-active');
     }
   });
 
-  // Tabs
+  // Tab Switching
   document.querySelectorAll('.media-tab').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.media-tab').forEach(b => b.classList.remove('active'));
       document.querySelectorAll('.media-tab-content').forEach(c => c.style.display = 'none');
+      
       btn.classList.add('active');
       const target = btn.dataset.tab;
-      document.getElementById('tab-' + target).style.display = target === 'emoji' ? 'grid' : 'flex';
-      
-      if (target === 'sticker' && document.getElementById('sticker-results').children.length === 0) {
-        loadStickers();
+      const content = document.getElementById('tab-' + target);
+      if (content) {
+        content.style.display = (target === 'emoji') ? 'grid' : 'flex';
+        if (target === 'gif') loadTrending('gifs');
+        if (target === 'sticker') loadTrending('stickers');
       }
     });
   });
 
-  // Giphy Search (Requires API key, using a public beta key for demo. Replace with real key.)
-  const GIPHY_API_KEY = 'dc6zaTOxFJmzC'; 
-  const searchInput = document.getElementById('gif-search');
-  let gifTimer = null;
-  
+  // Giphy Search (Shared for GIFs and Stickers)
+  const searchInput = document.getElementById('media-search-input');
+  let searchTimer = null;
   if (searchInput) {
     searchInput.addEventListener('input', e => {
-      clearTimeout(gifTimer);
+      clearTimeout(searchTimer);
       const q = e.target.value.trim();
-      if (!q) { document.getElementById('gif-results').innerHTML = ''; return; }
-      gifTimer = setTimeout(() => searchGiphy(q), 500);
+      const activeTab = document.querySelector('.media-tab.active')?.dataset.tab || 'gif';
+      
+      if (!q) {
+        loadTrending(activeTab === 'sticker' ? 'stickers' : 'gifs');
+        return;
+      }
+      
+      searchTimer = setTimeout(() => {
+        searchGiphy(q, activeTab === 'sticker' ? 'stickers' : 'gifs');
+      }, 500);
     });
   }
 
-  async function searchGiphy(query) {
-    const resEl = document.getElementById('gif-results');
-    resEl.innerHTML = '<center>Loading...</center>';
+  // ── Giphy Helpers ─────────────────────────────
+  
+  async function loadTrending(type) {
+    const resEl = type === 'stickers' ? document.getElementById('sticker-results') : document.getElementById('gif-results');
+    if (!resEl) return;
+    if (resEl.dataset.loaded === 'trending' && !document.getElementById('media-search-input').value) return;
+
+    resEl.innerHTML = '<div class="media-loading">Loading Trending...</div>';
     try {
-      const resp = await fetch(`https://api.giphy.com/v1/gifs/search?api_key=${GIPHY_API_KEY}&q=${encodeURIComponent(query)}&limit=12&rating=g`);
+      const resp = await fetch(`https://api.giphy.com/v1/${type}/trending?api_key=${GIPHY_API_KEY}&limit=12&rating=g`);
+      if (!resp.ok) throw new Error('API Error');
       const json = await resp.json();
-      resEl.innerHTML = '';
-      json.data.forEach(gif => {
-        const img = document.createElement('img');
-        img.src = gif.images.fixed_width_small.url;
-        img.style.width = '100%';
-        img.style.borderRadius = '8px';
-        img.style.cursor = 'pointer';
-        img.onclick = () => {
-          sendRichMedia(gif.images.fixed_height.url, 'gif');
-          drawer.style.display = 'none';
-        };
-        resEl.appendChild(img);
-      });
+      renderResults(json.data, resEl, type);
+      resEl.dataset.loaded = 'trending';
     } catch (e) {
-      resEl.innerHTML = '<center>Error loading GIFs</center>';
+      console.warn('Giphy Trending Error:', e);
+      resEl.innerHTML = '<div class="media-error">Giphy service unavailable. Emojis are still working!</div>';
     }
+  }
+
+  async function searchGiphy(query, type) {
+    const resEl = type === 'stickers' ? document.getElementById('sticker-results') : document.getElementById('gif-results');
+    if (!resEl) return;
+
+    resEl.innerHTML = '<div class="media-loading">Searching...</div>';
+    try {
+      const resp = await fetch(`https://api.giphy.com/v1/${type}/search?api_key=${GIPHY_API_KEY}&q=${encodeURIComponent(query)}&limit=15&rating=g`);
+      if (!resp.ok) throw new Error('API Error');
+      const json = await resp.json();
+      renderResults(json.data, resEl, type);
+      resEl.dataset.loaded = 'search';
+    } catch (e) {
+      console.warn('Giphy Search Error:', e);
+      resEl.innerHTML = '<div class="media-error">No results or service unavailable.</div>';
+    }
+  }
+
+  function renderResults(data, container, type) {
+    container.innerHTML = '';
+    if (!data || data.length === 0) {
+      container.innerHTML = '<div class="media-error">No results</div>';
+      return;
+    }
+    
+    data.forEach(item => {
+      const img = document.createElement('img');
+      img.src = item.images.fixed_width_small.url;
+      img.className = 'media-item';
+      img.loading = 'lazy';
+      img.onclick = () => {
+        sendRichMedia(item.images.fixed_height.url, type === 'stickers' ? 'sticker' : 'gif');
+        drawer.classList.remove('drawer-active');
+      };
+      container.appendChild(img);
+    });
   }
 
   function loadEmojis() {
     const cont = document.getElementById('tab-emoji');
+    if (!cont) return;
+    cont.innerHTML = '';
     EMOJI_LIST.forEach(em => {
       const btn = document.createElement('div');
+      btn.className   = 'emoji-item';
       btn.textContent = em;
-      btn.style.fontSize = '24px';
-      btn.style.cursor = 'pointer';
-      btn.style.textAlign = 'center';
-      btn.style.padding = '5px';
-      btn.style.borderRadius = 'var(--r-sm)';
-      
-      btn.onmouseover = () => btn.style.background = 'rgba(255,255,255,0.1)';
-      btn.onmouseout  = () => btn.style.background = 'transparent';
-      
       btn.onclick = () => {
         const input = document.getElementById('msg-input');
-        input.value += em;
-        input.focus();
+        if (input) {
+          input.value += em;
+          input.dispatchEvent(new Event('input')); // Trigger resize
+          input.focus();
+        }
       };
       cont.appendChild(btn);
     });
   }
-
-  function loadStickers() {
-    const cont = document.getElementById('sticker-results');
-    STICKER_LIST.forEach(url => {
-      const img = document.createElement('img');
-      img.src = url;
-      img.style.width = '100%';
-      img.style.borderRadius = '8px';
-      img.style.cursor = 'pointer';
-      img.onclick = () => {
-        sendRichMedia(url, 'sticker');
-        drawer.style.display = 'none';
-      };
-      cont.appendChild(img);
-    });
-  }
-
 });
 
 function sendRichMedia(url, type) {
@@ -139,7 +165,7 @@ function sendRichMedia(url, type) {
     from: myUsername,
     ts: Date.now()
   };
-  messages.push(msg);
+  rememberMessage(msg);
   renderRichMediaMessage(msg, true);
   if (typeof broadcastOrRelay === 'function') broadcastOrRelay(msg);
 }

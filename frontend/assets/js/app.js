@@ -477,7 +477,10 @@ async function initChatPage() {
     ridEl.textContent = params.roomId;
     ridEl.addEventListener('click', () => copyToClipboard(params.roomId));
   }
-  const badge = document.querySelector('.room-type-badge');
+  const topBarName = document.getElementById('top-bar-room-name');
+  if (topBarName) topBarName.textContent = params.roomId;
+  
+  const badge = document.querySelector('.badge-purple'); // Group/Private badge
   if (badge) badge.textContent = (params.type || 'PRIVATE').toUpperCase();
 
   // Add self to user panel
@@ -559,24 +562,44 @@ async function initChatPage() {
     leaveCurrentRoom();
   });
 
+  // Sidebar toggle (Mobile)
+  const chatSidebar = document.getElementById('chat-sidebar');
+  const chatSidebarOverlay = document.getElementById('chat-sidebar-overlay');
+  
+  document.getElementById('chat-sidebar-toggle')?.addEventListener('click', () => {
+    chatSidebar?.classList.toggle('csidebar-open');
+    chatSidebarOverlay?.classList.toggle('overlay-visible');
+  });
+
+  chatSidebarOverlay?.addEventListener('click', () => {
+    chatSidebar?.classList.remove('csidebar-open');
+    chatSidebarOverlay?.classList.remove('overlay-visible');
+  });
+
+  document.getElementById('close-chat-sidebar-btn')?.addEventListener('click', () => {
+    chatSidebar?.classList.remove('csidebar-open');
+    chatSidebarOverlay?.classList.remove('overlay-visible');
+  });
+
   // User panel toggle
   document.getElementById('users-btn')?.addEventListener('click', () => {
-    document.getElementById('user-panel')?.classList.toggle('panel-open');
+    document.getElementById('user-panel')?.classList.toggle('panel-visible');
   });
   document.getElementById('close-panel-btn')?.addEventListener('click', () => {
-    document.getElementById('user-panel')?.classList.remove('panel-open');
+    document.getElementById('user-panel')?.classList.remove('panel-visible');
   });
 
   // Search toggle
   let searchOpen = false;
   document.getElementById('search-btn')?.addEventListener('click', () => {
     searchOpen = !searchOpen;
-    const sb = document.getElementById('search-bar');
-    if (sb) {
-      sb.classList.toggle('search-visible', searchOpen);
-      if (searchOpen) document.getElementById('search-input')?.focus();
+    const sInput = document.getElementById('search-input');
+    if (sInput) {
+      sInput.focus();
+      if (!sInput.value) searchMessages('');
     }
   });
+
   document.getElementById('search-input')?.addEventListener('input', e => {
     searchMessages(e.target.value);
   });

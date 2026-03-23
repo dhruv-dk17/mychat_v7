@@ -14,7 +14,8 @@ const EMOJI_LIST = [
   '🚀','🛸','🚁','🛶','⛵','🚢','✈️','🛩️','🛰️','🪐','🌏','🌑','🌕','☀️','🌦️','⛈️','🌩️','🌋'
 ];
 
-const GIPHY_API_KEY = 'dc6zaTOxFJmzC'; // Public beta key
+const KLIPY_API_KEY = 'YOUR_KLIPY_API_KEY'; // Sign up at klipy.io for a lifetime free key
+const KLIPY_BASE_URL = 'https://api.klipy.ai/api/v1';
 
 document.addEventListener('DOMContentLoaded', () => {
   const drawerBtn = document.getElementById('media-drawer-btn');
@@ -87,14 +88,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     resEl.innerHTML = '<div class="media-loading">Loading Trending...</div>';
     try {
-      const resp = await fetch(`https://api.giphy.com/v1/${type}/trending?api_key=${GIPHY_API_KEY}&limit=12&rating=g`);
+      // Klipy uses /trending for both GIFs and stickers (filtered by type or separate endpoints)
+      const endpoint = type === 'stickers' ? '/stickers/trending' : '/gifs/trending';
+      const resp = await fetch(`${KLIPY_BASE_URL}${endpoint}?limit=12`, {
+        headers: { 'X-KLIPY-API-KEY': KLIPY_API_KEY }
+      });
       if (!resp.ok) throw new Error('API Error');
       const json = await resp.json();
       renderResults(json.data, resEl, type);
       resEl.dataset.loaded = 'trending';
     } catch (e) {
-      console.warn('Giphy Trending Error:', e);
-      resEl.innerHTML = '<div class="media-error">Giphy service unavailable. Emojis are still working!</div>';
+      console.warn('Klipy Trending Error:', e);
+      resEl.innerHTML = '<div class="media-error">Klipy service unavailable. Emojis are still working!</div>';
     }
   }
 
@@ -104,13 +109,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     resEl.innerHTML = '<div class="media-loading">Searching...</div>';
     try {
-      const resp = await fetch(`https://api.giphy.com/v1/${type}/search?api_key=${GIPHY_API_KEY}&q=${encodeURIComponent(query)}&limit=15&rating=g`);
+      const endpoint = type === 'stickers' ? '/stickers/search' : '/gifs/search';
+      const resp = await fetch(`${KLIPY_BASE_URL}${endpoint}?q=${encodeURIComponent(query)}&limit=15`, {
+        headers: { 'X-KLIPY-API-KEY': KLIPY_API_KEY }
+      });
       if (!resp.ok) throw new Error('API Error');
       const json = await resp.json();
       renderResults(json.data, resEl, type);
       resEl.dataset.loaded = 'search';
     } catch (e) {
-      console.warn('Giphy Search Error:', e);
+      console.warn('Klipy Search Error:', e);
       resEl.innerHTML = '<div class="media-error">No results or service unavailable.</div>';
     }
   }

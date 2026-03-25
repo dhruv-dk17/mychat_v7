@@ -7,10 +7,15 @@ function resolveApiBase() {
     if (base) return base.replace(/\/$/, '');
   }
 
+  // Local development fallback
   if (window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-    return 'http://localhost:10000/api';
+    // If running dev server on 5500, point to local backend
+    if (window.location.port === '5500' || window.location.protocol === 'file:') {
+       return 'http://localhost:10000/api';
+    }
   }
 
+  // Production - Frontend & API are served from exactly the same Render origin
   return '/api';
 }
 

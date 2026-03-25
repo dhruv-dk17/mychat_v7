@@ -3,7 +3,7 @@ services:
     name: mychat-v7
     runtime: node
     rootDir: .
-    buildCommand: npm ci --prefix backend
+    buildCommand: npm install --prefix backend
     startCommand: npm start --prefix backend
     healthCheckPath: /api/health
     plan: free
@@ -18,12 +18,6 @@ services:
       - key: ADMIN_SECRET
         sync: false
       - key: DATABASE_URL
-        fromDatabase:
-          name: mychat-v7-db
-          property: connectionString
-
-databases:
-  - name: mychat-v7-db
-    plan: free
-    databaseName: mychat
-    user: mychat_user
+        sync: false
+      - key: ALLOWED_ORIGIN
+        value: "*"

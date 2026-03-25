@@ -1,18 +1,17 @@
 services:
+  # 1. Backend Web Service (Node.js API)
   - type: web
-    name: mychat-v7
+    name: mychat-v7-api
     runtime: node
-    rootDir: .
-    buildCommand: npm install --prefix backend
-    startCommand: npm start --prefix backend
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: node src/server.js
     healthCheckPath: /api/health
     plan: free
     pullRequestPreviewsEnabled: false
     envVars:
       - key: NODE_ENV
         value: production
-      - key: PORT
-        value: 10000
       - key: DB_SSL
         value: true
       - key: ADMIN_SECRET
@@ -20,4 +19,25 @@ services:
       - key: DATABASE_URL
         sync: false
       - key: ALLOWED_ORIGIN
-        value: "*"
+        # Tells the backend to strictly only allow requests from the frontend
+        fromService:
+          type: web
+          name: mychat-v7-frontend
+          envVarKey: RENDER_EXTERNAL_URL
+
+  # 2. Frontend Static Site
+  - type: web
+    name: mychat-v7-frontend
+    env: static
+    rootDir: frontend
+    # This automatically injects the backend's URL into config.js during the build!
+    buildCommand: "sed -i \"s|return '/api';|return '${API_URL}/api';|g\" assets/js/config.js"
+    staticPublishPath: .
+    pullRequestPreviewsEnabled: false
+    envVars:
+      - key: API_URL
+        # Grabs the backend URL dynamically
+        fromService:
+          type: web
+          name: mychat-v7-api
+          envVarKey: RENDER_EXTERNAL_URL

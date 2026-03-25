@@ -68,6 +68,44 @@
   --warning: var(--accent-amber);
 }
 
+/* ── Light Theme ── */
+[data-theme="light"] {
+  --bg:           #F8FAFC;
+  --surface:      rgba(255, 255, 255, 0.8);
+  --surface2:     rgba(241, 245, 249, 0.9);
+  --surface3:     rgba(226, 232, 240, 1);
+  --surface4:     rgba(203, 213, 225, 1);
+  --border:       rgba(0, 0, 0, 0.1);
+  --border-hover: rgba(0, 0, 0, 0.25);
+  --border-dim:   rgba(0, 0, 0, 0.05);
+  --text:         #0F172A;
+  --text-dim:     #475569;
+  --text-faint:   #94A3B8;
+  --text-white:   #000000;
+  --grad-surface: linear-gradient(180deg, rgba(255, 255, 255, 0.9) 0%, #F8FAFC 100%);
+}
+
+/* ── Hacker Theme ── */
+[data-theme="hacker"] {
+  --bg:           #000000;
+  --surface:      rgba(0, 20, 0, 0.6);
+  --surface2:     rgba(0, 40, 0, 0.7);
+  --surface3:     rgba(0, 60, 0, 0.8);
+  --surface4:     rgba(0, 80, 0, 0.9);
+  --border:       rgba(0, 255, 0, 0.3);
+  --border-hover: rgba(0, 255, 0, 0.6);
+  --border-dim:   rgba(0, 255, 0, 0.1);
+  --accent:       #00FF00;
+  --accent-bright:#55FF55;
+  --accent-dark:  #00AA00;
+  --text:         #00FF00;
+  --text-dim:     #00AA00;
+  --text-faint:   #005500;
+  --text-white:   #55FF55;
+  --grad-surface: linear-gradient(180deg, rgba(0, 10, 0, 0.9) 0%, #000000 100%);
+  --grad-msg-out: linear-gradient(135deg, #005500 0%, #00AA00 100%);
+}
+
 /* ── Reset ───────────────────────────────────────────────────── */
 *, *::before, *::after {
   margin: 0; padding: 0;

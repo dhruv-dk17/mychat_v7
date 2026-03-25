@@ -9,15 +9,15 @@ let _toastQueue    = [];
 let _toastRunning  = false;
 
 // ── Theme system ─────────────────────────────────────────────────
-const THEMES = ['cosmic', 'ocean', 'ember'];
+const THEMES = ['default', 'light', 'hacker'];
 
 function initTheme() {
-  const saved = localStorage.getItem('mychat_theme') || 'cosmic';
+  const saved = localStorage.getItem('mychat_theme') || 'default';
   applyTheme(saved);
 }
 
 function applyTheme(themeName) {
-  if (themeName === 'cosmic') {
+  if (themeName === 'default') {
     document.documentElement.removeAttribute('data-theme');
   } else {
     document.documentElement.setAttribute('data-theme', themeName);
@@ -25,7 +25,7 @@ function applyTheme(themeName) {
 }
 
 function cycleTheme() {
-  const current = document.documentElement.getAttribute('data-theme') || 'cosmic';
+  const current = document.documentElement.getAttribute('data-theme') || 'default';
   let idx = THEMES.indexOf(current);
   if (idx === -1) idx = 0;
   const next = THEMES[(idx + 1) % THEMES.length];
@@ -369,3 +369,52 @@ function showIncomingCallUI(callerPeerId, callback) {
     callback(false);
   }, { once: true });
 }
+
+// ── Search UI Toggle ──────────────────────────────────────────────
+function initSearchUI() {
+  const btn = document.getElementById('search-btn');
+  const feed = document.getElementById('chat-main');
+  if (!btn || !feed) return;
+
+  // Create search bar DOM
+  const searchBar = document.createElement('div');
+  searchBar.id = 'search-bar';
+  searchBar.style.cssText = 'display: none; padding: 10px 1.5rem; background: var(--surface2); border-bottom: 1px solid var(--border);';
+  searchBar.innerHTML = `
+    <div style="display: flex; gap: 10px; align-items: center;">
+      <input type="text" id="search-input" placeholder="Search messages (Enter)..." style="flex: 1; padding: 8px 12px; border-radius: var(--r-sm); border: 1px solid var(--border); background: var(--bg); color: var(--text);">
+      <button class="btn btn-sm" id="search-close-btn" style="padding: 8px; font-size: 0.8rem;">✕</button>
+    </div>
+  `;
+  feed.insertBefore(searchBar, feed.firstChild);
+
+  const input = searchBar.querySelector('#search-input');
+  const closeBtn = searchBar.querySelector('#search-close-btn');
+
+  btn.addEventListener('click', () => {
+    if (searchBar.style.display === 'none') {
+      searchBar.style.display = 'block';
+      input.focus();
+    } else {
+      searchBar.style.display = 'none';
+      if (typeof searchMessages === 'function') searchMessages(''); // Clear search
+      input.value = '';
+    }
+  });
+
+  closeBtn.addEventListener('click', () => {
+    searchBar.style.display = 'none';
+    if (typeof searchMessages === 'function') searchMessages('');
+    input.value = '';
+  });
+
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      if (typeof searchMessages === 'function') searchMessages(input.value);
+    }
+  });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  initSearchUI();
+});

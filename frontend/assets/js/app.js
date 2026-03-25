@@ -74,10 +74,7 @@ function parseInviteHash(rawHash) {
 function buildInviteUrl(roomId, type) {
   const currentUrl = window.location.href.split('#')[0].split('?')[0];
   const localBase = currentUrl.replace(/(chat|index)\.html$/i, 'index.html');
-  const base = window.location.origin && window.location.origin !== 'null'
-    ? `${window.location.origin}/index.html`
-    : localBase;
-  return `${base}#${type}:${roomId}`;
+  return `${localBase}#${type}:${roomId}`;
 }
 
 // ════════════════════════════════════════════

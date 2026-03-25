@@ -16,7 +16,10 @@ async function initDB() {
         username      VARCHAR(32) PRIMARY KEY,
         password_hash CHAR(64)    NOT NULL,
         token         VARCHAR(128),
-        created_at    BIGINT      NOT NULL
+        created_at    BIGINT      NOT NULL,
+        internal_id   SERIAL UNIQUE,
+        is_deleted    BOOLEAN     DEFAULT FALSE,
+        last_seen     BIGINT
       )
     `);
     
@@ -39,6 +42,37 @@ async function initDB() {
     if (colCheck.rows.length === 0) {
       await client.query(`ALTER TABLE rooms ADD COLUMN owner_username VARCHAR(32) REFERENCES users(username) ON DELETE CASCADE`);
     }
+
+    // Migration for existing users to have internal_id and is_deleted
+    const userColCheck = await client.query(`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name='users' AND column_name='internal_id'
+    `);
+    if (userColCheck.rows.length === 0) {
+      await client.query(`ALTER TABLE users ADD COLUMN internal_id SERIAL UNIQUE`);
+      await client.query(`ALTER TABLE users ADD COLUMN is_deleted BOOLEAN DEFAULT FALSE`);
+    }
+
+    // Check for last_seen column
+    const lastSeenCheck = await client.query(`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name='users' AND column_name='last_seen'
+    `);
+    if (lastSeenCheck.rows.length === 0) {
+      await client.query(`ALTER TABLE users ADD COLUMN last_seen BIGINT`);
+    }
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS platform_messages (
+        id           BIGSERIAL PRIMARY KEY,
+        target_uid   INTEGER,
+        content      TEXT NOT NULL,
+        created_at   BIGINT NOT NULL,
+        expires_at   BIGINT
+      )
+    `);
 
     await client.query(`
       CREATE TABLE IF NOT EXISTS room_messages (

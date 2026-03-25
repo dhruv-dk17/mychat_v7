@@ -61,7 +61,7 @@ body[data-page="home"] {
   align-items: center;
   justify-content: center;
   font-size: 1.15rem;
-  box-shadow: var(--glow-accent);
+  box-shadow: 0 0 15px rgba(168, 85, 247, 0.3);
   flex-shrink: 0;
 }
 
@@ -71,7 +71,10 @@ body[data-page="home"] {
   font-family: var(--ff-head);
   font-size: 1.1rem;
   font-weight: 700;
-  color: var(--text-white);
+  color: transparent;
+  background-clip: text;
+  -webkit-background-clip: text;
+  background-image: var(--grad-accent);
   letter-spacing: -0.3px;
   line-height: 1.2;
 }
@@ -231,15 +234,17 @@ body[data-page="home"] {
   position: relative;
 }
 
-/* Subtle radial background glow */
+/* Deep Space Nebula Background Glow */
 .home-content::before {
   content: '';
   position: fixed;
-  top: -10%;
-  right: 5%;
-  width: 60vw;
-  height: 60vw;
-  background: radial-gradient(ellipse at center, rgba(109, 40, 217, 0.07) 0%, transparent 65%);
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: 
+      radial-gradient(circle at 20% 30%, rgba(183, 109, 255, 0.08) 0%, transparent 40%),
+      radial-gradient(circle at 80% 70%, rgba(5, 102, 217, 0.08) 0%, transparent 40%);
   pointer-events: none;
   z-index: 0;
 }
@@ -309,13 +314,16 @@ body[data-page="home"] {
 
 /* ── Room Card ───────────────────────────────── */
 .room-card {
-  background: var(--surface);
+  background: rgba(18, 18, 30, 0.6);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
   border: 1px solid var(--border-dim);
   border-radius: var(--r-2xl);
   padding: 1.75rem;
-  transition: border-color 0.25s, box-shadow 0.25s;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   position: relative;
   overflow: hidden;
+  box-shadow: 0 0 40px rgba(183, 183, 255, 0.02);
 }
 
 .room-card::before {
@@ -323,13 +331,21 @@ body[data-page="home"] {
   position: absolute;
   top: 0; left: 0; right: 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(139, 92, 246, 0.4), transparent);
+  background: linear-gradient(90deg, transparent, rgba(168, 85, 247, 0.8), transparent);
   opacity: 0;
-  transition: opacity 0.25s;
+  transform: translateX(-100%);
+  transition: opacity 0.4s, transform 0.6s ease-in-out;
 }
 
-.room-card:hover { border-color: var(--border); }
-.room-card:hover::before { opacity: 1; }
+.room-card:hover { 
+  border-color: rgba(168, 85, 247, 0.4); 
+  box-shadow: 0 10px 40px rgba(168, 85, 247, 0.15);
+  transform: translateY(-4px);
+}
+.room-card:hover::before { 
+  opacity: 1; 
+  transform: translateX(100%);
+}
 
 .card-label {
   font-family: var(--ff-mono);

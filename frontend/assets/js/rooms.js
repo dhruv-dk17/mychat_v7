@@ -156,6 +156,19 @@ async function deleteUserRoom(slug) {
   return data;
 }
 
+async function fetchPlatformMessages() {
+  const u = getUserSession();
+  if (!u) return [];
+  try {
+    const res = await fetch(`${CONFIG.API_BASE}/users/messages?username=${encodeURIComponent(u.username)}&token=${encodeURIComponent(u.token)}`);
+    const data = await res.json();
+    return data.messages || [];
+  } catch (e) {
+    console.error('Failed to fetch platform messages:', e);
+    return [];
+  }
+}
+
 async function resolvePermanentRoomRole(slug, preferredRole = 'guest') {
   const ownerToken = sessionStorage.getItem('ownerToken_' + slug);
   if (!ownerToken) return preferredRole;

@@ -293,6 +293,13 @@ function handleIncomingMessage(msg, conn) {
     case 'reaction': applyReaction(msg); shouldRelayFromGuest = true; break;
     case 'call_event': handleCallEvent(msg); shouldRelayFromGuest = true; break;
     case 'delete_msg': deleteMessage(msg.messageId); shouldRelayFromGuest = true; break;
+    case 'disappearing_mode': 
+      if (typeof isDisappearingMode !== 'undefined') {
+        isDisappearingMode = msg.enabled;
+        if (typeof updateDisappearingUI === 'function') updateDisappearingUI();
+      }
+      shouldRelayFromGuest = true; 
+      break;
     case 'screenshot_attempt': onPeerScreenshotAttempt(msg.from); shouldRelayFromGuest = true; break;
     case 'devtools_detected': onPeerDevTools(msg.from); shouldRelayFromGuest = true; break;
     case 'kick': if (msg.target === myUsername) executeKick(); break;

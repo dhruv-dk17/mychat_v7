@@ -8,6 +8,36 @@
 let _toastQueue    = [];
 let _toastRunning  = false;
 
+// ── Theme system ─────────────────────────────────────────────────
+const THEMES = ['cosmic', 'ocean', 'ember'];
+
+function initTheme() {
+  const saved = localStorage.getItem('mychat_theme') || 'cosmic';
+  applyTheme(saved);
+}
+
+function applyTheme(themeName) {
+  if (themeName === 'cosmic') {
+    document.documentElement.removeAttribute('data-theme');
+  } else {
+    document.documentElement.setAttribute('data-theme', themeName);
+  }
+}
+
+function cycleTheme() {
+  const current = document.documentElement.getAttribute('data-theme') || 'cosmic';
+  let idx = THEMES.indexOf(current);
+  if (idx === -1) idx = 0;
+  const next = THEMES[(idx + 1) % THEMES.length];
+  applyTheme(next);
+  localStorage.setItem('mychat_theme', next);
+  showToast(`Theme changed to ${next.charAt(0).toUpperCase() + next.slice(1)}`, 'info');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  initTheme();
+  document.getElementById('theme-btn')?.addEventListener('click', cycleTheme);
+});
 function showToast(message, type = 'info') {
   _toastQueue.push({ message, type });
   if (!_toastRunning) _processToast();
@@ -75,14 +105,17 @@ document.addEventListener('click', e => {
 
 // ── Navigation ────────────────────────────────────────────────────
 function navigateHome() {
-  window.location.href = 'index.html';
+  document.body.classList.add('page-fade-out');
+  setTimeout(() => window.location.href = 'index.html', 300);
 }
 
 function navigateToChat(roomId, type, username, role, key) {
   const p = new URLSearchParams({ roomId, type, username, role });
   let url = `chat.html?${p.toString()}`;
   if (key) url += `#${key}`;
-  window.location.href = url;
+  
+  document.body.classList.add('page-fade-out');
+  setTimeout(() => window.location.href = url, 300);
 }
 
 function getChatParams() {
@@ -141,13 +174,31 @@ function initNetworkWatcher() {
 async function initWithColdStartHandling() {
   const ready = await checkBackendHealth();
   if (!ready) {
-    // We won't show the annoying banner automatically anymore.
-    // The backend functions like 'checkRoomAvailability' will naturally handle the wait.
-    // showColdStartBanner();
     await waitForBackend();
-    // hideColdStartBanner();
   }
 }
+
+// ── Privacy Ticker ────────────────────────────────────────────────
+const PRIVACY_TIPS = [
+  "🔒 Tip: Never use your real name or share personal ID.",
+  "🛡️ Trust no one until proven. Stay anonymous.",
+  "✨ Your chats are End-to-End Encrypted. No servers.",
+  "🕒 Disappearing messages leave zero trace."
+];
+let _privacyTipIndex = 0;
+function initPrivacyTicker() {
+  setInterval(() => {
+    const el = document.getElementById('privacy-tip');
+    if (!el) return;
+    el.style.opacity = 0;
+    setTimeout(() => {
+      _privacyTipIndex = (_privacyTipIndex + 1) % PRIVACY_TIPS.length;
+      el.textContent = PRIVACY_TIPS[_privacyTipIndex];
+      el.style.opacity = 1;
+    }, 500);
+  }, 6000);
+}
+document.addEventListener('DOMContentLoaded', initPrivacyTicker);
 
 async function checkBackendHealth() {
   try {

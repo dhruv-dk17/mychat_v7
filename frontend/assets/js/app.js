@@ -11,12 +11,66 @@ document.addEventListener('DOMContentLoaded', () => {
   const page = document.body.dataset.page;
   if (page === 'home') initHomePage();
   if (page === 'chat') initChatPage();
+
+  initPrivacyBanner();
+  checkPlatformMessages().catch(() => {});
 });
 
 // ── Keep-alive (prevents Render free tier sleep) ──────────────────
 function initKeepAlive() {
   fetch(CONFIG.API_BASE + '/health').catch(() => {});
   setInterval(() => fetch(CONFIG.API_BASE + '/health').catch(() => {}), CONFIG.KEEPALIVE_MS);
+}
+
+// ── Privacy & Platform Messaging ──────────────────────────────
+const PRIVACY_TIPS = [
+  "🔒 Tip: Never use your real name or share personal ID until you trust them.",
+  "🔍 Tip: Group rooms are hosted by someone. Private rooms are 1:1 P2P only.",
+  "🛡 Tip: Check our 'Privacy Tips' in the footer for stay safe guidelines.",
+  "⚡ Tip: Save your owner token in a safe place. It can't be recovered!",
+  "🚫 Tip: Mychat staff will NEVER ask for your password or token."
+];
+
+function initPrivacyBanner() {
+  const banner = document.getElementById('privacy-tip');
+  if (!banner) return;
+  let i = 0;
+  setInterval(() => {
+    i = (i + 1) % PRIVACY_TIPS.length;
+    banner.style.opacity = 0;
+    setTimeout(() => {
+      banner.textContent = PRIVACY_TIPS[i];
+      banner.style.opacity = 1;
+    }, 500);
+  }, 10000);
+}
+
+async function checkPlatformMessages() {
+  const session = getUserSession();
+  if (!session) return;
+  
+  const msgs = await fetchPlatformMessages();
+  if (msgs.length === 0) return;
+
+  const container = document.getElementById('platform-messages-container');
+  if (!container) return;
+
+  const lastSeenMsgId = localStorage.getItem('mychat_last_msg');
+  if (lastSeenMsgId === msgs[0].id.toString()) return;
+
+  container.innerHTML = '';
+  msgs.forEach(m => {
+    const div = document.createElement('div');
+    div.style = 'background:rgba(255,255,255,0.03); border-radius:8px; padding:1rem; margin-bottom:0.75rem; border-left:3px solid var(--accent);';
+    div.innerHTML = `
+      <div style="font-size:0.75rem; color:var(--text-dim); margin-bottom:0.35rem;">${new Date(parseInt(m.created_at)).toLocaleDateString()}</div>
+      <div style="font-size:0.9rem;">${m.content}</div>
+    `;
+    container.appendChild(div);
+  });
+
+  showModal('platform-messages-modal');
+  localStorage.setItem('mychat_last_msg', msgs[0].id);
 }
 
 function parseInviteHash(rawHash) {
@@ -347,6 +401,68 @@ async function initHomePage() {
     };
     showModal('success-modal');
   }
+
+  // ── QR Scanner Logic ──────────────────────────────
+  let qrStream = null;
+  let qrAnimation = null;
+  window.startQRScanner = function() {
+    showModal('qr-scan-modal');
+    const video = document.getElementById('qr-video');
+    const msg = document.getElementById('qr-scan-text');
+    if (msg) msg.textContent = "Requesting camera...";
+    
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      if (msg) msg.textContent = "Camera API not supported";
+      return;
+    }
+
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }).then(function(stream) {
+      qrStream = stream;
+      video.srcObject = stream;
+      video.setAttribute("playsinline", true);
+      video.play();
+      if (msg) msg.textContent = "Scanning...";
+      requestAnimationFrame(tick);
+    }).catch(err => {
+      if (msg) msg.textContent = "Camera error: " + err.message;
+    });
+
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    
+    function tick() {
+      if (!qrStream) return;
+      if (video.readyState === video.HAVE_ENOUGH_DATA) {
+        canvas.height = video.videoHeight;
+        canvas.width = video.videoWidth;
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const code = window.jsQR(imageData.data, imageData.width, imageData.height, {
+          inversionAttempts: "dontInvert",
+        });
+        
+        if (code && code.data.includes('#')) {
+          stopQRScanner();
+          hideModal('qr-scan-modal');
+          window.location.hash = code.data.substring(code.data.indexOf('#'));
+          window.location.reload();
+          return;
+        }
+      }
+      qrAnimation = requestAnimationFrame(tick);
+    }
+  };
+
+  window.stopQRScanner = function() {
+    if (qrStream) {
+      qrStream.getTracks().forEach(t => t.stop());
+      qrStream = null;
+    }
+    if (qrAnimation) {
+      cancelAnimationFrame(qrAnimation);
+      qrAnimation = null;
+    }
+  };
 }
 
 // ════════════════════════════════════════════
@@ -551,6 +667,11 @@ async function initChatPage() {
 
   // Clear chat
   document.getElementById('clear-btn')?.addEventListener('click', broadcastClearChat);
+
+  // Disappearing Mode Toggle
+  document.getElementById('disappearing-btn')?.addEventListener('click', () => {
+    if (typeof toggleDisappearingMode === 'function') toggleDisappearingMode();
+  });
 
   // Leave button
   document.getElementById('leave-btn')?.addEventListener('click', () => {

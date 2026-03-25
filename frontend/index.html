@@ -10,7 +10,7 @@
   <!-- Fonts CDN -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Sora:wght@300;400;500;600;700&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
 
   <!-- CSS -->
   <link rel="stylesheet" href="assets/css/main.css?v=20260323" />
@@ -26,6 +26,11 @@
     <div class="cold-start-bar"></div>
   </div>
   <div id="toast-container"></div>
+
+  <!-- Privacy Banner (Rotating Tips) -->
+  <div id="privacy-banner">
+    <span id="privacy-tip" style="transition: opacity 0.5s ease-in-out;">🔒 Tip: Never use your real name or share personal ID until you trust them.</span>
+  </div>
 
   <!-- Optional wipe screen (triggered by surveillance) -->
   <div id="wipe-screen">
@@ -180,9 +185,40 @@
       </div>
 
       <!-- Footer -->
-      <div class="home-footer">Mychat v7 · All data P2P · No server logs · Free forever</div>
+      <div class="home-footer">
+        Mychat v7 · All data P2P · No server logs · <a href="#" onclick="showModal('privacy-tips-modal'); return false;" style="color:var(--accent); text-decoration:none;">Privacy Tips</a>
+      </div>
 
     </main>
+  </div>
+
+  <!-- Platform Messages Modal -->
+  <div class="modal-backdrop" id="platform-messages-modal">
+    <div class="modal-box" style="width: 400px;">
+      <div class="modal-title">📢 System Notice</div>
+      <div id="platform-messages-container" style="max-height: 300px; overflow-y: auto; margin: 1rem 0;">
+        <!-- Messages here -->
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-primary w-100" onclick="hideModal('platform-messages-modal')">I Understand</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Privacy Tips Modal -->
+  <div class="modal-backdrop" id="privacy-tips-modal">
+    <div class="modal-box" style="width: 400px;">
+      <div class="modal-title">🛡 Privacy Guidelines</div>
+      <div class="modal-subtitle">Stay safe while using Mychat.</div>
+      <ul style="margin: 1rem 0; padding-left: 1.2rem; font-size: 0.9rem; line-height: 1.6; color: var(--text-dim);">
+        <li><strong>Anonymity First:</strong> Use a pseudonym. Avoid names that link to your social media.</li>
+        <li><strong>Zero Trace:</strong> Permanent rooms store history in the database (encrypted). Private rooms are P2P only and leave no trace.</li>
+        <li><strong>Verification:</strong> Never share sensitive documents or location data with strangers.</li>
+        <li><strong>Security:</strong> Save your owner tokens offline. We cannot recover them.</li>
+        <li><strong>Scams:</strong> Mychat staff will NEVER ask for your password or token.</li>
+      </ul>
+      <button class="btn btn-ghost w-100" onclick="hideModal('privacy-tips-modal')">Close</button>
+    </div>
   </div>
 
   <!-- ═══════════════════════════════════════
@@ -219,6 +255,24 @@
         <button class="btn btn-ghost" onclick="hideModal('success-modal')">Close</button>
         <button class="btn btn-primary" id="enter-room-btn">Enter Room →</button>
       </div>
+    </div>
+  </div>
+
+  <!-- Floating Scan Button -->
+  <button class="btn btn-primary" style="position: fixed; bottom: 20px; right: 20px; border-radius: 50%; width: 56px; height: 56px; box-shadow: var(--glow-accent); z-index: 100; font-size: 1.5rem; display: flex; align-items: center; justify-content: center;" onclick="startQRScanner()" title="Scan QR Code">
+    📷
+  </button>
+
+  <!-- QR Scanner Modal -->
+  <div class="modal-backdrop" id="qr-scan-modal">
+    <div class="modal-box" style="width: 360px; text-align: center;">
+      <div class="modal-title" style="margin-bottom: 1rem;">Scan Room QR</div>
+      <div style="width: 100%; aspect-ratio: 1; background: #000; border-radius: var(--r-md); overflow: hidden; position: relative;">
+        <video id="qr-video" style="width: 100%; height: 100%; object-fit: cover;" playsinline></video>
+        <div id="qr-scan-text" style="position: absolute; bottom: 10px; width: 100%; color: var(--text-white); font-size: 0.85rem; text-shadow: 0 1px 4px rgba(0,0,0,0.8);">Searching for QR code...</div>
+      </div>
+      <button class="btn btn-ghost w-100" style="margin-top: 1rem;" onclick="stopQRScanner(); hideModal('qr-scan-modal')">Cancel</button>
+      <button class="btn btn-ghost" style="position: absolute; top:10px; right:10px; border:none; padding:10px;" onclick="stopQRScanner(); hideModal('qr-scan-modal')">✕</button>
     </div>
   </div>
 
@@ -277,6 +331,7 @@
   </div>
 
   <!-- Scripts (order matters) -->
+  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
   <script src="assets/js/config.js?v=20260323"></script>
   <script src="assets/js/crypto.js?v=20260323"></script>
   <script src="assets/js/rooms.js?v=20260323"></script>

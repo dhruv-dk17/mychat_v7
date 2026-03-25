@@ -53,6 +53,7 @@ app.use(rateLimit({
 app.use('/api/rooms', roomRoutes);
 app.use('/api/health', healthRoutes);
 app.use('/api/users', require('./routes/users'));
+app.use('/api/admin', require('./routes/admin'));
 
 // 404
 app.use((req, res) => res.status(404).json({ error: 'Not found' }));

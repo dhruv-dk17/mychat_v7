@@ -14,8 +14,8 @@ const EMOJI_LIST = [
   '🚀','🛸','🚁','🛶','⛵','🚢','✈️','🛩️','🛰️','🪐','🌏','🌑','🌕','☀️','🌦️','⛈️','🌩️','🌋'
 ];
 
-const KLIPY_API_KEY = 'YOUR_KLIPY_API_KEY'; // Sign up at klipy.io for a lifetime free key
-const KLIPY_BASE_URL = 'https://api.klipy.ai/api/v1';
+const TENOR_API_KEY = 'LIVDULZ6S78F'; // Using a public demo key - User should replace with their own
+const TENOR_BASE_URL = 'https://tenor.googleapis.com/v2';
 
 document.addEventListener('DOMContentLoaded', () => {
   const drawerBtn = document.getElementById('media-drawer-btn');
@@ -59,7 +59,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Giphy Search (Shared for GIFs and Stickers)
+  // Search (Shared for GIFs and Stickers)
   const searchInput = document.getElementById('media-search-input');
   let searchTimer = null;
   if (searchInput) {
@@ -74,12 +74,12 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       
       searchTimer = setTimeout(() => {
-        searchGiphy(q, activeTab === 'sticker' ? 'stickers' : 'gifs');
+        searchMedia(q, activeTab === 'sticker' ? 'stickers' : 'gifs');
       }, 500);
     });
   }
 
-  // ── Giphy Helpers ─────────────────────────────
+  // ── Tenor Helpers ─────────────────────────────
   
   async function loadTrending(type) {
     const resEl = type === 'stickers' ? document.getElementById('sticker-results') : document.getElementById('gif-results');
@@ -88,55 +88,54 @@ document.addEventListener('DOMContentLoaded', () => {
 
     resEl.innerHTML = '<div class="media-loading">Loading Trending...</div>';
     try {
-      // Klipy uses /trending for both GIFs and stickers (filtered by type or separate endpoints)
-      const endpoint = type === 'stickers' ? '/stickers/trending' : '/gifs/trending';
-      const resp = await fetch(`${KLIPY_BASE_URL}${endpoint}?limit=12`, {
-        headers: { 'X-KLIPY-API-KEY': KLIPY_API_KEY }
-      });
+      const endpoint = type === 'stickers' ? '/featured?searchfilter=sticker' : '/featured';
+      const resp = await fetch(`${TENOR_BASE_URL}${endpoint}&key=${TENOR_API_KEY}&limit=12&media_filter=gif,tinygif`);
       if (!resp.ok) throw new Error('API Error');
       const json = await resp.json();
-      renderResults(json.data, resEl, type);
+      renderResults(json.results, resEl, type);
       resEl.dataset.loaded = 'trending';
     } catch (e) {
-      console.warn('Klipy Trending Error:', e);
-      resEl.innerHTML = '<div class="media-error">Klipy service unavailable. Emojis are still working!</div>';
+      console.warn('Tenor Trending Error:', e);
+      resEl.innerHTML = '<div class="media-error">Service unavailable. Emojis are still working!</div>';
     }
   }
 
-  async function searchGiphy(query, type) {
+  async function searchMedia(query, type) {
     const resEl = type === 'stickers' ? document.getElementById('sticker-results') : document.getElementById('gif-results');
     if (!resEl) return;
 
     resEl.innerHTML = '<div class="media-loading">Searching...</div>';
     try {
-      const endpoint = type === 'stickers' ? '/stickers/search' : '/gifs/search';
-      const resp = await fetch(`${KLIPY_BASE_URL}${endpoint}?q=${encodeURIComponent(query)}&limit=15`, {
-        headers: { 'X-KLIPY-API-KEY': KLIPY_API_KEY }
-      });
+      const endpoint = type === 'stickers' ? '/search?searchfilter=sticker' : '/search';
+      const resp = await fetch(`${TENOR_BASE_URL}${endpoint}&q=${encodeURIComponent(query)}&key=${TENOR_API_KEY}&limit=15&media_filter=gif,tinygif`);
       if (!resp.ok) throw new Error('API Error');
       const json = await resp.json();
-      renderResults(json.data, resEl, type);
+      renderResults(json.results, resEl, type);
       resEl.dataset.loaded = 'search';
     } catch (e) {
-      console.warn('Klipy Search Error:', e);
+      console.warn('Tenor Search Error:', e);
       resEl.innerHTML = '<div class="media-error">No results or service unavailable.</div>';
     }
   }
 
-  function renderResults(data, container, type) {
+  function renderResults(results, container, type) {
     container.innerHTML = '';
-    if (!data || data.length === 0) {
+    if (!results || results.length === 0) {
       container.innerHTML = '<div class="media-error">No results</div>';
       return;
     }
     
-    data.forEach(item => {
+    results.forEach(item => {
+      const media = item.media_formats.tinygif || item.media_formats.gif;
+      if (!media) return;
+
       const img = document.createElement('img');
-      img.src = item.images.fixed_width_small.url;
+      img.src = media.url;
       img.className = 'media-item';
       img.loading = 'lazy';
       img.onclick = () => {
-        sendRichMedia(item.images.fixed_height.url, type === 'stickers' ? 'sticker' : 'gif');
+        const fullMedia = item.media_formats.gif;
+        sendRichMedia(fullMedia.url, type === 'stickers' ? 'sticker' : 'gif');
         drawer.classList.remove('drawer-active');
       };
       container.appendChild(img);
@@ -171,9 +170,14 @@ function sendRichMedia(url, type) {
     url: url,
     id: crypto.randomUUID(),
     from: myUsername,
-    ts: Date.now()
+    ts: Date.now(),
+    disappearing: (typeof isDisappearingMode !== 'undefined' && isDisappearingMode)
   };
   rememberMessage(msg);
   renderRichMediaMessage(msg, true);
   if (typeof broadcastOrRelay === 'function') broadcastOrRelay(msg);
+  
+  if (msg.disappearing && typeof setMessageTimer === 'function') {
+    setMessageTimer(msg.id, typeof DISAPPEAR_SECONDS !== 'undefined' ? DISAPPEAR_SECONDS : 60, true);
+  }
 }

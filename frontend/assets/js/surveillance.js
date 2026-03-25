@@ -159,10 +159,11 @@ window.addEventListener('beforeprint', e => {
 // 9. SELF-DESTRUCTING MESSAGES
 // ════════════════════════════════════════════
 
-function setMessageTimer(messageId, seconds) {
+function setMessageTimer(messageId, seconds, isOwn = true) {
   clearTimeout(destructTimers.get(messageId));
   const t = setTimeout(() => {
-    if (typeof sendDeleteMessage === 'function') sendDeleteMessage(messageId);
+    if (isOwn && typeof sendDeleteMessage === 'function') sendDeleteMessage(messageId);
+    else if (typeof deleteMessage === 'function') deleteMessage(messageId);
     destructTimers.delete(messageId);
   }, seconds * 1000);
   destructTimers.set(messageId, t);

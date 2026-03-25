@@ -3,6 +3,8 @@
 let messages = [];
 let isMultiSelectMode = false;
 let selectedMessages = new Set();
+let isDisappearingMode = false;
+const DISAPPEAR_SECONDS = 60;
 
 function hasMessage(messageId) {
   return Boolean(messageId) && messages.some(msg => msg.id === messageId);
@@ -26,12 +28,17 @@ function sendTextMessage(text) {
     id:   crypto.randomUUID(),
     from: myUsername,
     text: text.trim(),
-    ts:   Date.now()
+    ts:   Date.now(),
+    disappearing: isDisappearingMode
   };
   rememberMessage(msg);
   renderMessage(msg, true);
   broadcastOrRelay(msg);
   if (typeof persistCurrentRoomEvent === 'function') persistCurrentRoomEvent(msg);
+  
+  if (msg.disappearing && typeof setMessageTimer === 'function') {
+    setMessageTimer(msg.id, DISAPPEAR_SECONDS, true);
+  }
 }
 
 // ── Receive text message ──────────────────────────────────────────
@@ -41,6 +48,10 @@ function receiveTextMessage(msg) {
   const isOwn = msg.from === myUsername;
   renderMessage(msg, isOwn);
   if (!isOwn) playMessageSound();
+  
+  if (msg.disappearing && typeof setMessageTimer === 'function') {
+    setMessageTimer(msg.id, DISAPPEAR_SECONDS, false);
+  }
 }
 
 // ── Receive rich media ────────────────────────────────────────────
@@ -49,6 +60,26 @@ function receiveRichMedia(msg) {
   const isOwn = msg.from === myUsername;
   renderRichMediaMessage(msg, isOwn);
   if (!isOwn) playMessageSound();
+
+  if (msg.disappearing && typeof setMessageTimer === 'function') {
+    setMessageTimer(msg.id, DISAPPEAR_SECONDS, false);
+  }
+}
+
+// ── Disappearing Mode ─────────────────────────────────────────────
+function toggleDisappearingMode() {
+  if (myRole !== 'host') return;
+  isDisappearingMode = !isDisappearingMode;
+  updateDisappearingUI();
+  broadcastOrRelay({ type: 'disappearing_mode', enabled: isDisappearingMode });
+  broadcastSystemMessage(`Disappearing Mode is now ${isDisappearingMode ? 'ON (60s)' : 'OFF'}`);
+}
+
+function updateDisappearingUI() {
+  const lbl = document.getElementById('disappearing-label');
+  if (lbl) lbl.textContent = `Disappear: ${isDisappearingMode ? 'ON' : 'OFF'}`;
+  const btn = document.getElementById('disappearing-btn');
+  if (btn) btn.style.color = isDisappearingMode ? 'var(--accent, #a855f7)' : '';
 }
 
 // ── Render a message bubble ───────────────────────────────────────

@@ -18,19 +18,35 @@ app.set('trust proxy', 1);
 // Body parsing — 10kb limit prevents payload attacks
 app.use(express.json({ limit: '10kb' }));
 
-// Parse ALLOWED_ORIGIN from Render env setup
-let corsOrigin = process.env.ALLOWED_ORIGIN || '*';
-if (corsOrigin !== '*' && !corsOrigin.startsWith('http')) {
-  corsOrigin = `https://${corsOrigin}`;
-}
+// Parse ALLOWED_ORIGIN from Render env setup.
+// Support a comma-separated list for production and keep local dev origins explicit.
+const configuredOrigins = (process.env.ALLOWED_ORIGIN || '')
+  .split(',')
+  .map(origin => origin.trim())
+  .filter(Boolean)
+  .map(origin => {
+    if (origin === '*') return origin;
+    return origin.startsWith('http') ? origin : `https://${origin}`;
+  });
 
-// CORS — locked to frontend URL in production
-const allowedOrigins = [corsOrigin, 'http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:5173', 'http://localhost:8080'];
+const allowedOrigins = new Set([
+  ...configuredOrigins,
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://localhost:5173',
+  'http://localhost:8080'
+]);
+
+function isAllowedCorsOrigin(origin) {
+  if (!origin) return true;
+  if (allowedOrigins.has(origin)) return true;
+  if (allowedOrigins.has('*') && process.env.NODE_ENV !== 'production') return true;
+  return false;
+}
 
 app.use(cors({
   origin: function (origin, callback) {
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin) || origin.endsWith('onrender.com') || corsOrigin === '*') {
+    if (isAllowedCorsOrigin(origin)) {
       return callback(null, true);
     }
     callback(new Error('Not allowed by CORS'));

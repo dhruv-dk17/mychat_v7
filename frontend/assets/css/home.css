@@ -249,6 +249,90 @@ body[data-page="home"] {
   z-index: 0;
 }
 
+.hero-strip {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(280px, 0.9fr);
+  gap: 1rem;
+  padding: 0 2.5rem 1.25rem;
+  position: relative;
+  z-index: 1;
+}
+
+.hero-copy,
+.hero-metrics {
+  background: linear-gradient(180deg, rgba(18, 18, 30, 0.72), rgba(8, 8, 16, 0.58));
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: var(--r-2xl);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.24);
+}
+
+.hero-copy {
+  padding: 1.5rem 1.6rem;
+}
+
+.hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.85rem;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent-bright);
+}
+
+.hero-copy h1 {
+  font-family: var(--ff-head);
+  font-size: clamp(1.6rem, 2.2vw, 2.35rem);
+  line-height: 1.08;
+  letter-spacing: -0.04em;
+  margin-bottom: 0.85rem;
+  color: var(--text-white);
+  max-width: 15ch;
+}
+
+.hero-copy p {
+  max-width: 58ch;
+  color: var(--text-dim);
+  font-size: 0.92rem;
+  line-height: 1.7;
+}
+
+.hero-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  padding: 0.9rem;
+}
+
+.metric-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 120px;
+  padding: 1rem;
+  border-radius: var(--r-xl);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.015));
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.metric-value {
+  font-family: var(--ff-head);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-white);
+}
+
+.metric-label {
+  margin-top: 0.45rem;
+  color: var(--text-dim);
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
 /* ── Content Header ──────────────────────────── */
 .content-header {
   display: flex;
@@ -460,7 +544,30 @@ body[data-page="home"] {
 
   .home-content { min-height: calc(100vh - 60px); }
 
-  .content-header { padding: 1.25rem 1.25rem 0.75rem; }
+  .hero-strip {
+    grid-template-columns: 1fr;
+    padding: 0 1.25rem 1rem;
+  }
+
+  .hero-copy,
+  .hero-metrics {
+    border-radius: var(--r-xl);
+  }
+
+  .hero-copy {
+    padding: 1.15rem 1.15rem 1.05rem;
+  }
+
+  .hero-metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .metric-card {
+    min-height: auto;
+    padding: 0.9rem 1rem;
+  }
+
+  .content-header { padding: 1rem 1.25rem 0.75rem; }
 
   .room-panel { padding: 0 1.25rem 2rem; }
 

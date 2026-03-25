@@ -4,6 +4,7 @@
 let screenshotStrikes  = 0;
 let devToolsOpen       = false;
 let blurShieldActive   = false;
+let isNavigating       = false; // Set true when doing page transition to suppress blur shield
 const destructTimers   = new Map();
 
 // ════════════════════════════════════════════
@@ -29,7 +30,7 @@ function deactivateBlurShield() {
 document.addEventListener('visibilitychange', () => {
   document.hidden ? activateBlurShield('Tab switched') : deactivateBlurShield();
 });
-window.addEventListener('blur',  () => activateBlurShield('Window lost focus'));
+window.addEventListener('blur',  () => { if (!isNavigating) activateBlurShield('Window lost focus'); });
 window.addEventListener('focus', deactivateBlurShield);
 
 // Tap to dismiss on mobile

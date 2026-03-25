@@ -105,6 +105,7 @@ document.addEventListener('click', e => {
 
 // ── Navigation ────────────────────────────────────────────────────
 function navigateHome() {
+  if (typeof isNavigating !== 'undefined') isNavigating = true;
   document.body.classList.add('page-fade-out');
   setTimeout(() => window.location.href = 'index.html', 300);
 }
@@ -113,7 +114,7 @@ function navigateToChat(roomId, type, username, role, key) {
   const p = new URLSearchParams({ roomId, type, username, role });
   let url = `chat.html?${p.toString()}`;
   if (key) url += `#${key}`;
-  
+  if (typeof isNavigating !== 'undefined') isNavigating = true;
   document.body.classList.add('page-fade-out');
   setTimeout(() => window.location.href = url, 300);
 }

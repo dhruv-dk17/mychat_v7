@@ -12,7 +12,6 @@ document.addEventListener('DOMContentLoaded', () => {
   if (page === 'home') initHomePage();
   if (page === 'chat') initChatPage();
 
-  initPrivacyBanner();
   checkPlatformMessages().catch(() => {});
 });
 
@@ -22,29 +21,7 @@ function initKeepAlive() {
   setInterval(() => fetch(CONFIG.API_BASE + '/health').catch(() => {}), CONFIG.KEEPALIVE_MS);
 }
 
-// ── Privacy & Platform Messaging ──────────────────────────────
-const PRIVACY_TIPS = [
-  "🔒 Tip: Never use your real name or share personal ID until you trust them.",
-  "🔍 Tip: Group rooms are hosted by someone. Private rooms are 1:1 P2P only.",
-  "🛡 Tip: Check our 'Privacy Tips' in the footer for stay safe guidelines.",
-  "⚡ Tip: Save your owner token in a safe place. It can't be recovered!",
-  "🚫 Tip: Mychat staff will NEVER ask for your password or token."
-];
-
-function initPrivacyBanner() {
-  const banner = document.getElementById('privacy-tip');
-  if (!banner) return;
-  let i = 0;
-  setInterval(() => {
-    i = (i + 1) % PRIVACY_TIPS.length;
-    banner.style.opacity = 0;
-    setTimeout(() => {
-      banner.textContent = PRIVACY_TIPS[i];
-      banner.style.opacity = 1;
-    }, 500);
-  }, 10000);
-}
-
+// Privacy & Platform Messaging ──────────────────────────────
 async function checkPlatformMessages() {
   const session = getUserSession();
   if (!session) return;

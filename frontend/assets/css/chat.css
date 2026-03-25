@@ -63,7 +63,7 @@ body[data-page="chat"]::before {
   border-right: 1px solid var(--border-dim);
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow-y: auto;
   z-index: 100;
   transition: transform 0.4s var(--ease-snap);
 }

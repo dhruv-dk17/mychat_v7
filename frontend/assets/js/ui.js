@@ -9,7 +9,7 @@ let _toastQueue    = [];
 let _toastRunning  = false;
 
 // ── Theme system ─────────────────────────────────────────────────
-const THEMES = ['default', 'light', 'hacker'];
+const THEMES = ['default', 'sunset', 'hacker'];
 
 function initTheme() {
   const saved = localStorage.getItem('mychat_theme') || 'default';

@@ -407,7 +407,7 @@
         select.appendChild(opt);
       });
 
-      document.getElementById('stat-total-users').textContent = Object.keys(data.users).length;
+      document.getElementById('stat-total-users').textContent = data.users.length;
       document.getElementById('stat-total-rooms').textContent = totalRooms;
 
       await loadBroadcasts();

@@ -46,6 +46,11 @@ function isAllowedCorsOrigin(origin) {
   if (process.env.NODE_ENV !== 'production' && origin === 'null') {
     return true;
   }
+  if (process.env.NODE_ENV === 'production') {
+    try {
+      if (/\.onrender\.com$/.test(new URL(origin).hostname)) return true;
+    } catch (e) {}
+  }
   if (allowedOrigins.has('*') && process.env.NODE_ENV !== 'production') return true;
   return false;
 }

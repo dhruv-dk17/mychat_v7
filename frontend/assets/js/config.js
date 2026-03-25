@@ -1,10 +1,25 @@
 /* global CONFIG */
 'use strict';
 
+function resolveApiBase() {
+  if (window.__MYCHAT_API_BASE__ && typeof window.__MYCHAT_API_BASE__ === 'string') {
+    return window.__MYCHAT_API_BASE__.replace(/\/$/, '');
+  }
+
+  if (window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    return 'http://localhost:10000/api';
+  }
+
+  if (window.location.hostname.endsWith('.onrender.com')) {
+    const backendHost = window.location.hostname.replace('frontend', 'backend');
+    return `${window.location.protocol}//${backendHost}/api`;
+  }
+
+  return 'https://mychat-v7-backend.onrender.com/api';
+}
+
 const CONFIG = {
-  API_BASE: (window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-    ? 'http://localhost:10000/api'
-    : 'https://mychat-v7-backend.onrender.com/api',
+  API_BASE: resolveApiBase(),
 
   PEERJS_CONFIG: { debug: 0 },
 

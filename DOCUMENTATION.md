@@ -53,7 +53,7 @@ mychat_v7/
 │       └── routes/
 │           ├── rooms.js        # 4 endpoints
 │           └── health.js       # GET /api/health
-├── render.yaml                 # Render blueprint (3 services)
+├── render.yaml                 # Render blueprint (1 web service + PostgreSQL)
 ├── .gitignore
 └── README.md
 ```
@@ -199,9 +199,10 @@ Returns `{ valid: true/false }`.
 
 1. Push project root to GitHub (must include `render.yaml` at root)
 2. Render.com → Dashboard → **New → Blueprint** → Connect repo
-3. Render auto-creates 3 services: frontend static, backend web service, PostgreSQL
-4. Wait ~3 min
-5. Copy backend URL → update `API_BASE` in `frontend/assets/js/config.js`
+3. Render auto-creates 1 web service plus PostgreSQL
+4. Enter the `ADMIN_SECRET` value when Render prompts you
+5. Wait ~3 min
+6. Open the web service URL
 6. `git push` → frontend redeploys in ~30s
 
 ### Cold Start

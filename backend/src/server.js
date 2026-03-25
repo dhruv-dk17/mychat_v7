@@ -3,11 +3,13 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const path = require('path');
 const { initDB } = require('./db/database');
 const roomRoutes = require('./routes/rooms');
 const healthRoutes = require('./routes/health');
 
 const app = express();
+const frontendDir = path.join(__dirname, '..', '..', 'frontend');
 
 // Security headers
 app.use(helmet({ contentSecurityPolicy: false }));
@@ -81,6 +83,12 @@ app.use('/api/rooms', roomRoutes);
 app.use('/api/health', healthRoutes);
 app.use('/api/users', require('./routes/users'));
 app.use('/api/admin', require('./routes/admin'));
+
+// Static frontend: one Render web service serves the app and the API.
+app.use(express.static(frontendDir));
+app.get('/', (req, res) => res.sendFile(path.join(frontendDir, 'index.html')));
+app.get('/chat', (req, res) => res.sendFile(path.join(frontendDir, 'chat.html')));
+app.get('/admin', (req, res) => res.sendFile(path.join(frontendDir, 'admin.html')));
 
 // 404
 app.use((req, res) => res.status(404).json({ error: 'Not found' }));

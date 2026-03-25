@@ -39,11 +39,10 @@ npm run dev    # uses nodemon
 1. Push project to GitHub
 2. Go to [render.com](https://render.com) → Sign up with GitHub  
 3. Dashboard → **New → Blueprint** → Connect your repo
-4. Render reads `render.yaml` → creates 3 services automatically
-5. Wait ~3 minutes for deploy
-6. Copy backend URL (e.g. `https://mychat-v7-backend.onrender.com`)
-7. Update `API_BASE` in `frontend/assets/js/config.js`
-8. Push change → frontend auto-redeploys in ~30s
+4. Render reads `render.yaml` → creates 1 web service + 1 PostgreSQL database
+5. Render prompts you for `ADMIN_SECRET` during setup
+6. Wait ~3 minutes for deploy
+7. Open the web service URL and use the app from there
 
 See `DOCUMENTATION.md` for full feature reference.
 

@@ -40,6 +40,12 @@ const allowedOrigins = new Set([
 function isAllowedCorsOrigin(origin) {
   if (!origin) return true;
   if (allowedOrigins.has(origin)) return true;
+  if (process.env.NODE_ENV !== 'production' && /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
+    return true;
+  }
+  if (process.env.NODE_ENV !== 'production' && origin === 'null') {
+    return true;
+  }
   if (allowedOrigins.has('*') && process.env.NODE_ENV !== 'production') return true;
   return false;
 }

@@ -2,8 +2,8 @@
 'use strict';
 
 const CONFIG = {
-  API_BASE: window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-    ? 'http://localhost:10000/api' 
+  API_BASE: (window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+    ? 'http://localhost:10000/api'
     : 'https://mychat-v7-backend.onrender.com/api',
 
   PEERJS_CONFIG: { debug: 0 },

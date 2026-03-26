@@ -349,7 +349,7 @@ body[data-page="chat"]::before {
 .msg {
   display: flex;
   flex-direction: column;
-  max-width: 75%;
+  max-width: 25%;
   flex: 0 0 auto;
   animation: msg-pop 0.3s var(--ease-snap);
 }
@@ -384,7 +384,7 @@ body[data-page="chat"]::before {
   padding: 0.85rem 1.1rem;
   border-radius: var(--r-xl);
   font-size: 0.92rem;
-  line-height: 1.45;
+  line-height: 1.25;
   position: relative;
   word-break: break-word;
   white-space: pre-wrap;

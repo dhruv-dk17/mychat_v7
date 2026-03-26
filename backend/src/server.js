@@ -39,6 +39,24 @@ const allowedOrigins = new Set([
   'http://localhost:8080'
 ]);
 
+const corsOptions = {
+  origin: function (origin, callback) {
+    if (isAllowedCorsOrigin(origin)) {
+      return callback(null, true);
+    }
+    callback(new Error('Not allowed by CORS'));
+  },
+  methods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
+  allowedHeaders: [
+    'Content-Type',
+    'X-Room-Password-Hash',
+    'X-Admin-Secret',
+    'X-Auth-Username',
+    'X-Auth-Token'
+  ],
+  maxAge: 86400
+};
+
 function isAllowedCorsOrigin(origin) {
   if (!origin) return true;
   if (allowedOrigins.has(origin)) return true;
@@ -57,17 +75,8 @@ function isAllowedCorsOrigin(origin) {
   return false;
 }
 
-app.use(cors({
-  origin: function (origin, callback) {
-    if (isAllowedCorsOrigin(origin)) {
-      return callback(null, true);
-    }
-    callback(new Error('Not allowed by CORS'));
-  },
-  methods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'X-Room-Password-Hash'],
-  maxAge: 86400
-}));
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 
 // Global rate limit: 60 requests/minute
 app.use(rateLimit({

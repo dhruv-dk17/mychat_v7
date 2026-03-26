@@ -5,12 +5,23 @@
 // ════════════════════════════════════════════
 
 document.addEventListener('DOMContentLoaded', () => {
+  const page = document.body.dataset.page;
+  if (page === 'home') {
+    document.title = 'Mychat - Private, Encrypted, Zero Trace';
+  } else if (page === 'chat') {
+    document.title = 'Mychat - Chat Room';
+  }
+
   initKeepAlive();
   initNetworkWatcher();
 
-  const page = document.body.dataset.page;
   if (page === 'home') initHomePage();
   if (page === 'chat') initChatPage();
+
+  const privacyTip = document.getElementById('privacy-tip');
+  if (privacyTip) {
+    privacyTip.textContent = 'Tip: Keep your identity minimal and share room links only with people you trust.';
+  }
 
   checkPlatformMessages().catch(() => {});
 });
@@ -105,8 +116,16 @@ async function initHomePage() {
   // ── User Auth State ──────────────────────────────
   refreshAuthState();
 
-  document.getElementById('show-auth-btn')?.addEventListener('click', () => {
+  document.getElementById('open-auth-btn')?.addEventListener('click', () => {
     showModal('auth-modal');
+  });
+
+  document.getElementById('open-auth-permanent-btn')?.addEventListener('click', () => {
+    showModal('auth-modal');
+  });
+
+  document.getElementById('platform-messages-close-btn')?.addEventListener('click', () => {
+    hideModal('platform-messages-modal');
   });
 
   const dd = document.getElementById('user-profile-dropdown');
@@ -179,7 +198,7 @@ async function initHomePage() {
 
   function refreshAuthState() {
     const session = getUserSession();
-    const sBtn = document.getElementById('show-auth-btn');
+    const sBtn = document.getElementById('open-auth-btn');
     const uDD  = document.getElementById('user-profile-dropdown');
     const pOut = document.getElementById('perm-logged-out-view');
     const pIn  = document.getElementById('perm-logged-in-view');
@@ -683,20 +702,8 @@ async function initChatPage() {
   document.getElementById('close-panel-btn')?.addEventListener('click', () => {
     document.getElementById('user-panel')?.classList.remove('panel-visible');
   });
-
-  // Search toggle
-  let searchOpen = false;
-  document.getElementById('search-btn')?.addEventListener('click', () => {
-    searchOpen = !searchOpen;
-    const sInput = document.getElementById('search-input');
-    if (sInput) {
-      sInput.focus();
-      if (!sInput.value) searchMessages('');
-    }
-  });
-
-  document.getElementById('search-input')?.addEventListener('input', e => {
-    searchMessages(e.target.value);
+  document.getElementById('privacy-tips-btn')?.addEventListener('click', () => {
+    showModal('privacy-tips-modal');
   });
 
   // Sound toggle

@@ -379,11 +379,11 @@ function initSearchUI() {
   // Create search bar DOM
   const searchBar = document.createElement('div');
   searchBar.id = 'search-bar';
-  searchBar.style.cssText = 'display: none; padding: 10px 1.5rem; background: var(--surface2); border-bottom: 1px solid var(--border);';
+  searchBar.style.cssText = 'display: none; padding: 0.75rem 1rem; background: rgba(11, 19, 30, 0.94); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border-dim); box-shadow: 0 18px 40px rgba(0, 0, 0, 0.24);';
   searchBar.innerHTML = `
     <div style="display: flex; gap: 10px; align-items: center;">
-      <input type="text" id="search-input" placeholder="Search messages (Enter)..." style="flex: 1; padding: 8px 12px; border-radius: var(--r-sm); border: 1px solid var(--border); background: var(--bg); color: var(--text);">
-      <button class="btn btn-sm" id="search-close-btn" style="padding: 8px; font-size: 0.8rem;">✕</button>
+      <input type="text" id="search-input" placeholder="Search messages" style="flex: 1; padding: 10px 12px; border-radius: var(--r-md); border: 1px solid var(--border-dim); background: rgba(255, 255, 255, 0.04); color: var(--text);">
+      <button class="btn btn-sm" id="search-close-btn" style="padding: 8px 12px; font-size: 0.8rem;">Close</button>
     </div>
   `;
   feed.insertBefore(searchBar, feed.firstChild);

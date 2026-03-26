@@ -1,489 +1,210 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mychat — Dashboard</title>
-  
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mychat Dashboard</title>
+  <meta name="theme-color" content="#07111d" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
-
-  <style>
-    /* Dark Cyberpunk Theme for Admin */
-    :root {
-      --bg: #03050c;
-      --card-bg: rgba(10, 15, 30, 0.7);
-      --card-border: rgba(50, 80, 255, 0.2);
-      --accent: #2c52ff;
-      --accent-glow: 0 0 20px rgba(44, 82, 255, 0.5);
-      --text: #e2e8f0;
-      --text-dim: #94a3b8;
-      --danger: #ef4444;
-      --danger-hover: #b91c1c;
-      --success: #10b981;
-      --font-body: 'Sora', sans-serif;
-      --font-heading: 'Space Grotesk', sans-serif;
-      --font-mono: 'JetBrains Mono', monospace;
-    }
-
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    
-    body {
-      background-color: var(--bg);
-      color: var(--text);
-      font-family: var(--font-body);
-      line-height: 1.5;
-      padding: 2rem;
-      background-image: 
-        radial-gradient(circle at 15% 50%, rgba(44, 82, 255, 0.08) 0%, transparent 50%),
-        radial-gradient(circle at 85% 30%, rgba(200, 50, 255, 0.05) 0%, transparent 50%);
-    }
-
-    h1, h2, h3 { font-family: var(--font-heading); font-weight: 600; }
-    
-    .container {
-      max-width: 1200px;
-      margin: 0 auto;
-    }
-
-    .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 3rem;
-      border-bottom: 1px solid var(--card-border);
-      padding-bottom: 1rem;
-    }
-
-    .brand {
-      font-size: 1.5rem;
-      font-family: var(--font-heading);
-      font-weight: 700;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    /* Auth Mask */
-    #auth-mask {
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: var(--bg);
-      z-index: 9999;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-    }
-    .auth-box {
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      padding: 2.5rem;
-      border-radius: 16px;
-      width: 100%;
-      max-width: 400px;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.5);
-      backdrop-filter: blur(10px);
-    }
-    .auth-box h2 {
-      margin-bottom: 1.5rem;
-      text-align: center;
-    }
-
-    input, select, textarea {
-      width: 100%;
-      background: rgba(0,0,0,0.3);
-      border: 1px solid rgba(255,255,255,0.1);
-      color: white;
-      padding: 0.75rem 1rem;
-      border-radius: 8px;
-      font-family: inherit;
-      margin-bottom: 1rem;
-      outline: none;
-      transition: border-color 0.2s, box-shadow 0.2s;
-    }
-    input:focus, select:focus, textarea:focus {
-      border-color: var(--accent);
-      box-shadow: var(--accent-glow);
-    }
-
-    button {
-      background: var(--accent);
-      color: white;
-      border: none;
-      padding: 0.75rem 1.5rem;
-      border-radius: 8px;
-      font-family: inherit;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    button:hover {
-      box-shadow: var(--accent-glow);
-      filter: brightness(1.1);
-    }
-    button:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-    button.danger {
-      background: transparent;
-      border: 1px solid var(--danger);
-      color: var(--danger);
-    }
-    button.danger:hover {
-      background: var(--danger);
-      color: white;
-      box-shadow: 0 0 15px rgba(239, 68, 68, 0.4);
-    }
-
-    .grid {
-      display: grid;
-      grid-template-columns: 2fr 1fr;
-      gap: 2rem;
-    }
-
-    .card {
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      border-radius: 16px;
-      padding: 1.5rem;
-      backdrop-filter: blur(10px);
-    }
-
-    .card-header {
-      margin-bottom: 1rem;
-      padding-bottom: 0.5rem;
-      border-bottom: 1px solid rgba(255,255,255,0.05);
-      font-size: 1.25rem;
-    }
-
-    /* Stats Grid */
-    .stats-row {
-      display: flex;
-      gap: 1rem;
-      margin-bottom: 2rem;
-    }
-    .stat-box {
-      flex: 1;
-      background: rgba(255,255,255,0.02);
-      border: 1px solid var(--card-border);
-      border-radius: 12px;
-      padding: 1.5rem;
-      text-align: center;
-    }
-    .stat-value {
-      font-size: 2.5rem;
-      font-family: var(--font-heading);
-      font-weight: 700;
-      color: var(--accent);
-    }
-    .stat-label {
-      color: var(--text-dim);
-      font-size: 0.9rem;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-
-    /* Data Table */
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.95rem;
-    }
-    th, td {
-      padding: 1rem 0.5rem;
-      text-align: left;
-      border-bottom: 1px solid rgba(255,255,255,0.05);
-    }
-    th {
-      color: var(--text-dim);
-      font-weight: 500;
-      font-size: 0.85rem;
-      text-transform: uppercase;
-    }
-    tr:hover td {
-      background: rgba(255,255,255,0.02);
-    }
-    .user-id {
-      font-family: var(--font-mono);
-      font-weight: 500;
-    }
-
-    .toast {
-      position: fixed;
-      bottom: 2rem;
-      right: 2rem;
-      background: white;
-      color: black;
-      padding: 1rem 1.5rem;
-      border-radius: 8px;
-      font-weight: 600;
-      transform: translateY(100px);
-      opacity: 0;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      z-index: 10000;
-    }
-    .toast.show {
-      transform: translateY(0);
-      opacity: 1;
-    }
-
-    .spinner {
-      display: inline-block;
-      width: 20px;
-      height: 20px;
-      border: 2px solid rgba(255,255,255,0.3);
-      border-radius: 50%;
-      border-top-color: white;
-      animation: spin 1s ease-in-out infinite;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/css/admin.css?v=20260326" />
 </head>
-<body>
+<body class="admin-page">
+  <div id="auth-mask" class="auth-mask">
+    <section class="auth-card" aria-labelledby="auth-title">
+      <div class="auth-eyebrow">Secure admin access</div>
+      <h1 id="auth-title">Command Center</h1>
+      <p class="auth-copy">A focused operations console for users, broadcasts, and cleanup tasks.</p>
 
-  <!-- Auth Mask -->
-  <div id="auth-mask">
-    <div class="auth-box">
-      <h2>Command Center</h2>
-      <input type="password" id="secret-input" placeholder="Enter Admin Secret..." onkeydown="if(event.key==='Enter') loginAdmin()" />
-      <button onclick="loginAdmin()" style="width: 100%">Authenticate</button>
-    </div>
+      <form id="auth-form" class="auth-form">
+        <label class="field">
+          <span class="field-label" for="secret-input">Admin secret</span>
+          <input id="secret-input" class="control" type="password" autocomplete="current-password" placeholder="Enter admin secret" />
+        </label>
+        <div id="auth-error" class="auth-status" aria-live="polite"></div>
+        <button id="auth-submit" class="btn btn-primary" type="submit">Authenticate</button>
+      </form>
+
+      <p class="auth-hint">Use this console only when you need to review users, send a broadcast, or clear old records.</p>
+    </section>
   </div>
 
-  <div class="container" style="display: none;" id="app-container">
-    <header class="header">
-      <div class="brand">🚀 Mychat Control</div>
-      <button class="danger" onclick="logoutAdmin()">Disconnect</button>
-    </header>
-
-    <div class="stats-row">
-      <div class="stat-box">
-        <div class="stat-value" id="stat-total-users">0</div>
-        <div class="stat-label">Active Users</div>
-      </div>
-      <div class="stat-box">
-        <div class="stat-value" id="stat-total-rooms">0</div>
-        <div class="stat-label">Permanent Rooms</div>
-      </div>
-    </div>
-
-    <div class="grid">
-      <!-- Left Column: User Table -->
-      <div class="card">
-        <div class="card-header">User Directory</div>
-        <table id="users-table">
-          <thead>
-            <tr>
-              <th>Internal ID</th>
-              <th>Joined</th>
-              <th>Rooms</th>
-              <th style="text-align: right">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <!-- Populated via JS -->
-          </tbody>
-        </table>
-      </div>
-
-      <!-- Right Column: Broadcast -->
-      <div style="display: flex; flex-direction: column; gap: 2rem;">
-        
-        <div class="card">
-          <div class="card-header">Global Broadcast</div>
-          <p style="color:var(--text-dim); font-size:0.85rem; margin-bottom:1rem;">Send a system message to users upon their next login.</p>
-          
-          <select id="bc-target">
-            <option value="">All Active Users</option>
-            <!-- Users appended here dynamically -->
-          </select>
-
-          <textarea id="bc-content" rows="4" placeholder="Message content..."></textarea>
-          
-          <button id="bc-btn" onclick="sendBroadcast()" style="width:100%">📡 Dispatch System Alert</button>
-        </div>
-
-        <div class="card">
-          <div class="card-header">Recent Broadcasts</div>
-          <div id="broadcasts-list" style="font-size: 0.9rem;">
-            <!-- Populated via JS -->
+  <div id="app-container" class="admin-shell" hidden>
+    <div class="admin-topstack">
+      <header class="admin-header">
+        <div class="brand">
+          <div class="brand-mark">MC</div>
+          <div class="brand-copy">
+            <h2 class="brand-title">Mychat Control</h2>
+            <div class="brand-subtitle">Premium admin dashboard</div>
           </div>
         </div>
 
-      </div>
+        <div class="header-actions">
+          <span class="chip chip-success"><strong>Live</strong><span id="last-refresh">Not synced yet</span></span>
+          <button id="refresh-button" type="button" class="btn btn-ghost">Refresh</button>
+          <button id="logout-button" type="button" class="btn btn-ghost">Sign out</button>
+        </div>
+      </header>
+
+      <section class="admin-summary" aria-label="Key metrics">
+        <article class="summary-card">
+          <div class="summary-label">Active users</div>
+          <div id="summary-users" class="summary-value">0</div>
+          <div class="summary-note">Current unlocked user records</div>
+        </article>
+        <article class="summary-card">
+          <div class="summary-label">Permanent rooms</div>
+          <div id="summary-rooms" class="summary-value">0</div>
+          <div class="summary-note">Total rooms owned by active users</div>
+        </article>
+        <article class="summary-card">
+          <div class="summary-label">Broadcasts</div>
+          <div id="summary-broadcasts" class="summary-value">0</div>
+          <div class="summary-note">Messages currently on file</div>
+        </article>
+        <article class="summary-card">
+          <div class="summary-label">Needs cleanup</div>
+          <div id="summary-cleanup" class="summary-value">0</div>
+          <div class="summary-note">Records without a stable admin ID</div>
+        </article>
+      </section>
+    </div>
+
+    <div class="admin-layout">
+      <main class="admin-main">
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <h3 class="panel-title">User Directory</h3>
+              <div class="panel-subtitle">Search, filter, and page through the current user set.</div>
+            </div>
+            <div class="panel-kicker" id="users-count-note">Waiting for data</div>
+          </div>
+
+          <div class="panel-body">
+            <div class="toolbar">
+              <label class="field search-wrap">
+                <span class="field-label" for="user-search">Search users</span>
+                <input id="user-search" class="control" type="search" placeholder="Search by user ID, join date, or room count" />
+              </label>
+
+              <label class="field">
+                <span class="field-label" for="user-sort">Sort</span>
+                <select id="user-sort" class="control">
+                  <option value="recent">Newest</option>
+                  <option value="rooms">Most rooms</option>
+                  <option value="id">Lowest ID</option>
+                </select>
+              </label>
+
+              <label class="field">
+                <span class="field-label" for="user-page-size">Rows</span>
+                <select id="user-page-size" class="control">
+                  <option value="10">10</option>
+                  <option value="15">15</option>
+                  <option value="25">25</option>
+                  <option value="50">50</option>
+                </select>
+              </label>
+
+              <div class="toolbar-actions">
+                <div class="filter-group" role="tablist" aria-label="User filters">
+                  <button type="button" class="filter-chip active" data-user-filter="all">All</button>
+                  <button type="button" class="filter-chip" data-user-filter="actionable">Actionable</button>
+                  <button type="button" class="filter-chip" data-user-filter="needs-cleanup">Needs cleanup</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="table-shell">
+            <table id="users-table" aria-describedby="users-count-note">
+              <thead>
+                <tr>
+                  <th>Internal ID</th>
+                  <th>Joined</th>
+                  <th>Rooms</th>
+                  <th class="align-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="users-table-body"></tbody>
+            </table>
+          </div>
+
+          <div id="users-pagination" class="pagination"></div>
+        </section>
+      </main>
+
+      <aside class="admin-rail">
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <h3 class="panel-title">Broadcast Composer</h3>
+              <div class="panel-subtitle">Send a system notice to all active users or a single target.</div>
+            </div>
+            <div class="panel-kicker" id="broadcasts-count-note">Waiting for data</div>
+          </div>
+
+          <div class="panel-body">
+            <form id="broadcast-form" class="auth-form" autocomplete="off">
+              <label class="field">
+                <span class="field-label" for="bc-target">Target</span>
+                <select id="bc-target" class="control">
+                  <option value="">All active users</option>
+                </select>
+              </label>
+
+              <label class="field">
+                <span class="field-label" for="bc-content">Message</span>
+                <textarea id="bc-content" class="admin-textarea" rows="6" placeholder="Write the system message here"></textarea>
+              </label>
+
+              <p class="helper">Broadcasts are stored as plain text and shown on the next login.</p>
+              <button id="bc-send-button" class="btn btn-primary" type="submit">Dispatch broadcast</button>
+            </form>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <h3 class="panel-title">Recent Broadcasts</h3>
+              <div class="panel-subtitle">Latest system notices with safe, readable rendering.</div>
+            </div>
+          </div>
+
+          <div class="panel-body">
+            <div id="broadcasts-list" class="broadcast-list"></div>
+          </div>
+
+          <div id="broadcasts-pagination" class="pagination"></div>
+        </section>
+      </aside>
     </div>
   </div>
 
-  <div id="toast" class="toast"></div>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-  <script src="assets/js/config.js"></script>
-  <script>
-    let adminSecret = '';
+  <div id="confirm-modal" class="modal-backdrop" hidden>
+    <section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
+      <h3 id="confirm-title" class="modal-title">Confirm action</h3>
+      <p id="confirm-body" class="modal-body"></p>
+      <div id="confirm-detail" class="modal-detail"></div>
+      <div id="confirm-field-wrap" class="modal-field" hidden>
+        <label id="confirm-field-label" for="confirm-field">Type to confirm</label>
+        <input id="confirm-field" type="text" autocomplete="off" />
+        <div id="confirm-field-error" class="modal-error" aria-live="polite"></div>
+      </div>
+      <div class="modal-actions">
+        <button id="confirm-cancel" type="button" class="btn btn-ghost">Back</button>
+        <button id="confirm-submit" type="button" class="btn btn-danger">Delete</button>
+      </div>
+    </section>
+  </div>
 
-    function showToast(msg) {
-      const el = document.getElementById('toast');
-      el.textContent = msg;
-      el.classList.add('show');
-      setTimeout(() => el.classList.remove('show'), 3000);
-    }
-
-    async function fetchWithSecret(path, options = {}) {
-      const headers = {
-        'Content-Type': 'application/json',
-        'X-Admin-Secret': adminSecret,
-        ...(options.headers || {})
-      };
-      
-      const res = await fetch(`${CONFIG.API_BASE}/admin${path}`, { ...options, headers });
-      const data = await res.json();
-      
-      if (!res.ok) throw new Error(data.error || 'API Error');
-      return data;
-    }
-
-    async function loginAdmin() {
-      const input = document.getElementById('secret-input').value;
-      if(!input) return;
-      
-      adminSecret = input;
-      const btn = document.querySelector('.auth-box button');
-      btn.innerHTML = '<span class="spinner"></span>';
-      
-      try {
-        await loadDashboard();
-        document.getElementById('auth-mask').style.display = 'none';
-        document.getElementById('app-container').style.display = 'block';
-        showToast('Authentication Successful');
-      } catch (e) {
-        showToast(e.message === 'Unauthorized' ? 'Invalid Secret' : e.message);
-        adminSecret = '';
-      } finally {
-        btn.innerHTML = 'Authenticate';
-      }
-    }
-
-    function logoutAdmin() {
-      adminSecret = '';
-      document.getElementById('auth-mask').style.display = 'flex';
-      document.getElementById('app-container').style.display = 'none';
-      document.getElementById('secret-input').value = '';
-    }
-
-    async function loadDashboard() {
-      const data = await fetchWithSecret('/stats');
-      
-      let totalRooms = 0;
-      const tbody = document.querySelector('#users-table tbody');
-      const select = document.getElementById('bc-target');
-      
-      tbody.innerHTML = '';
-      // Keep first option
-      select.innerHTML = '<option value="">All Active Users</option>';
-
-      data.users.forEach(u => {
-        totalRooms += u.room_count;
-        
-        // Table row
-        const tr = document.createElement('tr');
-        const dateStr = new Date(u.joined_at).toLocaleDateString();
-        tr.innerHTML = `
-          <td class="user-id">${u.uid}</td>
-          <td>${dateStr}</td>
-          <td>${u.room_count}</td>
-          <td style="text-align: right">
-            <button class="danger" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;" onclick="deleteUser('${u.uid}')">Eradicate</button>
-          </td>
-        `;
-        tbody.appendChild(tr);
-
-        // Select option
-        const opt = document.createElement('option');
-        opt.value = u.uid;
-        opt.textContent = `Specific User: ${u.uid}`;
-        select.appendChild(opt);
-      });
-
-      document.getElementById('stat-total-users').textContent = data.users.length;
-      document.getElementById('stat-total-rooms').textContent = totalRooms;
-
-      await loadBroadcasts();
-    }
-
-    async function deleteUser(uid) {
-      if(!confirm(`Are you absolutely sure you want to delete ${uid}? All their rooms will be removed.`)) return;
-      
-      try {
-        await fetchWithSecret(`/users/${uid}`, { method: 'DELETE' });
-        showToast(`${uid} eradicated from the system`);
-        await loadDashboard();
-      } catch (e) {
-        showToast(e.message);
-      }
-    }
-
-    async function sendBroadcast() {
-      const target = document.getElementById('bc-target').value;
-      const content = document.getElementById('bc-content').value.trim();
-      const btn = document.getElementById('bc-btn');
-
-      if(!content) {
-        showToast('Message cannot be empty'); return;
-      }
-
-      btn.disabled = true;
-      try {
-        await fetchWithSecret('/broadcast', {
-          method: 'POST',
-          body: JSON.stringify({ target_uid: target || null, content })
-        });
-        showToast('System alert dispatched');
-        document.getElementById('bc-content').value = '';
-        await loadBroadcasts();
-      } catch (e) {
-        showToast(e.message);
-      } finally {
-        btn.disabled = false;
-      }
-    }
-
-    async function loadBroadcasts() {
-      const list = document.getElementById('broadcasts-list');
-      try {
-        const data = await fetchWithSecret('/broadcasts');
-        list.innerHTML = '';
-        if(data.broadcasts.length === 0) {
-          list.innerHTML = '<div style="color:var(--text-dim)">No active broadcasts</div>';
-          return;
-        }
-
-        data.broadcasts.forEach(b => {
-          const div = document.createElement('div');
-          div.style.cssText = 'padding: 1rem; background: rgba(255,255,255,0.02); border-radius: 8px; margin-bottom: 0.5rem; border-left: 3px solid var(--accent); position: relative;';
-          div.innerHTML = `
-            <div style="color:var(--text-dim); font-size:0.8rem; margin-bottom:0.25rem;">Target: ${b.target} • ${new Date(b.created_at).toLocaleDateString()}</div>
-            <div>${b.content}</div>
-            <button class="danger" style="position:absolute; top:0.5rem; right:0.5rem; padding: 0.2rem 0.5rem; font-size: 0.7rem;" onclick="deleteBroadcast(${b.id})">Del</button>
-          `;
-          list.appendChild(div);
-        });
-      } catch (e) {
-        // fail silently for this secondary element
-      }
-    }
-
-    async function deleteBroadcast(id) {
-        try {
-            await fetchWithSecret(`/broadcasts/${id}`, {method: 'DELETE'});
-            await loadBroadcasts();
-        } catch(e) {
-            showToast('Failed to delete message');
-        }
-    }
-
-  </script>
+  <script src="assets/js/config.js?v=20260326"></script>
+  <script src="assets/js/admin.js?v=20260326"></script>
 </body>
 </html>

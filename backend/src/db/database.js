@@ -22,7 +22,7 @@ async function initDB() {
         last_seen     BIGINT
       )
     `);
-    
+
     await client.query(`
       CREATE TABLE IF NOT EXISTS rooms (
         slug             VARCHAR(8) PRIMARY KEY,
@@ -32,37 +32,21 @@ async function initDB() {
         created_at       BIGINT     NOT NULL
       )
     `);
-    
-    // Check if owner_username exists (for migration)
-    const colCheck = await client.query(`
-      SELECT column_name 
-      FROM information_schema.columns 
-      WHERE table_name='rooms' AND column_name='owner_username'
+
+    const ownerUsernameCheck = await client.query(`
+      SELECT 1
+      FROM information_schema.columns
+      WHERE table_name = 'rooms' AND column_name = 'owner_username'
+      LIMIT 1
     `);
-    if (colCheck.rows.length === 0) {
-      await client.query(`ALTER TABLE rooms ADD COLUMN owner_username VARCHAR(32) REFERENCES users(username) ON DELETE CASCADE`);
+    if (ownerUsernameCheck.rows.length === 0) {
+      await client.query(`
+        ALTER TABLE rooms
+        ADD COLUMN owner_username VARCHAR(32) REFERENCES users(username) ON DELETE CASCADE
+      `);
     }
 
-    // Migration for existing users to have internal_id and is_deleted
-    const userColCheck = await client.query(`
-      SELECT column_name 
-      FROM information_schema.columns 
-      WHERE table_name='users' AND column_name='internal_id'
-    `);
-    if (userColCheck.rows.length === 0) {
-      await client.query(`ALTER TABLE users ADD COLUMN internal_id SERIAL UNIQUE`);
-      await client.query(`ALTER TABLE users ADD COLUMN is_deleted BOOLEAN DEFAULT FALSE`);
-    }
-
-    // Check for last_seen column
-    const lastSeenCheck = await client.query(`
-      SELECT column_name 
-      FROM information_schema.columns 
-      WHERE table_name='users' AND column_name='last_seen'
-    `);
-    if (lastSeenCheck.rows.length === 0) {
-      await client.query(`ALTER TABLE users ADD COLUMN last_seen BIGINT`);
-    }
+    await ensureUserIdentityColumns(client);
 
     await client.query(`
       CREATE TABLE IF NOT EXISTS platform_messages (
@@ -84,19 +68,76 @@ async function initDB() {
       )
     `);
 
-    await client.query(
-      `CREATE INDEX IF NOT EXISTS idx_rooms_slug ON rooms(slug)`
-    );
-    await client.query(
-      `CREATE INDEX IF NOT EXISTS idx_room_messages_room_id ON room_messages(room_slug, id)`
-    );
-    await client.query(
-      `CREATE UNIQUE INDEX IF NOT EXISTS idx_room_messages_unique_event ON room_messages(room_slug, event_id)`
-    );
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_rooms_slug ON rooms(slug)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_room_messages_room_id ON room_messages(room_slug, id)`);
+    await client.query(`CREATE UNIQUE INDEX IF NOT EXISTS idx_room_messages_unique_event ON room_messages(room_slug, event_id)`);
     console.log('✓ Database ready');
   } finally {
     client.release();
   }
 }
 
-module.exports = { pool, initDB };
+async function ensureUserIdentityColumns(client) {
+  const columnExists = async (tableName, columnName) => {
+    const result = await client.query(
+      `
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_name = $1 AND column_name = $2
+        LIMIT 1
+      `,
+      [tableName, columnName]
+    );
+    return result.rows.length > 0;
+  };
+
+  const hasInternalId = await columnExists('users', 'internal_id');
+  if (!hasInternalId) {
+    await client.query(`ALTER TABLE users ADD COLUMN internal_id INTEGER`);
+  }
+
+  const hasIsDeleted = await columnExists('users', 'is_deleted');
+  if (!hasIsDeleted) {
+    await client.query(`ALTER TABLE users ADD COLUMN is_deleted BOOLEAN DEFAULT FALSE`);
+  } else {
+    await client.query(`ALTER TABLE users ALTER COLUMN is_deleted SET DEFAULT FALSE`);
+  }
+
+  const hasLastSeen = await columnExists('users', 'last_seen');
+  if (!hasLastSeen) {
+    await client.query(`ALTER TABLE users ADD COLUMN last_seen BIGINT`);
+  }
+
+  await client.query(`CREATE SEQUENCE IF NOT EXISTS users_internal_id_seq`);
+  await client.query(`ALTER SEQUENCE users_internal_id_seq OWNED BY users.internal_id`);
+
+  const maxResult = await client.query(`
+    SELECT COALESCE(MAX(internal_id), 0) AS max_internal_id
+    FROM users
+    WHERE internal_id IS NOT NULL
+  `);
+  const maxInternalId = Number(maxResult.rows[0]?.max_internal_id || 0);
+
+  await client.query(`SELECT setval('users_internal_id_seq', $1, false)`, [maxInternalId + 1]);
+
+  await client.query(`
+    UPDATE users
+    SET internal_id = nextval('users_internal_id_seq')
+    WHERE internal_id IS NULL
+  `);
+
+  await client.query(`
+    ALTER TABLE users
+    ALTER COLUMN internal_id SET DEFAULT nextval('users_internal_id_seq')
+  `);
+  await client.query(`
+    ALTER TABLE users
+    ALTER COLUMN internal_id SET NOT NULL
+  `);
+  await client.query(`
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_users_internal_id
+    ON users(internal_id)
+  `);
+}
+
+module.exports = { pool, initDB, ensureUserIdentityColumns };

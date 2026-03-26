@@ -83,7 +83,7 @@
           <span class="version-pill">v7</span>
         </div>
         <div class="sidebar-auth">
-          <button id="show-auth-btn" class="btn btn-ghost sidebar-auth-btn">Sign In</button>
+          <button id="open-auth-btn" class="btn btn-ghost sidebar-auth-btn">Sign In</button>
           <div id="user-profile-dropdown" style="display:none; cursor:pointer;"></div>
         </div>
       </div>
@@ -183,7 +183,7 @@
           <div id="perm-logged-out-view">
             <center style="margin: 1.5rem 0;">
               <p style="font-size: 0.85rem; color: var(--text-dim); margin-bottom: 1rem;">Sign in to create &amp; manage your permanent rooms.</p>
-              <button class="btn btn-primary w-100" onclick="showModal('auth-modal')">Sign in / Register</button>
+              <button class="btn btn-primary w-100" id="open-auth-permanent-btn">Sign in / Register</button>
             </center>
           </div>
 
@@ -226,7 +226,7 @@
         <!-- Messages here -->
       </div>
       <div class="modal-actions">
-        <button class="btn btn-primary w-100" onclick="hideModal('platform-messages-modal')">I Understand</button>
+        <button class="btn btn-primary w-100" id="platform-messages-close-btn">I Understand</button>
       </div>
     </div>
   </div>

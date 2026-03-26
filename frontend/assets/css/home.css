@@ -4,12 +4,15 @@
 
 /* ── App Shell ───────────────────────────────── */
 body[data-page="home"] {
-  min-height: 100vh;
-  height: 100vh;
+  min-height: 100dvh;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
   background: var(--bg);
+  background-image:
+    radial-gradient(circle at 18% 14%, rgba(110, 163, 255, 0.14) 0%, transparent 32%),
+    radial-gradient(circle at 86% 10%, rgba(40, 210, 161, 0.08) 0%, transparent 30%);
 }
 
 .app-shell {
@@ -17,13 +20,14 @@ body[data-page="home"] {
   flex: 1;
   overflow: hidden;
   height: 100%;
+  min-height: 0;
 }
 
 /* ── Sidebar ─────────────────────────────────── */
 .home-sidebar {
   width: 260px;
   flex-shrink: 0;
-  background: var(--surface);
+  background: rgba(11, 19, 30, 0.82);
   border-right: 1px solid var(--border-dim);
   display: flex;
   flex-direction: column;
@@ -39,7 +43,7 @@ body[data-page="home"] {
   position: absolute;
   top: 0; left: 0; right: 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(139, 92, 246, 0.5), transparent);
+  background: linear-gradient(90deg, transparent, rgba(110, 163, 255, 0.5), transparent);
 }
 
 /* ── Sidebar Brand ───────────────────────────── */
@@ -61,7 +65,7 @@ body[data-page="home"] {
   align-items: center;
   justify-content: center;
   font-size: 1.15rem;
-  box-shadow: 0 0 15px rgba(168, 85, 247, 0.3);
+  box-shadow: 0 0 15px rgba(47, 99, 246, 0.22);
   flex-shrink: 0;
 }
 
@@ -169,7 +173,7 @@ body[data-page="home"] {
   font-size: 0.68rem;
   color: var(--accent-bright);
   background: var(--accent-dim);
-  border: 1px solid rgba(139, 92, 246, 0.25);
+  border: 1px solid rgba(110, 163, 255, 0.25);
   border-radius: var(--r-pill);
   padding: 0.2rem 0.55rem;
 }
@@ -232,6 +236,7 @@ body[data-page="home"] {
   overflow-y: auto;
   min-width: 0;
   position: relative;
+  min-height: 0;
 }
 
 /* Deep Space Nebula Background Glow */
@@ -241,10 +246,10 @@ body[data-page="home"] {
   top: 0;
   left: 0;
   width: 100vw;
-  height: 100vh;
+  height: 100dvh;
   background: 
-      radial-gradient(circle at 20% 30%, rgba(183, 109, 255, 0.08) 0%, transparent 40%),
-      radial-gradient(circle at 80% 70%, rgba(5, 102, 217, 0.08) 0%, transparent 40%);
+      radial-gradient(circle at 20% 30%, rgba(110, 163, 255, 0.09) 0%, transparent 40%),
+      radial-gradient(circle at 80% 70%, rgba(40, 210, 161, 0.07) 0%, transparent 40%);
   pointer-events: none;
   z-index: 0;
 }
@@ -260,12 +265,12 @@ body[data-page="home"] {
 
 .hero-copy,
 .hero-metrics {
-  background: linear-gradient(180deg, rgba(18, 18, 30, 0.72), rgba(8, 8, 16, 0.58));
+  background: linear-gradient(180deg, rgba(14, 22, 35, 0.76), rgba(8, 14, 24, 0.62));
   border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: var(--r-2xl);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.24);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.22);
 }
 
 .hero-copy {
@@ -291,7 +296,7 @@ body[data-page="home"] {
   letter-spacing: -0.04em;
   margin-bottom: 0.85rem;
   color: var(--text-white);
-  max-width: 15ch;
+  max-width: 14ch;
 }
 
 .hero-copy p {
@@ -398,7 +403,7 @@ body[data-page="home"] {
 
 /* ── Room Card ───────────────────────────────── */
 .room-card {
-  background: rgba(18, 18, 30, 0.6);
+  background: rgba(14, 22, 35, 0.7);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
   border: 1px solid var(--border-dim);
@@ -407,7 +412,7 @@ body[data-page="home"] {
   transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   position: relative;
   overflow: hidden;
-  box-shadow: 0 0 40px rgba(183, 183, 255, 0.02);
+  box-shadow: 0 0 40px rgba(110, 163, 255, 0.02);
 }
 
 .room-card::before {
@@ -415,15 +420,15 @@ body[data-page="home"] {
   position: absolute;
   top: 0; left: 0; right: 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(168, 85, 247, 0.8), transparent);
+  background: linear-gradient(90deg, transparent, rgba(110, 163, 255, 0.8), transparent);
   opacity: 0;
   transform: translateX(-100%);
   transition: opacity 0.4s, transform 0.6s ease-in-out;
 }
 
 .room-card:hover { 
-  border-color: rgba(168, 85, 247, 0.4); 
-  box-shadow: 0 10px 40px rgba(168, 85, 247, 0.15);
+  border-color: rgba(110, 163, 255, 0.4);
+  box-shadow: 0 10px 40px rgba(110, 163, 255, 0.12);
   transform: translateY(-4px);
 }
 .room-card:hover::before { 
@@ -456,13 +461,13 @@ body[data-page="home"] {
   border-color: transparent;
   background:
     linear-gradient(var(--surface), var(--surface)) padding-box,
-    linear-gradient(135deg, rgba(109, 40, 217, 0.5), rgba(139, 92, 246, 0.3), rgba(167, 139, 250, 0.5)) border-box;
+    linear-gradient(135deg, rgba(47, 99, 246, 0.5), rgba(110, 163, 255, 0.3), rgba(40, 210, 161, 0.35)) border-box;
 }
 
 .room-card-perm:hover {
   background:
     linear-gradient(var(--surface), var(--surface)) padding-box,
-    linear-gradient(135deg, rgba(109, 40, 217, 0.8), rgba(139, 92, 246, 0.5), rgba(167, 139, 250, 0.8)) border-box;
+    linear-gradient(135deg, rgba(47, 99, 246, 0.82), rgba(110, 163, 255, 0.54), rgba(40, 210, 161, 0.55)) border-box;
 }
 
 /* ── Success Modal ────────────────────────────── */
@@ -524,11 +529,11 @@ body[data-page="home"] {
 @media (max-width: 640px) {
   body[data-page="home"] {
     height: auto;
-    min-height: 100vh;
+    min-height: 100dvh;
     overflow: auto;
   }
 
-  .app-shell { flex-direction: column; height: auto; }
+  .app-shell { flex-direction: column; height: auto; min-height: 100dvh; }
 
   /* Hide sidebar, show mobile top bar */
   .home-sidebar {
@@ -542,7 +547,7 @@ body[data-page="home"] {
 
   .mobile-topbar { display: flex; }
 
-  .home-content { min-height: calc(100vh - 60px); }
+  .home-content { min-height: calc(100dvh - 60px); }
 
   .hero-strip {
     grid-template-columns: 1fr;
@@ -572,4 +577,11 @@ body[data-page="home"] {
   .room-panel { padding: 0 1.25rem 2rem; }
 
   .home-footer { padding: 1rem 1.25rem 2rem; }
+}
+
+@supports (height: 100dvh) {
+  body[data-page="home"] {
+    min-height: 100dvh;
+    height: 100dvh;
+  }
 }

@@ -110,7 +110,7 @@
           <button class="csidebar-action-btn" id="voice-btn" title="Voice call">
             🔋 <span>Voice</span>
           </button>
-          <button class="csidebar-action-btn" onclick="showModal('privacy-tips-modal')" title="Privacy Tips">
+          <button class="csidebar-action-btn" id="privacy-tips-btn" title="Privacy Tips">
             🛡 <span>Privacy</span>
           </button>
           <button class="csidebar-action-btn" id="theme-btn" title="Change Theme">
@@ -187,12 +187,6 @@
 
       <!-- ══ Chat Content ══ -->
       <div id="chat-main">
-
-        <!-- Search bar (hidden by default) -->
-        <div id="search-bar">
-          <input type="text" id="search-input" placeholder="Search messages..." autocomplete="off" />
-          <button class="btn-icon" onclick="searchMessages('');document.getElementById('search-input').value=''">✕</button>
-        </div>
 
         <!-- Typing indicator -->
         <div id="typing-indicator">

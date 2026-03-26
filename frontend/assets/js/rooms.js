@@ -170,14 +170,7 @@ async function fetchPlatformMessages() {
 }
 
 async function resolvePermanentRoomRole(slug, preferredRole = 'guest') {
-  const ownerToken = sessionStorage.getItem('ownerToken_' + slug);
-  if (!ownerToken) return preferredRole;
-  try {
-    const isOwner = await verifyOwnerToken(slug, ownerToken);
-    return isOwner ? 'host' : preferredRole;
-  } catch (e) {
-    return preferredRole;
-  }
+  return preferredRole;
 }
 
 function buildPermanentEventId(event) {

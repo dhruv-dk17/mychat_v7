@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Mychat — Private · Encrypted · Zero Trace</title>
-  <meta name="description" content="Mychat v7 — End-to-end encrypted P2P messaging. No servers. No logs. Total privacy." />
+  <title>Mychat — Private Operations Rooms</title>
+  <meta name="description" content="Mychat v7 — private operations rooms with encrypted delivery, password-protected entry, and rolling 7-day room history." />
   <meta name="theme-color" content="#080810" />
 
   <!-- Fonts CDN -->
@@ -69,7 +69,7 @@
         </button>
         <button class="sidebar-nav-item" data-room="permanent" id="nav-permanent">
           <span class="sidebar-nav-icon">⚡</span>
-          <span class="sidebar-nav-label">Permanent Room</span>
+          <span class="sidebar-nav-label">Operations Room</span>
         </button>
       </nav>
 
@@ -123,10 +123,10 @@
       <section class="hero-strip" aria-label="Product highlights">
         <div class="hero-copy">
           <div class="hero-eyebrow">Private infrastructure, public polish</div>
-          <h1>Own the conversation without losing the experience.</h1>
+          <h1>Run sensitive coordination without handing your workflow to someone else.</h1>
           <p>
-            Mychat combines P2P privacy with a premium room dashboard, permanent spaces,
-            and quick-launch room modes for teams that want speed without surveillance.
+            Mychat blends P2P privacy, password-protected operations rooms, and a rolling
+            7-day encrypted history for teams coordinating work that should stay contained.
           </p>
         </div>
         <div class="hero-metrics">
@@ -182,7 +182,7 @@
           <!-- Logged out view -->
           <div id="perm-logged-out-view">
             <center style="margin: 1.5rem 0;">
-              <p style="font-size: 0.85rem; color: var(--text-dim); margin-bottom: 1rem;">Sign in to create &amp; manage your permanent rooms.</p>
+              <p style="font-size: 0.85rem; color: var(--text-dim); margin-bottom: 1rem;">Sign in to create and manage private operations rooms with rolling 7-day history.</p>
               <button class="btn btn-primary w-100" id="open-auth-permanent-btn">Sign in / Register</button>
             </center>
           </div>
@@ -190,7 +190,7 @@
           <!-- Logged in view -->
           <div id="perm-logged-in-view" style="display:none;">
             <button class="btn btn-primary w-100" id="open-dashboard-btn" style="margin-top:0.75rem; margin-bottom:1rem">
-              ◎ Open Dashboard
+              Open Room Console
             </button>
           </div>
 
@@ -212,7 +212,7 @@
 
       <!-- Footer -->
       <div class="home-footer">
-        Mychat v7 · All data P2P · No server logs · <a href="#" onclick="showModal('privacy-tips-modal'); return false;" style="color:var(--accent); text-decoration:none;">Privacy Tips</a>
+        Mychat v7 · Direct delivery where possible · 7-day rolling room history · <a href="#" onclick="showModal('privacy-tips-modal'); return false;" style="color:var(--accent); text-decoration:none;">Privacy Tips</a>
       </div>
 
     </main>
@@ -238,7 +238,7 @@
       <div class="modal-subtitle">Stay safe while using Mychat.</div>
       <ul style="margin: 1rem 0; padding-left: 1.2rem; font-size: 0.9rem; line-height: 1.6; color: var(--text-dim);">
         <li><strong>Anonymity First:</strong> Use a pseudonym. Avoid names that link to your social media.</li>
-        <li><strong>Zero Trace:</strong> Permanent rooms store history in the database (encrypted). Private rooms are P2P only and leave no trace.</li>
+        <li><strong>History Window:</strong> Operations room messages stay encrypted and auto-expire after 7 days. Private rooms remain live-only.</li>
         <li><strong>Verification:</strong> Never share sensitive documents or location data with strangers.</li>
         <li><strong>Security:</strong> Save your owner tokens offline. We cannot recover them.</li>
         <li><strong>Scams:</strong> Mychat staff will NEVER ask for your password or token.</li>
@@ -255,7 +255,7 @@
   <div class="modal-backdrop" id="success-modal">
     <div class="modal-box">
       <div class="modal-title">✓ Room Registered!</div>
-      <div class="modal-subtitle">Your permanent room is ready. Save your owner token — it cannot be recovered.</div>
+      <div class="modal-subtitle">Your operations room is ready. Save your owner token — it cannot be recovered.</div>
 
       <div style="margin-bottom:0.75rem">
         <div class="input-label" style="margin-bottom:0.35rem">Room ID</div>
@@ -321,12 +321,12 @@
   <div class="modal-backdrop" id="dashboard-modal">
     <div class="modal-box" style="width: 440px; max-height: 90vh; overflow-y: auto;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
-        <div class="modal-title">Your Permanent Rooms</div>
+        <div class="modal-title">Your Operations Rooms</div>
         <button class="btn btn-ghost" style="border:none; padding:10px;" onclick="hideModal('dashboard-modal')">✕</button>
       </div>
       
       <!-- Create Room Form inside Dashboard -->
-      <div class="card-desc" style="margin-bottom:1rem;">Create a new permanent room:</div>
+      <div class="card-desc" style="margin-bottom:1rem;">Create a new operations room:</div>
       <div style="display:flex;flex-direction:column;gap:0.5rem; margin-bottom:1.5rem; padding:1rem; background:rgba(255,255,255,0.03); border-radius:var(--r-md); border:1px solid rgba(255,255,255,0.08);">
         <input type="text" class="input-field" id="dashboard-new-slug" placeholder="Room ID (3-8 chars, a-z 0-9)" maxlength="8" autocomplete="off" spellcheck="false" />
         <div class="input-pw-wrap">
@@ -372,7 +372,7 @@
       const panels = {
         private: { icon: '🔒', title: 'Private Room', sub: 'Direct P2P connection. End-to-end encrypted. 2 people max.' },
         group:   { icon: '👥', title: 'Group Room',   sub: 'Star topology. Host relays messages. Up to 50 participants.' },
-        permanent:{ icon: '⚡', title: 'Permanent Room', sub: 'Register a custom Room ID that\'s yours forever. Password protected.' }
+        permanent:{ icon: '⚡', title: 'Operations Room', sub: 'Password-protected shared room with encrypted rolling 7-day history.' }
       };
 
       function switchPanel(room) {

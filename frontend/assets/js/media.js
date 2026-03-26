@@ -7,6 +7,8 @@ let isRecording      = false;
 let activeCall       = null;
 let localStream      = null;
 let callStartTime    = 0;
+let recordingNoticeTimer = null;
+let recordingStartedAt = 0;
 
 // ════════════════════════════════════════════
 // FILE SHARING
@@ -148,7 +150,9 @@ async function startVoiceRecording() {
     mediaRecorder.onstop = () => { stream.getTracks().forEach(t => t.stop()); sendVoiceMessage(); };
     mediaRecorder.start();
     isRecording = true;
+    recordingStartedAt = Date.now();
     document.getElementById('mic-btn')?.classList.add('recording');
+    showRecordingNotice();
     // Auto-stop
     setTimeout(() => { if (isRecording) stopVoiceRecording(); }, CONFIG.VOICE_MAX_MS);
   } catch (e) {
@@ -160,7 +164,9 @@ function stopVoiceRecording() {
   if (mediaRecorder && isRecording) {
     mediaRecorder.stop();
     isRecording = false;
+    recordingStartedAt = 0;
     document.getElementById('mic-btn')?.classList.remove('recording');
+    hideRecordingNotice();
   }
 }
 
@@ -362,8 +368,39 @@ function playRemoteAudio(stream) {
 function stopAllMediaStreams() {
   if (localStream) localStream.getTracks().forEach(t => t.stop());
   if (activeCall)  { try { activeCall.close(); } catch (e) {} }
+  hideRecordingNotice();
+  recordingStartedAt = 0;
+  isRecording = false;
   localStream = null;
   activeCall  = null;
+}
+
+function showRecordingNotice() {
+  const indicator = document.getElementById('recording-indicator');
+  if (!indicator) return;
+  indicator.hidden = false;
+  updateRecordingNotice();
+  if (recordingNoticeTimer) clearInterval(recordingNoticeTimer);
+  recordingNoticeTimer = setInterval(updateRecordingNotice, 1000);
+}
+
+function hideRecordingNotice() {
+  const indicator = document.getElementById('recording-indicator');
+  if (indicator) indicator.hidden = true;
+  if (recordingNoticeTimer) {
+    clearInterval(recordingNoticeTimer);
+    recordingNoticeTimer = null;
+  }
+}
+
+function updateRecordingNotice() {
+  const timer = document.getElementById('recording-timer');
+  if (!timer) return;
+  const elapsedMs = recordingStartedAt ? Date.now() - recordingStartedAt : 0;
+  const elapsedSeconds = Math.max(0, Math.floor(elapsedMs / 1000));
+  const minutes = Math.floor(elapsedSeconds / 60);
+  const seconds = elapsedSeconds % 60;
+  timer.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
 }
 
 // ════════════════════════════════════════════

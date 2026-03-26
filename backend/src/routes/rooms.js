@@ -10,6 +10,8 @@ const registerLimiter = rateLimit({
   message: { error: 'Too many registration attempts. Try again in an hour.' }
 });
 
+const PERMANENT_HISTORY_RETENTION_MS = 7 * 24 * 60 * 60 * 1000;
+
 // GET /api/rooms/check/:slug — availability check
 router.get('/check/:slug', async (req, res) => {
   const slug = req.params.slug?.toLowerCase();
@@ -98,6 +100,14 @@ async function authorizeRoomByPasswordHash(slug, passwordHash) {
   return room.rows[0].slug;
 }
 
+async function purgeExpiredRoomMessages(roomSlug) {
+  const cutoff = Date.now() - PERMANENT_HISTORY_RETENTION_MS;
+  await pool.query(
+    'DELETE FROM room_messages WHERE room_slug = $1 AND created_at < $2',
+    [roomSlug, cutoff]
+  );
+}
+
 // GET /api/rooms/user
 router.get('/user', async (req, res) => {
   const username = req.get('X-Auth-Username');
@@ -127,6 +137,7 @@ router.get('/:slug/messages', async (req, res) => {
     const roomSlug = await authorizeRoomByPasswordHash(slug, passwordHash);
     if (roomSlug === null) return res.status(404).json({ error: 'Room not found' });
     if (roomSlug === false) return res.status(403).json({ error: 'Invalid password' });
+    await purgeExpiredRoomMessages(roomSlug);
 
     const result = await pool.query(
       `SELECT id, event_id, ciphertext, created_at
@@ -168,6 +179,7 @@ router.post('/:slug/messages', async (req, res) => {
     const roomSlug = await authorizeRoomByPasswordHash(slug, passwordHash);
     if (roomSlug === null) return res.status(404).json({ error: 'Room not found' });
     if (roomSlug === false) return res.status(403).json({ error: 'Invalid password' });
+    await purgeExpiredRoomMessages(roomSlug);
 
     await pool.query(
       `INSERT INTO room_messages (room_slug, event_id, ciphertext, created_at)

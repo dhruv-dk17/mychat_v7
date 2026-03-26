@@ -57,6 +57,12 @@
   <!-- ═══════════════════════════════════════
        MAIN CHAT SHELL — Sidebar + Content
   ════════════════════════════════════════ -->
+  <div id="recording-indicator" hidden>
+    <span class="recording-dot"></span>
+    <span class="recording-label">Recording voice message</span>
+    <strong id="recording-timer">0:00</strong>
+  </div>
+
   <div class="chat-shell">
 
     <!-- ── LEFT SIDEBAR ── -->
@@ -318,7 +324,7 @@
     <div class="modal-box" style="text-align:center">
       <div class="loading-spinner" style="margin: 0 auto 1.5rem;"></div>
       <div class="modal-title">Please Wait</div>
-      <div class="modal-subtitle">Waiting for the host to approve your join request...</div>
+      <div class="modal-subtitle">Securing the room connection and syncing participants...</div>
     </div>
   </div>
 

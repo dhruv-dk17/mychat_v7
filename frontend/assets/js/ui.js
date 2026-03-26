@@ -271,14 +271,27 @@ function updateOnlineCount(n) {
   el.textContent = `● ${count} online`;
 }
 
+function syncPermanentParticipantUI() {
+  document.querySelectorAll('.host-only').forEach(el => el.style.display = 'none');
+  document.getElementById('host-badge')?.style.setProperty('display', 'none');
+  document.getElementById('host-controls-section')?.style.setProperty('display', 'none');
+}
+
 function updateHostUI() {
+  if (typeof currentRoomType !== 'undefined' && currentRoomType === 'permanent') {
+    syncPermanentParticipantUI();
+    return;
+  }
   document.querySelectorAll('.host-only').forEach(el => el.style.display = '');
+  document.getElementById('host-controls-section')?.style.setProperty('display', 'block');
   document.getElementById('host-badge')?.style.setProperty('display', 'flex');
   document.querySelector('.room-type-badge');
 }
 
 function updateGuestUI() {
   document.querySelectorAll('.host-only').forEach(el => el.style.display = 'none');
+  document.getElementById('host-badge')?.style.setProperty('display', 'none');
+  document.getElementById('host-controls-section')?.style.setProperty('display', 'none');
 }
 
 function updateMuteUI(muted) {
@@ -299,7 +312,7 @@ function addUserToPanel(peerId, username, role) {
   row.id          = 'user-' + peerId;
 
   const initials = username.slice(0, 2).toUpperCase();
-  const isHost   = role === 'host';
+  const isHost   = role === 'host' && currentRoomType !== 'permanent';
 
   row.innerHTML = `
     <div class="user-avatar">${initials}</div>
@@ -308,7 +321,7 @@ function addUserToPanel(peerId, username, role) {
       <div class="user-role ${isHost ? 'host' : ''}">${isHost ? '👑 Host' : 'Member'}</div>
     </div>
     <div class="dot dot-green" id="ping-${CSS.escape(peerId)}"></div>
-    ${myRole === 'host' && peerId !== peerInstance?.id ? `
+    ${myRole === 'host' && currentRoomType !== 'permanent' && peerId !== peerInstance?.id ? `
     <button class="user-menu-btn" onclick="toggleUserMenu('${peerId}','${escHtml(username)}',this)">···</button>
     ` : ''}
   `;
@@ -376,41 +389,51 @@ function initSearchUI() {
   const feed = document.getElementById('chat-main');
   if (!btn || !feed) return;
 
-  // Create search bar DOM
-  const searchBar = document.createElement('div');
-  searchBar.id = 'search-bar';
-  searchBar.style.cssText = 'display: none; padding: 0.75rem 1rem; background: rgba(11, 19, 30, 0.94); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border-dim); box-shadow: 0 18px 40px rgba(0, 0, 0, 0.24);';
-  searchBar.innerHTML = `
-    <div style="display: flex; gap: 10px; align-items: center;">
-      <input type="text" id="search-input" placeholder="Search messages" style="flex: 1; padding: 10px 12px; border-radius: var(--r-md); border: 1px solid var(--border-dim); background: rgba(255, 255, 255, 0.04); color: var(--text);">
-      <button class="btn btn-sm" id="search-close-btn" style="padding: 8px 12px; font-size: 0.8rem;">Close</button>
-    </div>
-  `;
-  feed.insertBefore(searchBar, feed.firstChild);
+  let searchBar = document.getElementById('search-bar');
+  if (!searchBar) {
+    searchBar = document.createElement('div');
+    searchBar.id = 'search-bar';
+    searchBar.hidden = true;
+    searchBar.style.cssText = 'padding: 0.75rem 1rem; background: rgba(11, 19, 30, 0.94); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border-dim); box-shadow: 0 18px 40px rgba(0, 0, 0, 0.24);';
+    searchBar.innerHTML = `
+      <div style="display: flex; gap: 10px; align-items: center;">
+        <input type="text" id="search-input" placeholder="Search messages" style="flex: 1; padding: 10px 12px; border-radius: var(--r-md); border: 1px solid var(--border-dim); background: rgba(255, 255, 255, 0.04); color: var(--text);">
+        <button class="btn btn-sm" id="search-close-btn" style="padding: 8px 12px; font-size: 0.8rem;">Close</button>
+      </div>
+    `;
+    feed.insertBefore(searchBar, feed.firstChild);
+  }
 
   const input = searchBar.querySelector('#search-input');
   const closeBtn = searchBar.querySelector('#search-close-btn');
+  if (!input || !closeBtn || btn.dataset.searchBound === 'true') return;
 
-  btn.addEventListener('click', () => {
-    if (searchBar.style.display === 'none') {
-      searchBar.style.display = 'block';
-      input.focus();
-    } else {
-      searchBar.style.display = 'none';
-      if (typeof searchMessages === 'function') searchMessages(''); // Clear search
-      input.value = '';
-    }
-  });
-
-  closeBtn.addEventListener('click', () => {
-    searchBar.style.display = 'none';
-    if (typeof searchMessages === 'function') searchMessages('');
+  const closeSearch = () => {
+    searchBar.hidden = true;
+    searchBar.classList.remove('search-visible');
     input.value = '';
+    if (typeof searchMessages === 'function') searchMessages('');
+  };
+
+  btn.dataset.searchBound = 'true';
+  btn.addEventListener('click', () => {
+    if (!searchBar.hidden) {
+      closeSearch();
+      return;
+    }
+    searchBar.hidden = false;
+    searchBar.classList.add('search-visible');
+    input.focus();
+    input.select();
   });
 
+  closeBtn.addEventListener('click', closeSearch);
+  input.addEventListener('input', () => {
+    if (typeof searchMessages === 'function') searchMessages(input.value.trim());
+  });
   input.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-      if (typeof searchMessages === 'function') searchMessages(input.value);
+    if (e.key === 'Escape') {
+      closeSearch();
     }
   });
 }

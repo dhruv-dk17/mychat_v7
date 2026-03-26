@@ -70,6 +70,7 @@ async function initDB() {
 
     await client.query(`CREATE INDEX IF NOT EXISTS idx_rooms_slug ON rooms(slug)`);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_room_messages_room_id ON room_messages(room_slug, id)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_room_messages_room_created_at ON room_messages(room_slug, created_at)`);
     await client.query(`CREATE UNIQUE INDEX IF NOT EXISTS idx_room_messages_unique_event ON room_messages(room_slug, event_id)`);
     console.log('✓ Database ready');
   } finally {

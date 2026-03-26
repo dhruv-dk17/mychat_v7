@@ -7,7 +7,7 @@
 document.addEventListener('DOMContentLoaded', () => {
   const page = document.body.dataset.page;
   if (page === 'home') {
-    document.title = 'Mychat - Private, Encrypted, Zero Trace';
+    document.title = 'Mychat - Private Operations Rooms';
   } else if (page === 'chat') {
     document.title = 'Mychat - Chat Room';
   }
@@ -20,7 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const privacyTip = document.getElementById('privacy-tip');
   if (privacyTip) {
-    privacyTip.textContent = 'Tip: Keep your identity minimal and share room links only with people you trust.';
+    privacyTip.textContent = 'Tip: Use minimal identity, keep room passwords scoped, and rotate access when the operation changes.';
   }
 
   checkPlatformMessages().catch(() => {});
@@ -243,7 +243,7 @@ async function initHomePage() {
     } catch (e) {
       err.textContent = e.message;
     } finally {
-      btn.disabled = false; btn.textContent = '◎ Register & Host';
+      btn.disabled = false; btn.textContent = 'Open Operations Room';
     }
   });
 
@@ -265,7 +265,7 @@ async function initHomePage() {
         d.innerHTML = `
           <div style="font-weight:600; font-family:var(--ff-mono);">${r.slug}</div>
           <div style="display:flex; gap:0.5rem;">
-            <button class="btn btn-ghost btn-sm" onclick="joinDashboardRoom('${r.slug}')">Host / Join</button>
+            <button class="btn btn-ghost btn-sm" onclick="joinDashboardRoom('${r.slug}')">Open Room</button>
             <button class="btn btn-ghost btn-sm" style="color:var(--red);" onclick="attemptDeleteRoom('${r.slug}')">🗑</button>
           </div>
         `;
@@ -277,7 +277,7 @@ async function initHomePage() {
   }
 
   window.joinDashboardRoom = (slug) => {
-    const pw = prompt('Enter room password to join/host:');
+    const pw = prompt('Enter room password to open this room:');
     if (!pw) return;
     const session = getUserSession();
     // Use session username as joining name, or 'Host' if host
@@ -285,7 +285,7 @@ async function initHomePage() {
     verifyRoomPassword(slug, pw).then(valid => {
       if (valid) {
         sessionStorage.setItem('joinPassword_' + slug, pw);
-        navigateToChat(slug, 'permanent', session ? session.username : 'User', 'host');
+        navigateToChat(slug, 'permanent', session ? session.username : 'User', 'guest');
       }
       else showToast('Incorrect password', 'error');
     }).catch(() => showToast('Error joining', 'error'));
@@ -370,8 +370,7 @@ async function initHomePage() {
       const valid = await verifyRoomPassword(slug, pw);
       if (!valid) { showErr('Incorrect password'); btn.disabled = false; btn.textContent = '→ Join Room'; return; }
       sessionStorage.setItem('joinPassword_' + slug, pw);
-      const role = await resolvePermanentRoomRole(slug, 'guest');
-      navigateToChat(slug, 'permanent', name, role);
+      navigateToChat(slug, 'permanent', name, 'guest');
     } catch (e) {
       showErr('Network error — is the server awake?');
       btn.disabled = false; btn.textContent = '→ Join Room';
@@ -390,7 +389,7 @@ async function initHomePage() {
       copyToClipboard(ownerToken, e.currentTarget);
     document.getElementById('enter-room-btn').onclick = () => {
       hideModal('success-modal');
-      navigateToChat(slug, 'permanent', session?.username || 'Host', 'host');
+      navigateToChat(slug, 'permanent', session?.username || 'Member', 'guest');
     };
     showModal('success-modal');
   }
@@ -540,7 +539,7 @@ async function initChatPage() {
 
   currentRoomType = params.type || 'private';
   const isPerm  = params.type === 'permanent';
-  let isHost  = params.role === 'host';
+  let isHost  = params.role === 'host' && !isPerm;
   const hId     = hostPeerId(params.roomId, isPerm);
   const gId     = guestPeerId(params.roomId, isPerm);
   let storedPermPassword = isPerm ? (sessionStorage.getItem('joinPassword_' + params.roomId) || '') : '';
@@ -565,12 +564,7 @@ async function initChatPage() {
     }
   }
 
-  if (isPerm) {
-    isHost = await resolvePermanentRoomRole(params.roomId, isHost ? 'host' : 'guest') === 'host';
-    currentPermanentPassword = storedPermPassword;
-  } else {
-    currentPermanentPassword = '';
-  }
+  currentPermanentPassword = isPerm ? storedPermPassword : '';
   permanentHistoryCursor = 0;
   handledPermanentEventIds = new Set();
   stopPermanentHistoryPolling();
@@ -593,7 +587,7 @@ async function initChatPage() {
   if (badge) badge.textContent = (params.type || 'PRIVATE').toUpperCase();
 
   // Add self to user panel
-  addUserToPanel('self', params.username, isHost ? 'host' : 'guest');
+  addUserToPanel('self', params.username, isPerm ? 'guest' : (isHost ? 'host' : 'guest'));
   updateOnlineCount(1);
   
   if (currentRoomType === 'group') {
@@ -602,7 +596,10 @@ async function initChatPage() {
   }
 
   // Init peer
-  if (isHost) {
+  if (isPerm) {
+    await initPermanentParticipant(params.username, params.roomId, storedPermPassword, e2eeKey, fallbackRoomKeys);
+    if (typeof syncPermanentParticipantUI === 'function') syncPermanentParticipantUI();
+  } else if (isHost) {
     await initAsHost(hId, params.username, params.roomId, e2eeKey, fallbackRoomKeys);
     updateHostUI();
   } else {

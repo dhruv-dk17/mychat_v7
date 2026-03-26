@@ -29,6 +29,30 @@ async function loadPeerJS() {
   });
 }
 
+async function createPeerInstance(peerId, onReady, onLateError) {
+  await loadPeerJS();
+  return new Promise((resolve, reject) => {
+    let settled = false;
+    const peer = new Peer(peerId, CONFIG.PEERJS_CONFIG);
+    peer.on('open', id => {
+      if (typeof onReady === 'function') onReady(id);
+      if (!settled) {
+        settled = true;
+        resolve(peer);
+      }
+    });
+    peer.on('error', err => {
+      if (!settled) {
+        settled = true;
+        try { peer.destroy(); } catch (e) {}
+        reject(err);
+        return;
+      }
+      if (typeof onLateError === 'function') onLateError(err);
+    });
+  });
+}
+
 // ── Init as Host ──────────────────────────────────────────────────
 function setRoomKeys(primaryKey, fallbackKeys = []) {
   roomKey = primaryKey || '';
@@ -53,8 +77,7 @@ async function decryptWithRoomKeys(payload) {
   throw lastError || new Error('No valid room key');
 }
 
-async function initAsHost(peerId, username, roomId, keyForE2EE, fallbackRoomKeys = []) {
-  await loadPeerJS();
+async function initAsHost(peerId, username, roomId, keyForE2EE, fallbackRoomKeys = [], transportOnly = false) {
   myRole = 'host';
   myUsername = username;
   currentRoomId = roomId;
@@ -63,19 +86,20 @@ async function initAsHost(peerId, username, roomId, keyForE2EE, fallbackRoomKeys
   stopPermanentReconnectLoop();
   setRoomKeys(keyForE2EE || roomId, fallbackRoomKeys);
 
-  peerInstance = new Peer(peerId, CONFIG.PEERJS_CONFIG);
-  peerInstance.on('open', id => {
-    console.log('Host open:', id);
-    updateConnectionUI('hosting');
-  });
+  peerInstance = await createPeerInstance(
+    peerId,
+    id => {
+      console.log('Host open:', id);
+      updateConnectionUI(transportOnly ? 'connected' : 'hosting');
+    },
+    handlePeerError
+  );
   peerInstance.on('connection', handleIncomingConnection);
   peerInstance.on('call', handleIncomingCall);
-  peerInstance.on('error', handlePeerError);
 }
 
 // ── Init as Guest ─────────────────────────────────────────────────
 async function initAsGuest(hostPeerIdStr, myPeerIdStr, username, roomId, passwordForPerm, keyForE2EE, fallbackRoomKeys = []) {
-  await loadPeerJS();
   myRole = 'guest';
   myUsername = username;
   currentRoomId = roomId;
@@ -84,22 +108,42 @@ async function initAsGuest(hostPeerIdStr, myPeerIdStr, username, roomId, passwor
   stopPermanentReconnectLoop();
   setRoomKeys(keyForE2EE || roomId, fallbackRoomKeys);
 
-  peerInstance = new Peer(myPeerIdStr, CONFIG.PEERJS_CONFIG);
-  peerInstance.on('open', () => {
-    showModal('waiting-host-modal');
-    initiateHandshake(hostPeerIdStr, passwordForPerm, true);
-  });
-  peerInstance.on('call', handleIncomingCall);
-  peerInstance.on('error', err => {
-    if (err?.type === 'peer-unavailable' && currentRoomType === 'permanent') {
-      reconnectInFlight = false;
-      hideModal('waiting-host-modal');
-      showToast('Host is offline. Staying in the room and retrying...', 'warning');
-      schedulePermanentReconnect();
-      return;
+  peerInstance = await createPeerInstance(
+    myPeerIdStr,
+    () => {
+      showModal('waiting-host-modal');
+      initiateHandshake(hostPeerIdStr, passwordForPerm, true);
+    },
+    err => {
+      if (err?.type === 'peer-unavailable' && currentRoomType === 'permanent') {
+        reconnectInFlight = false;
+        hideModal('waiting-host-modal');
+        if (shouldClaimPermanentTransportHost()) {
+          restartPermanentTransportAsHost().catch(handlePeerError);
+          return;
+        }
+        showToast('Room relay is shifting. Reconnecting you automatically...', 'warning');
+        schedulePermanentReconnect();
+        return;
+      }
+      handlePeerError(err);
     }
-    handlePeerError(err);
-  });
+  );
+  peerInstance.on('call', handleIncomingCall);
+}
+
+async function initPermanentParticipant(username, roomId, passwordForPerm, keyForE2EE, fallbackRoomKeys = []) {
+  const fixedHostId = hostPeerId(roomId, true);
+  const fallbackPeerId = guestPeerId(roomId, true);
+  try {
+    await initAsHost(fixedHostId, username, roomId, keyForE2EE, fallbackRoomKeys, true);
+    permanentRoomPassword = passwordForPerm || '';
+    if (typeof syncPermanentParticipantUI === 'function') syncPermanentParticipantUI();
+    return;
+  } catch (err) {
+    if (err?.type !== 'unavailable-id') throw err;
+  }
+  await initAsGuest(fixedHostId, fallbackPeerId, username, roomId, passwordForPerm, keyForE2EE, fallbackRoomKeys);
 }
 
 function initiateHandshake(hostId, password, showWaitingModal = false) {
@@ -141,6 +185,56 @@ function schedulePermanentReconnect() {
   }, CONFIG.PERMANENT_RECONNECT_MS);
 }
 
+function shouldClaimPermanentTransportHost() {
+  if (currentRoomType !== 'permanent' || !peerInstance?.id) return false;
+  const candidateIds = [...connectedPeers.entries()]
+    .filter(([, peer]) => peer.role !== 'host')
+    .map(([peerId]) => peerId)
+    .concat(peerInstance.id)
+    .filter(Boolean)
+    .sort();
+  return candidateIds[0] === peerInstance.id;
+}
+
+async function restartPermanentTransportAsHost() {
+  if (currentRoomType !== 'permanent' || !currentRoomId) return;
+
+  const roomId = currentRoomId;
+  const username = myUsername;
+  const password = permanentRoomPassword;
+  const primaryKey = roomKey || password || roomId;
+  const fallbackKeys = roomKeyCandidates.filter(candidate => candidate && candidate !== primaryKey);
+
+  stopPermanentReconnectLoop();
+  pendingJoins.clear();
+  acceptedPeers.clear();
+  connectedPeers.forEach(({ conn }) => {
+    try { conn.close(); } catch (e) {}
+  });
+  connectedPeers.clear();
+  try {
+    peerInstance?.destroy();
+  } catch (e) {}
+  peerInstance = null;
+
+  document.getElementById('user-list')?.replaceChildren();
+  addUserToPanel('self', username, 'guest');
+  updateOnlineCount(1);
+
+  try {
+    await initAsHost(hostPeerId(roomId, true), username, roomId, primaryKey, fallbackKeys, true);
+    permanentRoomPassword = password || '';
+    if (typeof syncPermanentParticipantUI === 'function') syncPermanentParticipantUI();
+    showToast('Room relay recovered automatically.', 'success');
+  } catch (err) {
+    if (err?.type === 'unavailable-id') {
+      await initAsGuest(hostPeerId(roomId, true), guestPeerId(roomId, true), username, roomId, password, primaryKey, fallbackKeys);
+      return;
+    }
+    throw err;
+  }
+}
+
 // ── Handle incoming connections (HOST side) ───────────────────────
 function handleIncomingConnection(conn) {
   if (isRoomLocked) {
@@ -158,7 +252,12 @@ function handleIncomingConnection(conn) {
         if (msg.type !== 'join_request') { conn.close(); return; }
 
         // For permanent rooms — verify password
-        if (currentRoomType === 'permanent' && msg.passwordHash) {
+        if (currentRoomType === 'permanent') {
+          if (!msg.passwordHash) {
+            conn.send(JSON.stringify({ type: 'join_response', accepted: false, reason: 'Missing password' }));
+            conn.close();
+            return;
+          }
           try {
             const res = await fetch(`${CONFIG.API_BASE}/rooms/verify-password`, {
               method: 'POST',
@@ -171,6 +270,8 @@ function handleIncomingConnection(conn) {
               conn.close();
               return;
             }
+            finalizeJoin(conn, msg.username, true);
+            return;
           } catch (e) {
             conn.send(JSON.stringify({ type: 'join_response', accepted: false, reason: 'Server error' }));
             conn.close();
@@ -247,6 +348,10 @@ function handleIncomingMessage(msg, conn) {
     if (myRole !== 'host') return;
     if (acceptedPeers.has(conn.peer)) {
       conn.send(JSON.stringify({ type: 'join_response', accepted: true }));
+      return;
+    }
+    if (currentRoomType === 'permanent') {
+      finalizeJoin(conn, msg.username, true);
       return;
     }
     pendingJoins.set(conn.peer, conn);
@@ -365,7 +470,11 @@ function broadcastUserList() {
   const users = [...connectedPeers.entries()].map(([id, p]) => ({
     peerId: id, username: p.username, role: p.role
   }));
-  users.push({ peerId: peerInstance.id, username: myUsername, role: 'host' });
+  users.push({
+    peerId: peerInstance.id,
+    username: myUsername,
+    role: currentRoomType === 'permanent' ? 'guest' : 'host'
+  });
   broadcastToPeers({ type: 'user_list', users });
 }
 
@@ -396,7 +505,11 @@ function handlePeerDisconnect(peerId) {
 
   if (currentRoomType === 'permanent') {
     hideModal('waiting-host-modal');
-    showToast('Host is offline. The room stays open and will reconnect automatically.', 'warning');
+    if (shouldClaimPermanentTransportHost()) {
+      restartPermanentTransportAsHost().catch(handlePeerError);
+      return;
+    }
+    showToast('Room relay moved. Reconnecting automatically...', 'warning');
     schedulePermanentReconnect();
     return;
   }
@@ -413,6 +526,11 @@ function considerHostTransfer() {
 
 function becomeHost() {
   myRole = 'host';
+  if (currentRoomType === 'permanent') {
+    if (typeof syncPermanentParticipantUI === 'function') syncPermanentParticipantUI();
+    broadcastUserList();
+    return;
+  }
   updateHostUI();
   addSystemMessage(`${myUsername} is now the host`);
   broadcastUserList();

@@ -687,13 +687,39 @@ function showContextMenu(e, msg, isOwn) {
     menu.appendChild(btn);
   });
 
-  const x = Math.min(e.clientX || e.pageX, window.innerWidth - 180);
-  const y = Math.min(e.clientY || e.pageY, window.innerHeight - 180);
-  menu.style.left = `${x}px`;
-  menu.style.top = `${y}px`;
-
   document.body.appendChild(menu);
   _activeCtxMenu = menu;
+
+  const anchorEl =
+    (e?.target instanceof Element && e.target.closest('.msg-bubble')) ||
+    document.querySelector(`[data-msg-id="${msg.id}"] .msg-bubble`) ||
+    (e?.target instanceof Element && e.target.closest('.msg'));
+
+  const menuRect = menu.getBoundingClientRect();
+  const anchorRect = anchorEl?.getBoundingClientRect();
+  const viewportPadding = 12;
+  const bubbleGap = 10;
+
+  let left = viewportPadding;
+  let top = viewportPadding;
+
+  if (anchorRect) {
+    left = isOwn ? (anchorRect.right - menuRect.width) : anchorRect.left;
+
+    const preferredTop = anchorRect.top - menuRect.height - bubbleGap;
+    const fallbackTop = anchorRect.bottom + bubbleGap;
+    top = preferredTop >= viewportPadding ? preferredTop : fallbackTop;
+  } else {
+    left = (e?.clientX || e?.pageX || viewportPadding) - (isOwn ? menuRect.width : 0);
+    top = (e?.clientY || e?.pageY || viewportPadding) + bubbleGap;
+  }
+
+  left = Math.max(viewportPadding, Math.min(left, window.innerWidth - menuRect.width - viewportPadding));
+  top = Math.max(viewportPadding, Math.min(top, window.innerHeight - menuRect.height - viewportPadding));
+
+  menu.style.left = `${left}px`;
+  menu.style.top = `${top}px`;
+
   setTimeout(() => document.addEventListener('click', closeContextMenu, { once: true }), 0);
 }
 

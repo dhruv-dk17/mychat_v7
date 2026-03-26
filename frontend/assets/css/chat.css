@@ -351,13 +351,11 @@ body[data-page="chat"]::before {
   flex-direction: column;
   max-width: 75%;
   flex: 0 0 auto;
-  height: max-content;
   animation: msg-pop 0.3s var(--ease-snap);
 }
 
 .msg-bubble {
   flex: 0 0 auto;
-  height: max-content;
 }
 
 .msg-text {

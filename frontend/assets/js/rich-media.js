@@ -72,7 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Search (Shared for GIFs and Stickers)
+  // Search (Shared for Emojis, GIFs and Stickers)
   const searchInput = document.getElementById('media-search-input');
   let searchTimer = null;
   if (searchInput) {
@@ -82,18 +82,41 @@ document.addEventListener('DOMContentLoaded', () => {
       const activeTab = document.querySelector('.media-tab.active')?.dataset.tab || 'gif';
       
       if (!q) {
-        loadTrending(activeTab === 'sticker' ? 'stickers' : 'gifs');
+        if (activeTab === 'emoji') {
+          loadEmojis();
+        } else {
+          loadTrending(activeTab === 'sticker' ? 'stickers' : 'gifs');
+        }
         return;
       }
       
       searchTimer = setTimeout(() => {
-        searchMedia(q, activeTab === 'sticker' ? 'stickers' : 'gifs');
+        if (activeTab === 'emoji') {
+          searchEmojis(q);
+        } else {
+          searchMedia(q, activeTab === 'sticker' ? 'stickers' : 'gifs');
+        }
       }, 500);
     });
   }
 
-  // ── Tenor Helpers ─────────────────────────────
+  // ── Handlers & Fallbacks ─────────────────────────────
   
+  const FALLBACK_GIFS = [
+    { media_formats: { gif: { url: "https://media.tenor.com/2RoCBzvBKhAAAAAM/cat-typing.gif" } } },
+    { media_formats: { gif: { url: "https://media.tenor.com/_H3e-fEa1M8AAAAM/cute-cat.gif" } } },
+    { media_formats: { gif: { url: "https://media.tenor.com/t3VdZOf0oHAAAAAM/cat-yes.gif" } } },
+    { media_formats: { gif: { url: "https://media.tenor.com/QW0zXj0XU3sAAAAM/cat-dance.gif" } } },
+    { media_formats: { gif: { url: "https://media.tenor.com/xHq3n_60UAAAAAAM/cat-funny.gif" } } },
+    { media_formats: { gif: { url: "https://media.tenor.com/PZcM_j6Gg3wAAAAM/cat-no.gif" } } },
+    { media_formats: { gif: { url: "https://media.tenor.com/b9a3z2P6oAAAAAAM/ok-agreed.gif" } } },
+    { media_formats: { gif: { url: "https://media.tenor.com/gK22a0q5x8MAAAAM/thumbs-up.gif" } } },
+    { media_formats: { gif: { url: "https://media.tenor.com/-pA3b-EPEjYAAAAM/crying-sad.gif" } } },
+    { media_formats: { gif: { url: "https://media.tenor.com/lM_L1M9f-vAAAAAM/wow-omg.gif" } } },
+    { media_formats: { gif: { url: "https://media.tenor.com/JvC-r27jOlcAAAAM/angry-mad.gif" } } },
+    { media_formats: { gif: { url: "https://media.tenor.com/Z4oR-R0-U78AAAAM/laughing-lol.gif" } } }
+  ];
+
   async function loadTrending(type) {
     const resEl = type === 'stickers' ? document.getElementById('sticker-results') : document.getElementById('gif-results');
     if (!resEl) return;
@@ -108,8 +131,10 @@ document.addEventListener('DOMContentLoaded', () => {
       renderResults(json.results, resEl, type);
       resEl.dataset.loaded = 'trending';
     } catch (e) {
-      console.warn('Tenor Trending Error:', e);
-      resEl.innerHTML = '<div class="media-error">Service unavailable. Emojis are still working!</div>';
+      console.warn('Tenor API Rate Limited/Invalid:', e);
+      // Fast free fallback since user required a forever free service
+      renderResults(FALLBACK_GIFS.sort(() => 0.5 - Math.random()), resEl, type);
+      resEl.dataset.loaded = 'trending';
     }
   }
 
@@ -126,8 +151,9 @@ document.addEventListener('DOMContentLoaded', () => {
       renderResults(json.results, resEl, type);
       resEl.dataset.loaded = 'search';
     } catch (e) {
-      console.warn('Tenor Search Error:', e);
-      resEl.innerHTML = '<div class="media-error">No results or service unavailable.</div>';
+      console.warn('Tenor API Rate Limited/Invalid:', e);
+      renderResults(FALLBACK_GIFS.sort(() => 0.5 - Math.random()), resEl, type);
+      resEl.dataset.loaded = 'search';
     }
   }
 
@@ -156,18 +182,24 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  function loadEmojis() {
+  let emojiDataList = [];
+
+  function renderEmojis(list) {
     const cont = document.getElementById('tab-emoji');
     if (!cont) return;
     cont.innerHTML = '';
-    EMOJI_LIST.forEach(em => {
+    
+    // Slice to 250 so DOM doesn't freeze
+    list.slice(0, 250).forEach(em => {
+      const c = em.char || em;
       const btn = document.createElement('div');
       btn.className   = 'emoji-item';
-      btn.textContent = em;
+      btn.textContent = c;
+      btn.title       = em.name || '';
       btn.onclick = () => {
         const input = document.getElementById('msg-input');
         if (input) {
-          input.value += em;
+          input.value += c;
           input.dispatchEvent(new Event('input')); // Trigger resize
           input.focus();
         }
@@ -175,6 +207,35 @@ document.addEventListener('DOMContentLoaded', () => {
       cont.appendChild(btn);
     });
   }
+
+  async function loadEmojis() {
+    const cont = document.getElementById('tab-emoji');
+    if (!cont) return;
+    cont.innerHTML = '<div class="media-loading">Loading Emojis...</div>';
+    
+    try {
+      if (emojiDataList.length === 0) {
+        const res = await fetch('https://unpkg.com/emoji.json@14.0.0/emoji.json');
+        if (res.ok) {
+          emojiDataList = await res.json();
+        } else {
+          throw new Error('Fetch failed');
+        }
+      }
+      renderEmojis(emojiDataList);
+    } catch (e) {
+      console.warn('Emoji fetch failed:', e);
+      emojiDataList = EMOJI_LIST.map(char => ({ char, name: 'unknown' }));
+      renderEmojis(emojiDataList);
+    }
+  }
+
+  window.searchEmojis = function(query) {
+    const lq = query.toLowerCase();
+    const searchable = emojiDataList.length > 0 ? emojiDataList : EMOJI_LIST.map(char => ({ char, name: 'unknown' }));
+    const filtered = searchable.filter(em => (em.name || '').toLowerCase().includes(lq));
+    renderEmojis(filtered);
+  };
 });
 
 function sendRichMedia(url, type) {

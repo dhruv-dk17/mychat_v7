@@ -110,10 +110,7 @@ async function initAsGuest(hostPeerIdStr, myPeerIdStr, username, roomId, passwor
 
   peerInstance = await createPeerInstance(
     myPeerIdStr,
-    () => {
-      showModal('waiting-host-modal');
-      initiateHandshake(hostPeerIdStr, passwordForPerm, true);
-    },
+    null,
     err => {
       if (err?.type === 'peer-unavailable' && currentRoomType === 'permanent') {
         reconnectInFlight = false;
@@ -130,6 +127,8 @@ async function initAsGuest(hostPeerIdStr, myPeerIdStr, username, roomId, passwor
     }
   );
   peerInstance.on('call', handleIncomingCall);
+  showModal('waiting-host-modal');
+  initiateHandshake(hostPeerIdStr, passwordForPerm, true);
 }
 
 async function initPermanentParticipant(username, roomId, passwordForPerm, keyForE2EE, fallbackRoomKeys = []) {

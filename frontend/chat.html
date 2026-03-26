@@ -57,11 +57,7 @@
   <!-- ═══════════════════════════════════════
        MAIN CHAT SHELL — Sidebar + Content
   ════════════════════════════════════════ -->
-  <div id="recording-indicator" hidden>
-    <span class="recording-dot"></span>
-    <span class="recording-label">Recording voice message</span>
-    <strong id="recording-timer">0:00</strong>
-  </div>
+
 
   <div class="chat-shell">
 
@@ -202,6 +198,21 @@
 
         <!-- Message feed -->
         <div id="chat-feed" role="log" aria-live="polite" aria-label="Chat messages"></div>
+
+        <!-- Voice Note Recording Overlay (Near Mic) -->
+        <div id="recording-indicator" hidden>
+          <div class="recording-info">
+            <span class="recording-dot"></span>
+            <span class="recording-label" id="recording-status">Recording...</span>
+            <strong id="recording-timer">0:00</strong>
+          </div>
+          <div class="recording-controls">
+            <button class="rec-btn-preview" id="rec-play-btn" title="Preview" type="button" hidden>▶</button>
+            <button class="rec-btn-delete" id="rec-delete-btn" title="Discard" type="button">🗑</button>
+            <button class="rec-btn-send" id="rec-send-btn" title="Send Voice Message" type="button" hidden>📤</button>
+            <button class="rec-btn-stop" id="rec-stop-btn" title="Stop Recording" type="button">⏹</button>
+          </div>
+        </div>
 
         <!-- Multi-select bar (hidden by default) -->
         <div id="multi-select-bar" style="display:none; position:absolute; bottom: 80px; left:50%; transform:translateX(-50%); background:var(--surface-high); padding:0.5rem 1rem; border-radius:var(--r-full); box-shadow:0 10px 30px rgba(0,0,0,0.8); z-index:100; align-items:center; gap:1rem; border:1px solid rgba(255,255,255,0.1);">

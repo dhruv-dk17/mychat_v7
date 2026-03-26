@@ -103,19 +103,26 @@ document.addEventListener('DOMContentLoaded', () => {
   // ── Handlers & Fallbacks ─────────────────────────────
   
   const FALLBACK_GIFS = [
-    { media_formats: { gif: { url: "https://media.tenor.com/2RoCBzvBKhAAAAAM/cat-typing.gif" } } },
-    { media_formats: { gif: { url: "https://media.tenor.com/_H3e-fEa1M8AAAAM/cute-cat.gif" } } },
-    { media_formats: { gif: { url: "https://media.tenor.com/t3VdZOf0oHAAAAAM/cat-yes.gif" } } },
-    { media_formats: { gif: { url: "https://media.tenor.com/QW0zXj0XU3sAAAAM/cat-dance.gif" } } },
-    { media_formats: { gif: { url: "https://media.tenor.com/xHq3n_60UAAAAAAM/cat-funny.gif" } } },
-    { media_formats: { gif: { url: "https://media.tenor.com/PZcM_j6Gg3wAAAAM/cat-no.gif" } } },
-    { media_formats: { gif: { url: "https://media.tenor.com/b9a3z2P6oAAAAAAM/ok-agreed.gif" } } },
-    { media_formats: { gif: { url: "https://media.tenor.com/gK22a0q5x8MAAAAM/thumbs-up.gif" } } },
-    { media_formats: { gif: { url: "https://media.tenor.com/-pA3b-EPEjYAAAAM/crying-sad.gif" } } },
-    { media_formats: { gif: { url: "https://media.tenor.com/lM_L1M9f-vAAAAAM/wow-omg.gif" } } },
-    { media_formats: { gif: { url: "https://media.tenor.com/JvC-r27jOlcAAAAM/angry-mad.gif" } } },
-    { media_formats: { gif: { url: "https://media.tenor.com/Z4oR-R0-U78AAAAM/laughing-lol.gif" } } }
+    { media_formats: { gif: { url: "https://media.tenor.com/2RoCBzvBKhAAAAAM/cat-typing.gif" } }, tags: ['typing', 'work', 'computer', 'cat'] },
+    { media_formats: { gif: { url: "https://media.tenor.com/_H3e-fEa1M8AAAAM/cute-cat.gif" } }, tags: ['cute', 'cat', 'love', 'smile'] },
+    { media_formats: { gif: { url: "https://media.tenor.com/t3VdZOf0oHAAAAAM/cat-yes.gif" } }, tags: ['yes', 'agree', 'ok', 'cat'] },
+    { media_formats: { gif: { url: "https://media.tenor.com/QW0zXj0XU3sAAAAM/cat-dance.gif" } }, tags: ['dance', 'party', 'happy', 'cat'] },
+    { media_formats: { gif: { url: "https://media.tenor.com/xHq3n_60UAAAAAAM/cat-funny.gif" } }, tags: ['funny', 'lol', 'haha', 'cat'] },
+    { media_formats: { gif: { url: "https://media.tenor.com/PZcM_j6Gg3wAAAAM/cat-no.gif" } }, tags: ['no', 'refuse', 'never', 'cat'] },
+    { media_formats: { gif: { url: "https://media.tenor.com/b9a3z2P6oAAAAAAM/ok-agreed.gif" } }, tags: ['ok', 'agree', 'nod'] },
+    { media_formats: { gif: { url: "https://media.tenor.com/gK22a0q5x8MAAAAM/thumbs-up.gif" } }, tags: ['thumb', 'good', 'nice'] },
+    { media_formats: { gif: { url: "https://media.tenor.com/-pA3b-EPEjYAAAAM/crying-sad.gif" } }, tags: ['sad', 'cry', 'tears'] },
+    { media_formats: { gif: { url: "https://media.tenor.com/lM_L1M9f-vAAAAAM/wow-omg.gif" } }, tags: ['wow', 'omg', 'surprise'] },
+    { media_formats: { gif: { url: "https://media.tenor.com/JvC-r27jOlcAAAAM/angry-mad.gif" } }, tags: ['angry', 'mad', 'rage'] },
+    { media_formats: { gif: { url: "https://media.tenor.com/Z4oR-R0-U78AAAAM/laughing-lol.gif" } }, tags: ['lol', 'laugh', 'funny'] }
   ];
+
+  function getFallbackSubset(query) {
+    if (!query) return FALLBACK_GIFS.sort(() => 0.5 - Math.random()).slice(0, 12);
+    const lq = query.toLowerCase();
+    const filtered = FALLBACK_GIFS.filter(g => g.tags.some(t => t.includes(lq) || lq.includes(t)));
+    return filtered.length > 0 ? filtered : FALLBACK_GIFS.sort(() => 0.5 - Math.random()).slice(0, 8);
+  }
 
   async function loadTrending(type) {
     const resEl = type === 'stickers' ? document.getElementById('sticker-results') : document.getElementById('gif-results');
@@ -132,8 +139,7 @@ document.addEventListener('DOMContentLoaded', () => {
       resEl.dataset.loaded = 'trending';
     } catch (e) {
       console.warn('Tenor API Rate Limited/Invalid:', e);
-      // Fast free fallback since user required a forever free service
-      renderResults(FALLBACK_GIFS.sort(() => 0.5 - Math.random()), resEl, type);
+      renderResults(getFallbackSubset(''), resEl, type);
       resEl.dataset.loaded = 'trending';
     }
   }
@@ -152,7 +158,7 @@ document.addEventListener('DOMContentLoaded', () => {
       resEl.dataset.loaded = 'search';
     } catch (e) {
       console.warn('Tenor API Rate Limited/Invalid:', e);
-      renderResults(FALLBACK_GIFS.sort(() => 0.5 - Math.random()), resEl, type);
+      renderResults(getFallbackSubset(query), resEl, type);
       resEl.dataset.loaded = 'search';
     }
   }
@@ -238,24 +244,7 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 });
 
-function sendRichMedia(url, type) {
-  const msg = {
-    type: 'rich_media',
-    mediaType: type, // 'gif' or 'sticker'
-    url: url,
-    id: crypto.randomUUID(),
-    from: myUsername,
-    ts: Date.now(),
-    disappearing: (typeof isDisappearingMode !== 'undefined' && isDisappearingMode)
-  };
-  rememberMessage(msg);
-  renderRichMediaMessage(msg, true);
-  if (typeof broadcastOrRelay === 'function') broadcastOrRelay(msg);
-  
-  if (msg.disappearing && typeof setMessageTimer === 'function') {
-    setMessageTimer(msg.id, typeof DISAPPEAR_SECONDS !== 'undefined' ? DISAPPEAR_SECONDS : 60, true);
-  }
-}
+// sendRichMedia consolidated below.
 
 function sendRichMedia(url, type) {
   const msg = {

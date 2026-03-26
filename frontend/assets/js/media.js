@@ -9,6 +9,9 @@ let localStream      = null;
 let callStartTime    = 0;
 let recordingNoticeTimer = null;
 let recordingStartedAt = 0;
+let previewBlob = null;
+let previewUrl = null;
+let previewAudio = null;
 
 // ════════════════════════════════════════════
 // FILE SHARING
@@ -137,7 +140,7 @@ function getFileIcon(mime) {
 }
 
 // ════════════════════════════════════════════
-// VOICE MESSAGES
+// VOICE MESSAGES (CONSOLIDATED)
 // ════════════════════════════════════════════
 
 async function startVoiceRecording() {
@@ -145,16 +148,44 @@ async function startVoiceRecording() {
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
     recordedChunks = [];
+    previewBlob = null;
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    previewUrl = null;
     mediaRecorder  = new MediaRecorder(stream, { mimeType: 'audio/webm' });
     mediaRecorder.ondataavailable = e => { if (e.data.size > 0) recordedChunks.push(e.data); };
-    mediaRecorder.onstop = () => { stream.getTracks().forEach(t => t.stop()); sendVoiceMessage(); };
+    mediaRecorder.onstop = () => {
+      stream.getTracks().forEach(t => t.stop());
+      previewBlob = new Blob(recordedChunks, { type: 'audio/webm' });
+      previewUrl = URL.createObjectURL(previewBlob);
+      showPreviewUI();
+    };
     mediaRecorder.start();
     isRecording = true;
     recordingStartedAt = Date.now();
     document.getElementById('mic-btn')?.classList.add('recording');
     showRecordingNotice();
-    // Auto-stop
-    setTimeout(() => { if (isRecording) stopVoiceRecording(); }, CONFIG.VOICE_MAX_MS);
+
+    // Reset UI to recording state
+    const indicator = document.getElementById('recording-indicator');
+    if (indicator) {
+      indicator.hidden = false;
+      const statusTitle = document.getElementById('recording-status');
+      if (statusTitle) statusTitle.textContent = 'Recording...';
+      
+      const stopBtn = document.getElementById('rec-stop-btn');
+      const playBtn = document.getElementById('rec-play-btn');
+      const sendBtn = document.getElementById('rec-send-btn');
+      
+      if (stopBtn) stopBtn.hidden = false;
+      if (playBtn) {
+        playBtn.hidden = true;
+        playBtn.textContent = '▶';
+      }
+      if (sendBtn) sendBtn.hidden = true;
+    }
+
+    // Auto-stop at 2 mins
+    setTimeout(() => { if (isRecording) stopVoiceRecording(); }, 120000);
   } catch (e) {
     showToast('Microphone access denied', 'error');
   }
@@ -166,110 +197,47 @@ function stopVoiceRecording() {
     isRecording = false;
     recordingStartedAt = 0;
     document.getElementById('mic-btn')?.classList.remove('recording');
-    hideRecordingNotice();
   }
 }
 
-async function sendVoiceMessage() {
-  if (!recordedChunks.length) return;
-  const blob = new Blob(recordedChunks, { type: 'audio/webm' });
-  const b64  = await blobToBase64(blob);
-  const msg  = {
-    type: 'voice_msg',
-    id:   crypto.randomUUID(),
-    from: myUsername,
-    voiceData: b64,
-    ts: Date.now()
-  };
-  broadcastOrRelay(msg);
-  renderVoiceMessage(msg, true);
+function showPreviewUI() {
+  const indicator = document.getElementById('recording-indicator');
+  if (!indicator) return;
+
+  if (recordingNoticeTimer) clearInterval(recordingNoticeTimer);
+
+  const statusTitle = document.getElementById('recording-status');
+  if (statusTitle) statusTitle.textContent = 'Preview';
+  
+  const stopBtn = document.getElementById('rec-stop-btn');
+  const playBtn = document.getElementById('rec-play-btn');
+  const sendBtn = document.getElementById('rec-send-btn');
+  
+  if (stopBtn) stopBtn.hidden = true;
+  if (playBtn) playBtn.hidden = false;
+  if (sendBtn) sendBtn.hidden = false;
 }
 
-function receiveVoiceMessage(msg) {
-  renderVoiceMessage(msg, false);
-  playMessageSound();
-}
-
-function renderVoiceMessage(msg, isOwn) {
-  const blob = base64ToBlob(msg.voiceData, 'audio/webm');
-  const url  = URL.createObjectURL(blob);
-
-  const feed = document.getElementById('chat-feed');
-  if (!feed) return;
-
-  const el = document.createElement('div');
-  el.className   = 'msg msg-voice ' + (isOwn ? 'msg-out' : 'msg-in');
-  el.dataset.msgId  = msg.id;
-  el.dataset.sender = msg.from;
-
-  el.innerHTML = `
-    ${!isOwn ? `<span class="msg-from">${escHtml(msg.from)}</span>` : ''}
-    <div class="msg-bubble">
-      <div class="voice-player">
-        <div class="voice-avatar">${!isOwn ? escHtml(msg.from.slice(0,1).toUpperCase()) : '🔊'}</div>
-        <button class="voice-play-btn" data-url="${url}">▶</button>
-        <div class="voice-controls">
-          <input type="range" class="voice-scrubber" value="0" min="0" max="100" step="0.1" />
-          <span class="voice-duration">0:00</span>
-        </div>
-      </div>
-    </div>
-    <span class="msg-time">${fmtTime(msg.ts)}</span>
-  `;
-
-  const playBtn  = el.querySelector('.voice-play-btn');
-  const scrubber = el.querySelector('.voice-scrubber');
-  const durLabel = el.querySelector('.voice-duration');
-  let audio      = null;
-
-  const fmt = (sec) => {
-    const s = Math.floor(sec % 60);
-    return Math.floor(sec / 60) + ':' + (s < 10 ? '0' : '') + s;
-  };
-
-  playBtn.addEventListener('click', () => {
-    if (!audio) {
-      audio = new Audio(url);
-      audio.onloadedmetadata = () => { durLabel.textContent = fmt(audio.duration); };
-      audio.ontimeupdate = () => {
-        if (!audio.duration) return;
-        scrubber.value = (audio.currentTime / audio.duration) * 100;
-        durLabel.textContent = fmt(audio.currentTime) + ' / ' + fmt(audio.duration);
-      };
-      audio.onended = () => { playBtn.textContent = '▶'; scrubber.value = 0; };
-      
-      scrubber.addEventListener('input', () => {
-        if (audio.duration) audio.currentTime = (scrubber.value / 100) * audio.duration;
-      });
+function discardRecording() {
+  if (isRecording) {
+    if (mediaRecorder) {
+      mediaRecorder.onstop = null; 
+      mediaRecorder.stop();
     }
-    if (audio.paused) { audio.play(); playBtn.textContent = '⏸'; }
-    else              { audio.pause(); playBtn.textContent = '▶'; }
-  });
-
-  feed.appendChild(el);
-  feed.scrollTop = feed.scrollHeight;
-
-  // We no longer draw the canvas waveform
-  const m = { ...msg, type: 'voice', blobUrl: url };
-  messages.push(m);
-}
-
-async function drawWaveform(canvas, blob) {
-  try {
-    const ctx  = canvas.getContext('2d');
-    const ab   = await blob.arrayBuffer();
-    const ac   = new OfflineAudioContext(1, 1, 44100);
-    const decoded = await ac.decodeAudioData(ab);
-    const data = decoded.getChannelData(0);
-    const step = Math.ceil(data.length / canvas.width);
-    ctx.fillStyle = '#8B5CF6';
-    for (let i = 0; i < canvas.width; i++) {
-      const h = Math.max(2, Math.abs(data[i * step] || 0) * canvas.height);
-      ctx.fillRect(i, (canvas.height - h) / 2, 1, h);
-    }
-  } catch (e) {
-    // Waveform not available — leave canvas blank
+    isRecording = false;
   }
+
+  recordedChunks = [];
+  previewBlob = null;
+  if (previewUrl) URL.revokeObjectURL(previewUrl);
+  previewUrl = null;
+  if (previewAudio) { previewAudio.pause(); previewAudio = null; }
+
+  const indicator = document.getElementById('recording-indicator');
+  if (indicator) indicator.hidden = true;
+  
+  hideRecordingNotice();
+  document.getElementById('mic-btn')?.classList.remove('recording');
 }
 
 // ════════════════════════════════════════════
@@ -285,9 +253,6 @@ async function initiateCall() {
     localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
     const target = [...connectedPeers.values()].find(p => p.conn);
     if (!target) { showToast('No one to call', 'warning'); return; }
-    
-    // We don't send call_event 'started' here, we wait for recipient to accept
-    
     activeCall = peerInstance.call(target.conn.peer, localStream);
     activeCall.on('stream', s => { playRemoteAudio(s); showActiveCallUI(); callStartTime = Date.now(); });
     activeCall.on('close',  endCall);
@@ -420,9 +385,10 @@ function base64ToBlob(b64, mime) {
 }
 
 async function sendVoiceMessage() {
-  if (!recordedChunks.length) return;
-  const blob = new Blob(recordedChunks, { type: 'audio/webm' });
-  const b64 = await blobToBase64(blob);
+  const blobToUse = previewBlob || (recordedChunks.length ? new Blob(recordedChunks, { type: 'audio/webm' }) : null);
+  if (!blobToUse) return;
+
+  const b64 = await blobToBase64(blobToUse);
   const msg = {
     type: 'voice_msg',
     id: crypto.randomUUID(),
@@ -433,10 +399,14 @@ async function sendVoiceMessage() {
     deliveredAt: null,
     readAt: null
   };
+  
   if (typeof rememberMessage === 'function') rememberMessage(msg);
   renderVoiceMessage(msg, true);
   broadcastOrRelay(msg);
   if (typeof clearPendingReply === 'function') clearPendingReply();
+  
+  // Cleanup
+  discardRecording();
 }
 
 function receiveVoiceMessage(msg) {
@@ -537,3 +507,34 @@ function renderVoiceMessage(msg, isOwn) {
     messages.push({ ...msg, type: 'voice', blobUrl: url });
   }
 }
+
+// Global Event Listeners for the new buttons
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('rec-stop-btn')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    stopVoiceRecording();
+  });
+  document.getElementById('rec-delete-btn')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    discardRecording();
+  });
+  document.getElementById('rec-send-btn')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    sendVoiceMessage();
+  });
+  document.getElementById('rec-play-btn')?.addEventListener('click', e => {
+    e.stopPropagation();
+    if (!previewUrl) return;
+    if (previewAudio && !previewAudio.paused) {
+      previewAudio.pause();
+      e.target.textContent = '▶';
+    } else {
+      if (!previewAudio) {
+        previewAudio = new Audio(previewUrl);
+        previewAudio.onended = () => { e.target.textContent = '▶'; };
+      }
+      previewAudio.play();
+      e.target.textContent = '⏸';
+    }
+  });
+});

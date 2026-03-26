@@ -578,7 +578,7 @@ function searchMessages(query) {
 }
 
 // ── Render Rich Media Message ─────────────────────────────────────
-function renderRichMediaMessage(msg, isOwn) {
+// function renderRichMediaMessage(msg, isOwn) { // Redundant! Consolidated at end of file.
   const feed = document.getElementById('chat-feed');
   if (!feed) return;
 
@@ -618,7 +618,7 @@ function renderRichMediaMessage(msg, isOwn) {
 
   feed.appendChild(el);
   feed.scrollTop = feed.scrollHeight;
-}
+// } // End redundant function
 
 function getReceiptMarkup(msg, isOwn) {
   if (!isOwn) return '';

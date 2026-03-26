@@ -392,6 +392,11 @@ function handleIncomingMessage(msg, conn) {
     case 'voice_msg': receiveVoiceMessage(msg); shouldRelayFromGuest = true; break;
     case 'clear_chat': executeClearChat(msg.from); shouldRelayFromGuest = true; break;
     case 'typing': showTypingIndicator(msg.from); shouldRelayFromGuest = true; break;
+    case 'receipt':
+    case 'read_receipt':
+      applyMessageReceipt(msg);
+      shouldRelayFromGuest = true;
+      break;
     case 'ping': conn.send(JSON.stringify({ type: 'pong', ts: msg.ts })); break;
     case 'pong': updatePeerPing(conn.peer, msg.ts); break;
     case 'reaction': applyReaction(msg); shouldRelayFromGuest = true; break;

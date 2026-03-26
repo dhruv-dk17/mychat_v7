@@ -4,15 +4,28 @@
 // RICH MEDIA — Emojis, Giphy GIFs, Stickers
 // ══════════════════════════════════════════════
 
-const EMOJI_LIST = [
-  '😀','😂','🥺','😍','🥰','😎','😭','😊','😉','😘','😜','🤪','🤔','🙄','😏','😴','🤫','🤭',
-  '❤️','🔥','✨','⭐','🌟','🌈','☁️','⚡','❄️','🌈','🌊','🎨','🎭','🎬','🎤','🎧','🎹','🎸',
-  '👍','👎','👏','🙌','🙏','💪','🤝','✌️','🤞','🤟','🤘','🤙','🖐️','✋','🖖','👌','🤏','👉',
-  '🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐨','🐯','🦁','🐮','🐷','🐸','🐵','🐔','🐧','🐦',
-  '🍎','🍓','🍒','🍑','🍍','🥥','🥝','🍕','🍔','🍟','🌭','🍿','🍩','🍪','🎂','🍰','🍦','🍧',
-  '🚗','🚕','🚙','🚌','🏎️','🚓','🚑','🚒','🚐','🚚','🚛','🚜','🛵','🏍️','🚲','🛴','🛹','🚨',
-  '🚀','🛸','🚁','🛶','⛵','🚢','✈️','🛩️','🛰️','🪐','🌏','🌑','🌕','☀️','🌦️','⛈️','🌩️','🌋'
+const EMOJI_BLOCKS = [
+  [0x1F600, 0x1F64F],
+  [0x1F300, 0x1F5FF],
+  [0x1F680, 0x1F6FF],
+  [0x1F900, 0x1F9FF],
+  [0x1FA70, 0x1FAFF],
+  [0x2600, 0x26FF],
+  [0x2700, 0x27BF]
 ];
+
+const EMOJI_LIST = Array.from(new Set(
+  EMOJI_BLOCKS.flatMap(([start, end]) => {
+    const chars = [];
+    for (let code = start; code <= end; code += 1) {
+      try {
+        const emoji = String.fromCodePoint(code);
+        if (/\p{Extended_Pictographic}/u.test(emoji)) chars.push(emoji);
+      } catch (e) {}
+    }
+    return chars;
+  })
+));
 
 const TENOR_API_KEY = 'LIVDULZ6S78F'; // Using a public demo key - User should replace with their own
 const TENOR_BASE_URL = 'https://tenor.googleapis.com/v2';
@@ -88,7 +101,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     resEl.innerHTML = '<div class="media-loading">Loading Trending...</div>';
     try {
-      const endpoint = type === 'stickers' ? '/featured?searchfilter=sticker' : '/featured';
+      const endpoint = type === 'stickers' ? '/featured?searchfilter=sticker' : '/featured?';
       const resp = await fetch(`${TENOR_BASE_URL}${endpoint}&key=${TENOR_API_KEY}&limit=12&media_filter=gif,tinygif`);
       if (!resp.ok) throw new Error('API Error');
       const json = await resp.json();
@@ -106,7 +119,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     resEl.innerHTML = '<div class="media-loading">Searching...</div>';
     try {
-      const endpoint = type === 'stickers' ? '/search?searchfilter=sticker' : '/search';
+      const endpoint = type === 'stickers' ? '/search?searchfilter=sticker' : '/search?';
       const resp = await fetch(`${TENOR_BASE_URL}${endpoint}&q=${encodeURIComponent(query)}&key=${TENOR_API_KEY}&limit=15&media_filter=gif,tinygif`);
       if (!resp.ok) throw new Error('API Error');
       const json = await resp.json();
@@ -134,7 +147,8 @@ document.addEventListener('DOMContentLoaded', () => {
       img.className = 'media-item';
       img.loading = 'lazy';
       img.onclick = () => {
-        const fullMedia = item.media_formats.gif;
+        const fullMedia = item.media_formats.gif || item.media_formats.tinygif;
+        if (!fullMedia?.url) return;
         sendRichMedia(fullMedia.url, type === 'stickers' ? 'sticker' : 'gif');
         drawer.classList.remove('drawer-active');
       };
@@ -177,6 +191,29 @@ function sendRichMedia(url, type) {
   renderRichMediaMessage(msg, true);
   if (typeof broadcastOrRelay === 'function') broadcastOrRelay(msg);
   
+  if (msg.disappearing && typeof setMessageTimer === 'function') {
+    setMessageTimer(msg.id, typeof DISAPPEAR_SECONDS !== 'undefined' ? DISAPPEAR_SECONDS : 60, true);
+  }
+}
+
+function sendRichMedia(url, type) {
+  const msg = {
+    type: 'rich_media',
+    mediaType: type,
+    url,
+    id: crypto.randomUUID(),
+    from: myUsername,
+    ts: Date.now(),
+    replyTo: typeof buildReplyPayload === 'function' ? buildReplyPayload() : null,
+    deliveredAt: null,
+    readAt: null,
+    disappearing: (typeof isDisappearingMode !== 'undefined' && isDisappearingMode)
+  };
+  rememberMessage(msg);
+  renderRichMediaMessage(msg, true);
+  if (typeof broadcastOrRelay === 'function') broadcastOrRelay(msg);
+  if (typeof clearPendingReply === 'function') clearPendingReply();
+
   if (msg.disappearing && typeof setMessageTimer === 'function') {
     setMessageTimer(msg.id, typeof DISAPPEAR_SECONDS !== 'undefined' ? DISAPPEAR_SECONDS : 60, true);
   }

@@ -418,3 +418,122 @@ function blobToBase64(blob) {
 function base64ToBlob(b64, mime) {
   return new Blob([Uint8Array.from(atob(b64), c => c.charCodeAt(0))], { type: mime });
 }
+
+async function sendVoiceMessage() {
+  if (!recordedChunks.length) return;
+  const blob = new Blob(recordedChunks, { type: 'audio/webm' });
+  const b64 = await blobToBase64(blob);
+  const msg = {
+    type: 'voice_msg',
+    id: crypto.randomUUID(),
+    from: myUsername,
+    voiceData: b64,
+    ts: Date.now(),
+    replyTo: typeof buildReplyPayload === 'function' ? buildReplyPayload() : null,
+    deliveredAt: null,
+    readAt: null
+  };
+  if (typeof rememberMessage === 'function') rememberMessage(msg);
+  renderVoiceMessage(msg, true);
+  broadcastOrRelay(msg);
+  if (typeof clearPendingReply === 'function') clearPendingReply();
+}
+
+function receiveVoiceMessage(msg) {
+  if (typeof rememberMessage === 'function' && !rememberMessage(msg)) return;
+  renderVoiceMessage(msg, msg.from === myUsername);
+  if (msg.from !== myUsername) {
+    playMessageSound();
+    if (typeof acknowledgeIncomingMessage === 'function') acknowledgeIncomingMessage(msg);
+  }
+}
+
+function renderVoiceMessage(msg, isOwn) {
+  const blob = base64ToBlob(msg.voiceData, 'audio/webm');
+  const url = URL.createObjectURL(blob);
+
+  const feed = document.getElementById('chat-feed');
+  if (!feed) return;
+
+  const el = document.createElement('div');
+  el.className = 'msg msg-voice ' + (isOwn ? 'msg-out' : 'msg-in');
+  el.dataset.msgId = msg.id;
+  el.dataset.sender = msg.from;
+
+  el.innerHTML = `
+    ${!isOwn ? `<span class="msg-user">${escHtml(msg.from)}</span>` : ''}
+    <div class="msg-bubble">
+      ${typeof renderReplyBlock === 'function' ? renderReplyBlock(msg.replyTo) : ''}
+      <div class="voice-player">
+        <div class="voice-avatar">${!isOwn ? escHtml(msg.from.slice(0, 1).toUpperCase()) : '♫'}</div>
+        <button class="voice-play-btn" data-url="${url}" type="button">▶</button>
+        <div class="voice-controls">
+          <input type="range" class="voice-scrubber" value="0" min="0" max="100" step="0.1" />
+          <span class="voice-duration">0:00</span>
+        </div>
+      </div>
+    </div>
+    <div class="msg-meta">
+      <span class="msg-time">${fmtTime(msg.ts)}</span>
+      ${typeof getReceiptMarkup === 'function' ? getReceiptMarkup(msg, isOwn) : ''}
+    </div>
+  `;
+
+  const playBtn = el.querySelector('.voice-play-btn');
+  const scrubber = el.querySelector('.voice-scrubber');
+  const durLabel = el.querySelector('.voice-duration');
+  let audio = null;
+
+  const fmt = sec => {
+    const s = Math.floor(sec % 60);
+    return `${Math.floor(sec / 60)}:${s < 10 ? '0' : ''}${s}`;
+  };
+
+  playBtn.addEventListener('click', () => {
+    if (!audio) {
+      audio = new Audio(url);
+      audio.onloadedmetadata = () => { durLabel.textContent = fmt(audio.duration); };
+      audio.ontimeupdate = () => {
+        if (!audio.duration) return;
+        scrubber.value = (audio.currentTime / audio.duration) * 100;
+        durLabel.textContent = `${fmt(audio.currentTime)} / ${fmt(audio.duration)}`;
+      };
+      audio.onended = () => {
+        playBtn.textContent = '▶';
+        scrubber.value = 0;
+      };
+      scrubber.addEventListener('input', () => {
+        if (audio.duration) audio.currentTime = (scrubber.value / 100) * audio.duration;
+      });
+    }
+
+    if (audio.paused) {
+      audio.play();
+      playBtn.textContent = '⏸';
+    } else {
+      audio.pause();
+      playBtn.textContent = '▶';
+    }
+  });
+
+  el.querySelector('[data-reply-target]')?.addEventListener('click', event => {
+    const targetId = event.currentTarget.dataset.replyTarget;
+    const targetEl = document.querySelector(`[data-msg-id="${targetId}"]`);
+    if (targetEl) {
+      targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      targetEl.classList.add('msg-flash');
+      setTimeout(() => targetEl.classList.remove('msg-flash'), 1200);
+    }
+  });
+
+  feed.appendChild(el);
+  feed.scrollTop = feed.scrollHeight;
+
+  const existing = typeof getMessageById === 'function' ? getMessageById(msg.id) : null;
+  if (existing) {
+    existing.type = 'voice';
+    existing.blobUrl = url;
+  } else if (Array.isArray(messages)) {
+    messages.push({ ...msg, type: 'voice', blobUrl: url });
+  }
+}

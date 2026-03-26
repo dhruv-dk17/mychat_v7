@@ -216,6 +216,13 @@
             <button class="extra-action danger" id="clear-btn" title="Clear chat for everyone">🗑 Clear Chat</button>
             <button class="extra-action" id="copy-room-btn" title="Copy Room ID">🔗 Copy ID</button>
           </div>
+          <div id="reply-preview" hidden>
+            <div class="reply-preview-copy">
+              <span id="reply-preview-from"></span>
+              <span id="reply-preview-text"></span>
+            </div>
+            <button class="btn-icon" id="reply-cancel-btn" title="Cancel reply" type="button">✕</button>
+          </div>
           <div class="input-row">
             <!-- File attachment -->
             <label class="btn-icon" for="file-input" title="Share file" style="cursor:pointer">
@@ -293,6 +300,7 @@
       <div class="modal-title">Self-Destruct Timer</div>
       <div class="modal-subtitle">Choose when this message disappears for everyone</div>
       <div class="timer-options">
+        <button class="timer-opt" data-seconds="5">5s</button>
         <button class="timer-opt" data-seconds="30">30s</button>
         <button class="timer-opt" data-seconds="60">1 min</button>
         <button class="timer-opt" data-seconds="300">5 min</button>

@@ -4,6 +4,7 @@ let messages = [];
 let isMultiSelectMode = false;
 let selectedMessages = new Set();
 let isDisappearingMode = false;
+let pendingReply = null;
 const DISAPPEAR_SECONDS = 60;
 
 function hasMessage(messageId) {
@@ -20,21 +21,144 @@ function rememberMessage(msg) {
   return true;
 }
 
+function getMessageById(messageId) {
+  return messages.find(msg => msg.id === messageId) || null;
+}
+
+function buildReplyPayload() {
+  if (!pendingReply?.id) return null;
+  const source = getMessageById(pendingReply.id);
+  if (!source) return null;
+  const replyText = source.text || (source.mediaType === 'sticker'
+    ? 'Sticker'
+    : source.mediaType === 'gif'
+      ? 'GIF'
+      : source.type === 'voice_msg'
+        ? 'Voice message'
+        : source.name || 'Message');
+  return {
+    id: source.id,
+    from: source.from,
+    text: String(replyText).slice(0, 120)
+  };
+}
+
+function setPendingReply(messageId) {
+  const msg = getMessageById(messageId);
+  if (!msg) return;
+  pendingReply = {
+    id: msg.id,
+    from: msg.from,
+    text: String(msg.text || msg.mediaType || msg.name || 'Message').slice(0, 120)
+  };
+  updateReplyComposer();
+}
+
+function clearPendingReply() {
+  pendingReply = null;
+  updateReplyComposer();
+}
+
+function updateReplyComposer() {
+  const bar = document.getElementById('reply-preview');
+  const from = document.getElementById('reply-preview-from');
+  const text = document.getElementById('reply-preview-text');
+  if (!bar || !from || !text) return;
+
+  if (!pendingReply) {
+    bar.hidden = true;
+    from.textContent = '';
+    text.textContent = '';
+    return;
+  }
+
+  bar.hidden = false;
+  from.textContent = pendingReply.from === myUsername ? 'Replying to yourself' : `Replying to ${pendingReply.from}`;
+  text.textContent = pendingReply.text;
+}
+
+function renderReplyBlock(replyTo) {
+  if (!replyTo?.id) return '';
+  return `
+    <button class="msg-reply-chip" type="button" data-reply-target="${replyTo.id}">
+      <span class="msg-reply-from">${escHtml(replyTo.from || 'Message')}</span>
+      <span class="msg-reply-text">${escHtml(replyTo.text || '')}</span>
+    </button>
+  `;
+}
+
+function getReceiptMarkup(msg, isOwn) {
+  if (!isOwn) return '';
+  const state = msg.readAt ? 'read' : (msg.deliveredAt ? 'delivered' : 'sent');
+  const icon = state === 'sent' ? '✓' : '✓✓';
+  return `<span class="msg-status msg-status-${state}" data-msg-status-for="${msg.id}">${icon}</span>`;
+}
+
+function updateMessageReceipt(messageId, patch) {
+  const msg = getMessageById(messageId);
+  if (!msg) return;
+  Object.assign(msg, patch);
+  const el = document.querySelector(`[data-msg-status-for="${messageId}"]`);
+  if (!el) return;
+
+  if (msg.readAt) {
+    el.textContent = '✓✓';
+    el.className = 'msg-status msg-status-read';
+  } else if (msg.deliveredAt) {
+    el.textContent = '✓✓';
+    el.className = 'msg-status msg-status-delivered';
+  } else {
+    el.textContent = '✓';
+    el.className = 'msg-status msg-status-sent';
+  }
+}
+
+function applyMessageReceipt(payload) {
+  if (!payload?.messageId || payload.target !== myUsername) return;
+  if (payload.type === 'read_receipt') {
+    updateMessageReceipt(payload.messageId, { deliveredAt: payload.ts, readAt: payload.ts });
+    return;
+  }
+  updateMessageReceipt(payload.messageId, { deliveredAt: payload.ts });
+}
+
+function sendReceipt(type, messageId, targetUser) {
+  if (!messageId || !targetUser || targetUser === myUsername) return;
+  broadcastOrRelay({
+    type,
+    messageId,
+    target: targetUser,
+    from: myUsername,
+    ts: Date.now()
+  });
+}
+
+function acknowledgeIncomingMessage(msg) {
+  if (!msg?.id || msg.from === myUsername || msg.system) return;
+  sendReceipt('receipt', msg.id, msg.from);
+  requestAnimationFrame(() => sendReceipt('read_receipt', msg.id, msg.from));
+}
+
 // ── Send text message ─────────────────────────────────────────────
 function sendTextMessage(text) {
   if (!text || !text.trim()) return;
+  const replyTo = buildReplyPayload();
   const msg = {
     type: 'msg',
     id:   crypto.randomUUID(),
     from: myUsername,
     text: text.trim(),
     ts:   Date.now(),
+    replyTo,
+    deliveredAt: null,
+    readAt: null,
     disappearing: isDisappearingMode
   };
   rememberMessage(msg);
   renderMessage(msg, true);
   broadcastOrRelay(msg);
   if (typeof persistCurrentRoomEvent === 'function') persistCurrentRoomEvent(msg);
+  clearPendingReply();
   
   if (msg.disappearing && typeof setMessageTimer === 'function') {
     setMessageTimer(msg.id, DISAPPEAR_SECONDS, true);
@@ -48,6 +172,7 @@ function receiveTextMessage(msg) {
   const isOwn = msg.from === myUsername;
   renderMessage(msg, isOwn);
   if (!isOwn) playMessageSound();
+  acknowledgeIncomingMessage(msg);
   
   if (msg.disappearing && typeof setMessageTimer === 'function') {
     setMessageTimer(msg.id, DISAPPEAR_SECONDS, false);
@@ -60,6 +185,7 @@ function receiveRichMedia(msg) {
   const isOwn = msg.from === myUsername;
   renderRichMediaMessage(msg, isOwn);
   if (!isOwn) playMessageSound();
+  acknowledgeIncomingMessage(msg);
 
   if (msg.disappearing && typeof setMessageTimer === 'function') {
     setMessageTimer(msg.id, DISAPPEAR_SECONDS, false);
@@ -104,9 +230,13 @@ function renderMessage(msg, isOwn) {
   el.innerHTML = `
     ${showFrom ? `<span class="msg-user">${escHtml(msg.from)}</span>` : ''}
     <div class="msg-bubble">
+      ${renderReplyBlock(msg.replyTo)}
       <p class="msg-text">${escHtml(msg.text)}</p>
     </div>
-    <span class="msg-time">${fmtTime(msg.ts)}</span>
+    <div class="msg-meta">
+      <span class="msg-time">${fmtTime(msg.ts)}</span>
+      ${getReceiptMarkup(msg, isOwn)}
+    </div>
     <div class="msg-reactions" id="reactions-${msg.id}"></div>
     <div class="msg-checkbox" style="display:none;">✓</div>
   `;
@@ -125,6 +255,16 @@ function renderMessage(msg, isOwn) {
   el.addEventListener('touchstart',  e => {
     const t = setTimeout(() => showContextMenu(e.touches[0], msg, isOwn), 500);
     el.addEventListener('touchend', () => clearTimeout(t), { once: true });
+  });
+
+  el.querySelector('[data-reply-target]')?.addEventListener('click', e => {
+    const targetId = e.currentTarget.dataset.replyTarget;
+    const targetEl = document.querySelector(`[data-msg-id="${targetId}"]`);
+    if (targetEl) {
+      targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      targetEl.classList.add('msg-flash');
+      setTimeout(() => targetEl.classList.remove('msg-flash'), 1200);
+    }
   });
 
   feed.appendChild(el);
@@ -146,6 +286,13 @@ function applyPersistedRoomEvent(event) {
   switch (event.type) {
     case 'msg':
       receiveTextMessage(event);
+      break;
+    case 'reaction':
+      applyReaction(event);
+      break;
+    case 'receipt':
+    case 'read_receipt':
+      applyMessageReceipt(event);
       break;
     case 'delete_msg':
       deleteMessage(event.messageId);
@@ -258,6 +405,8 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
   });
+  document.getElementById('reply-cancel-btn')?.addEventListener('click', clearPendingReply);
+  updateReplyComposer();
 });
 
 // ── Typing indicator ──────────────────────────────────────────────
@@ -396,21 +545,36 @@ function searchMessages(query) {
     parent.replaceChild(document.createTextNode(h.textContent), h);
     parent.normalize();
   });
+  feed.querySelectorAll('.search-match').forEach(el => el.classList.remove('search-match'));
 
   if (!query) return;
-  const q = query.toLowerCase();
+  const normalized = query.trim();
+  if (!normalized) return;
+  const q = normalized.toLowerCase();
+  const matches = [];
 
-  feed.querySelectorAll('.msg-text').forEach(el => {
+  feed.querySelectorAll('.msg-text, .msg-reply-text').forEach(el => {
     const text = el.textContent;
     if (text.toLowerCase().includes(q)) {
       const html = escHtml(text).replace(
-        new RegExp(escHtml(query).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'),
+        new RegExp(normalized.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'),
         m => `<mark class="search-highlight">${m}</mark>`
       );
       el.innerHTML = html;
-      el.closest('.msg')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      const row = el.closest('.msg');
+      if (row) {
+        row.classList.add('search-match');
+        matches.push(row);
+      }
     }
   });
+
+  if (!matches.length) {
+    showToast('No messages matched your search', 'info');
+    return;
+  }
+
+  matches[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
 // ── Render Rich Media Message ─────────────────────────────────────
@@ -455,3 +619,138 @@ function renderRichMediaMessage(msg, isOwn) {
   feed.appendChild(el);
   feed.scrollTop = feed.scrollHeight;
 }
+
+function getReceiptMarkup(msg, isOwn) {
+  if (!isOwn) return '';
+  const state = msg.readAt ? 'read' : (msg.deliveredAt ? 'delivered' : 'sent');
+  const icon = state === 'sent' ? '✓' : '✓✓';
+  return `<span class="msg-status msg-status-${state}" data-msg-status-for="${msg.id}" aria-label="${state}">${icon}</span>`;
+}
+
+function updateMessageReceipt(messageId, patch) {
+  const msg = getMessageById(messageId);
+  if (!msg) return;
+  Object.assign(msg, patch);
+  const el = document.querySelector(`[data-msg-status-for="${messageId}"]`);
+  if (!el) return;
+
+  if (msg.readAt) {
+    el.textContent = '✓✓';
+    el.className = 'msg-status msg-status-read';
+    el.setAttribute('aria-label', 'read');
+  } else if (msg.deliveredAt) {
+    el.textContent = '✓✓';
+    el.className = 'msg-status msg-status-delivered';
+    el.setAttribute('aria-label', 'delivered');
+  } else {
+    el.textContent = '✓';
+    el.className = 'msg-status msg-status-sent';
+    el.setAttribute('aria-label', 'sent');
+  }
+}
+
+function showContextMenu(e, msg, isOwn) {
+  closeContextMenu();
+
+  const menu = document.createElement('div');
+  menu.className = 'msg-context-menu';
+
+  const emojis = ['👍', '❤️', '😂', '😮', '😢', '🔥'];
+  const emojiRow = document.createElement('div');
+  emojiRow.className = 'ctx-emoji-row';
+  emojis.forEach(em => {
+    const btn = document.createElement('span');
+    btn.className = 'ctx-emoji';
+    btn.textContent = em;
+    btn.addEventListener('click', () => { sendReaction(msg.id, em); closeContextMenu(); });
+    emojiRow.appendChild(btn);
+  });
+  menu.appendChild(emojiRow);
+
+  const actions = [
+    { label: 'Reply', action: () => setPendingReply(msg.id) },
+    { label: 'Copy Text', action: () => navigator.clipboard?.writeText(msg.text || msg.name || msg.mediaType || 'Message') },
+    { label: 'Set Timer', action: () => { closeContextMenu(); showTimerModal(msg.id); } },
+  ];
+  if (isOwn) {
+    if (!isMultiSelectMode) {
+      actions.push({ label: 'Select', action: () => enterMultiSelectMode(msg.id, document.querySelector(`[data-msg-id="${msg.id}"]`)) });
+    }
+    actions.push({ label: 'Delete', action: () => sendDeleteMessage(msg.id), danger: true });
+  }
+
+  actions.forEach(({ label, action, danger }) => {
+    const btn = document.createElement('button');
+    btn.className = 'ctx-item' + (danger ? ' ctx-danger' : '');
+    btn.textContent = label;
+    btn.addEventListener('click', () => { action(); closeContextMenu(); });
+    menu.appendChild(btn);
+  });
+
+  const x = Math.min(e.clientX || e.pageX, window.innerWidth - 180);
+  const y = Math.min(e.clientY || e.pageY, window.innerHeight - 180);
+  menu.style.left = `${x}px`;
+  menu.style.top = `${y}px`;
+
+  document.body.appendChild(menu);
+  _activeCtxMenu = menu;
+  setTimeout(() => document.addEventListener('click', closeContextMenu, { once: true }), 0);
+}
+
+function renderRichMediaMessage(msg, isOwn) {
+  const feed = document.getElementById('chat-feed');
+  if (!feed) return;
+
+  const last = feed.lastElementChild;
+  const isCts = last && last.dataset.sender === msg.from && !last.classList.contains('msg-system');
+  if (isCts) last.classList.add('msg-cts');
+
+  const el = document.createElement('div');
+  el.className = 'msg ' + (isOwn ? 'msg-out' : 'msg-in');
+  if (isCts) el.classList.add('msg-cts-next');
+  el.dataset.msgId = msg.id;
+  el.dataset.sender = msg.from;
+
+  const showFrom = !isOwn && !isCts;
+
+  el.innerHTML = `
+    ${showFrom ? `<span class="msg-user">${escHtml(msg.from)}</span>` : ''}
+    <div class="msg-bubble media-bubble">
+      ${renderReplyBlock(msg.replyTo)}
+      <img src="${msg.url}" class="msg-media-image" loading="lazy" alt="${escHtml(msg.mediaType || 'media')}">
+    </div>
+    <div class="msg-meta">
+      <span class="msg-time">${fmtTime(msg.ts)}</span>
+      ${getReceiptMarkup(msg, isOwn)}
+    </div>
+    <div class="msg-reactions" id="reactions-${msg.id}"></div>
+    <div class="msg-checkbox" style="display:none;">✓</div>
+  `;
+
+  el.addEventListener('click', event => {
+    if (isMultiSelectMode && isOwn) {
+      event.preventDefault();
+      event.stopPropagation();
+      toggleMessageSelection(msg.id, el);
+    }
+  });
+  el.addEventListener('contextmenu', event => { event.preventDefault(); showContextMenu(event, msg, isOwn); });
+  el.addEventListener('touchstart', event => {
+    const timer = setTimeout(() => showContextMenu(event.touches[0], msg, isOwn), 500);
+    el.addEventListener('touchend', () => clearTimeout(timer), { once: true });
+  });
+  el.querySelector('.msg-media-image')?.addEventListener('click', () => window.open(msg.url, '_blank'));
+  el.querySelector('[data-reply-target]')?.addEventListener('click', event => {
+    const targetId = event.currentTarget.dataset.replyTarget;
+    const targetEl = document.querySelector(`[data-msg-id="${targetId}"]`);
+    if (targetEl) {
+      targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      targetEl.classList.add('msg-flash');
+      setTimeout(() => targetEl.classList.remove('msg-flash'), 1200);
+    }
+  });
+
+  feed.appendChild(el);
+  feed.scrollTop = feed.scrollHeight;
+}
+

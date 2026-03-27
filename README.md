@@ -1,67 +1,31 @@
 # Mychat v7
 
-Privacy-first, zero-trace, real-time P2P communication. Built on WebRTC via PeerJS — messages never touch a server.
+Privacy-first real-time communication built on WebRTC/PeerJS, now hardened for production-facing use with signed peer identity, stricter API validation, scoped abuse controls, rolling encrypted room history, CI, and container tooling.
 
-## Features
+## Highlights
 
-- **Private Room** — Direct P2P, 2 people, blur shield privacy overlay
-- **Group Room** — Up to 50 participants, star topology via host relay  
-- **Permanent Room** — Custom room ID registered permanently (password protected, stored in PostgreSQL)
-- **File Sharing** — Any file type up to 25MB, chunked via DataChannel
-- **Voice Messages** — Hold to record, waveform preview, playback
-- **Voice Calling** — Audio-only, WebRTC SRTP encrypted
-- **Reactions** — 6 emoji, synced across all peers
-- **Self-destructing Messages** — 30s to 1hr timer, synced delete
-- **Anti-surveillance** — 10 subsystems (blur shield, screenshot detect, devtools detect, emergency wipe, etc.)
-- **Message Search** — In-memory, highlights matches
-- **Dark/Light Mode** — sessionStorage persisted
+- Signed Ed25519 peer identities persisted in the browser
+- AES-GCM room encryption plus signed transport envelopes
+- Bcrypt-backed password and owner-token storage with legacy-hash upgrade
+- Scoped rate limits and stricter slug, username, timestamp, and message validation
+- Heartbeat timeout detection and reconnect support for permanent rooms
+- Health and metrics endpoints at `/api/health` and `/api/health/metrics`
+- TURN/STUN override support with `window.__MYCHAT_ICE_SERVERS__`
+- GitHub Actions CI, Docker image, and local Docker Compose stack
 
-## Architecture
-
-All chat is P2P via PeerJS/WebRTC. The backend stores only permanent room slugs and hashed passwords — no messages, no IPs, no usernames.
-
-## Local Development
+## Local Run
 
 ```bash
-# Backend
-cd backend
-cp .env.example .env
-# Edit .env with your local PostgreSQL credentials
-npm install
-npm run dev    # uses nodemon
-
-# Frontend
-# Simply open frontend/index.html in your browser
+docker compose up --build
 ```
 
-## Deploy to Render.com (Free Forever)
+For manual development, run the backend from `backend/` and open `frontend/index.html` separately.
 
-1. Push project to GitHub
-2. Go to [render.com](https://render.com) → Sign up with GitHub  
-3. Dashboard → **New → Blueprint** → Connect your repo
-4. Render reads `render.yaml` → creates 1 web service + 1 PostgreSQL database
-5. Render prompts you for `ADMIN_SECRET` during setup
-6. Wait ~3 minutes for deploy
-7. Open the web service URL and use the app from there
+## Infra Gaps Still Outside This Repo
 
+- Dedicated TURN deployment such as `coturn`
+- SFU architecture for large group media scaling
+- External monitoring stack such as Prometheus/Grafana
+- Separate staging/production environments with managed secrets
 
-See `DOCUMENTATION.md` for full feature reference.
-
-## Security
-
-- Messages: RAM only, gone on disconnect
-- Passwords: SHA-256 hashed in browser before leaving device  
-- Backend: One table (`rooms`), four columns, nothing else
-- Transport: WebRTC DTLS (text) + SRTP (voice)
-- CORS: Locked to Render frontend URL only
-
----
-
-## 🦈 Shark Tank Senior Dev Review
-
-**The Journey (v1 to v7):** We started as a basic WebRTC prototype and evolved into a hardened, zero-trust operations platform. The architecture shifted from basic sockets to a STUN/TURN mesh network, eliminating server dependencies and moving to a purely ephemeral, RAM-only state. We integrated 10 layers of anti-surveillance tech, DOM-safe searches, exponential backoff, and Bcrypt security—all while keeping hosting costs at absolute **$0**.
-
-**The Pitch:**
-*"If I'm evaluating this in the Tank... this is a masterclass in zero-infrastructure scaling. You're giving me a WhatsApp-caliber feature set (media, voice, live typing) with a non-existent server bill because the clients do the heavy lifting via DataChannels.*
-
-*The privacy model is bulletproof; keeping payload off the DB entirely solves GDPR/compliance by design. It's lean, aggressively secure, and highly investable. **I'm making an offer.***"
+See `DOCUMENTATION.md` for the broader architecture and implementation notes.

@@ -14,6 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   initKeepAlive();
   initNetworkWatcher();
+  getIdentityMaterial().catch(() => {});
 
   if (page === 'home') initHomePage();
   if (page === 'chat') initChatPage();
@@ -228,8 +229,8 @@ async function initHomePage() {
     const btn  = document.getElementById('dashboard-create-btn');
     const err  = document.getElementById('dashboard-new-error');
 
-    if (!slug || slug.length < 3) { err.textContent = 'Room ID must be 3-8 characters'; return; }
-    if (!pw || pw.length < 4) { err.textContent = 'Password must be at least 4 characters'; return; }
+    if (!slug || !/^[a-z0-9-]{3,32}$/.test(slug)) { err.textContent = 'Room ID must be 3-32 chars: a-z, 0-9, hyphen'; return; }
+    if (!pw || pw.length < 8) { err.textContent = 'Password must be at least 8 characters'; return; }
 
     btn.disabled = true; btn.textContent = 'Registering...';
     try {
@@ -314,7 +315,7 @@ async function initHomePage() {
 
   document.getElementById('join-private-btn')?.addEventListener('click', async () => {
     const id = document.getElementById('join-room-id')?.value.trim();
-    if (!id || id.length < 4) {
+    if (!id || !/^[a-z0-9-]{3,32}$/.test(id)) {
       showToast('Enter a valid Room ID', 'warning'); return;
     }
     const username = document.getElementById('join-username')?.value.trim() || 'Guest_' + randomToken(2);
@@ -332,8 +333,8 @@ async function initHomePage() {
   document.getElementById('join-group-btn')?.addEventListener('click', () => {
     const id   = document.getElementById('join-group-id')?.value.trim();
     const name = document.getElementById('join-group-username')?.value.trim();
-    if (!id)   { showToast('Enter Room ID', 'warning'); return; }
-    if (!name) { showToast('Enter a username', 'warning'); return; }
+    if (!id || !/^[a-z0-9-]{3,32}$/.test(id))   { showToast('Enter a valid Room ID', 'warning'); return; }
+    if (!name || !/^[a-zA-Z0-9_]{3,32}$/.test(name)) { showToast('Enter a valid username', 'warning'); return; }
     const legacyKey = invite?.type === 'group' && invite.roomId === id ? invite.key : '';
     navigateToChat(id, 'group', name, 'guest', legacyKey || undefined);
   });
@@ -361,9 +362,9 @@ async function initHomePage() {
     const showErr = msg => { if (err) { err.textContent = msg; err.classList.add('visible'); } };
     if (err) err.classList.remove('visible');
 
-    if (!slug) { showErr('Enter Room ID'); return; }
-    if (!pw)   { showErr('Enter password'); return; }
-    if (!name) { showErr('Enter a username'); return; }
+    if (!slug || !/^[a-z0-9-]{3,32}$/.test(slug)) { showErr('Enter a valid Room ID'); return; }
+    if (!pw || pw.length < 8)   { showErr('Enter the 8+ char password'); return; }
+    if (!name || !/^[a-zA-Z0-9_]{3,32}$/.test(name)) { showErr('Enter a valid username'); return; }
 
     btn.disabled = true; btn.textContent = 'Verifying...';
     try {
@@ -497,6 +498,10 @@ async function loadPermanentHistoryOnce(roomId, password) {
         if (event.eventId) handledPermanentEventIds.add(event.eventId);
         const decrypted = await aesDecrypt(password, event.ciphertext);
         const payload = JSON.parse(decrypted);
+        if (!payload?.system) {
+          const verified = await verifyPayloadEnvelope(payload);
+          if (!verified) continue;
+        }
         if (typeof applyPersistedRoomEvent === 'function') applyPersistedRoomEvent(payload);
       }
       if (events.length < 500) break;

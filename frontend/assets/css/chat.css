@@ -399,7 +399,7 @@ body[data-page="chat"]::before {
   padding: 20px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
   scroll-behavior: smooth;
   scroll-padding-bottom: 6rem;
 }
@@ -432,16 +432,16 @@ body[data-page="chat"]::before {
 
 .msg-bubble {
   display: inline-block;
-  max-width: min(65%, 520px);
+  max-width: min(70%, 450px);
   width: fit-content;
   height: auto;
-  padding: 10px 14px !important;
-  border-radius: 16px;
-  font-size: 14px;
-  line-height: 1.4 !important;
+  padding: 7px 12px !important;
+  border-radius: 14px;
+  font-size: 13px;
+  line-height: 1.3 !important;
   word-break: break-word;
   white-space: pre-wrap;
-  box-shadow: 0 2px 10px rgba(0,0,0,.25);
+  box-shadow: 0 2px 8px rgba(0,0,0,.15);
   position: relative;
 }
 

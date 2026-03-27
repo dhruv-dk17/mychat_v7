@@ -3,15 +3,14 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
-const path = require('path');
 const { initDB } = require('./db/database');
 const roomRoutes = require('./routes/rooms');
 const healthRoutes = require('./routes/health');
+const logger = require('./lib/logger');
+const { metricsMiddleware } = require('./lib/metrics');
 
 const app = express();
-const frontendDir = path.join(__dirname, '..', '..', 'frontend');
 
-// Security headers with Content Security Policy
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
@@ -20,24 +19,20 @@ app.use(helmet({
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://cdn.jsdelivr.net"],
       fontSrc: ["'self'", "https://fonts.gstatic.com", "https://cdn.jsdelivr.net"],
       imgSrc: ["'self'", "data:", "blob:", "https:"],
-      connectSrc: ["'self'", "wss:", "ws:", "https:", "https://0.peerjs.com"],
+      connectSrc: ["'self'", "wss:", "ws:", "https:"],
       mediaSrc: ["'self'", "blob:", "data:"],
       workerSrc: ["'self'", "blob:"],
       objectSrc: ["'none'"],
-      frameSrc: ["'none'"],
+      frameSrc: ["'none'"]
     }
   },
-  crossOriginEmbedderPolicy: false,
+  crossOriginEmbedderPolicy: false
 }));
 
-// Required for Render — behind a load balancer
 app.set('trust proxy', 1);
-
-// Body parsing — 10kb limit prevents payload attacks
 app.use(express.json({ limit: '10kb' }));
+app.use(metricsMiddleware);
 
-// Parse ALLOWED_ORIGIN from Render env setup.
-// Support a comma-separated list for production and keep local dev origins explicit.
 const configuredOrigins = (process.env.ALLOWED_ORIGIN || '')
   .split(',')
   .map(origin => origin.trim())
@@ -54,24 +49,6 @@ const allowedOrigins = new Set([
   'http://localhost:5173',
   'http://localhost:8080'
 ]);
-
-const corsOptions = {
-  origin: function (origin, callback) {
-    if (isAllowedCorsOrigin(origin)) {
-      return callback(null, true);
-    }
-    callback(new Error('Not allowed by CORS'));
-  },
-  methods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
-  allowedHeaders: [
-    'Content-Type',
-    'X-Room-Password-Hash',
-    'X-Admin-Secret',
-    'X-Auth-Username',
-    'X-Auth-Token'
-  ],
-  maxAge: 86400
-};
 
 function isAllowedCorsOrigin(origin) {
   if (!origin) return true;
@@ -91,32 +68,48 @@ function isAllowedCorsOrigin(origin) {
   return false;
 }
 
+const corsOptions = {
+  origin(origin, callback) {
+    if (isAllowedCorsOrigin(origin)) {
+      return callback(null, true);
+    }
+    callback(new Error('Not allowed by CORS'));
+  },
+  methods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
+  allowedHeaders: [
+    'Content-Type',
+    'X-Room-Password-Hash',
+    'X-Admin-Secret',
+    'X-Auth-Username',
+    'X-Auth-Token'
+  ],
+  maxAge: 86400
+};
+
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
 
-// Global rate limit: 60 requests/minute
 app.use(rateLimit({
-  windowMs: 60 * 1000,
-  max: 60,
+  windowMs: 15 * 60 * 1000,
+  max: 100,
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many requests. Slow down.' }
 }));
 
-// Routes
 app.use('/api/rooms', roomRoutes);
 app.use('/api/health', healthRoutes);
 app.use('/api/users', require('./routes/users'));
 app.use('/api/admin', require('./routes/admin'));
 
-// Pure API Mode: Frontend is hosted separately
-
-// 404
 app.use((req, res) => res.status(404).json({ error: 'Not found' }));
 
-// Error handler
 app.use((err, req, res, next) => {
-  console.error(err.stack);
+  logger.error('request_failed', {
+    path: req.path,
+    method: req.method,
+    error: err.message
+  });
   res.status(500).json({ error: 'Internal server error' });
 });
 
@@ -126,11 +119,13 @@ async function start() {
   try {
     await initDB();
     app.listen(PORT, '0.0.0.0', () => {
-      console.log(`✓ Mychat v7 backend running on port ${PORT}`);
-      console.log(`  Environment: ${process.env.NODE_ENV || 'development'}`);
+      logger.info('server_started', {
+        port: PORT,
+        environment: process.env.NODE_ENV || 'development'
+      });
     });
   } catch (err) {
-    console.error('Failed to start:', err);
+    logger.error('server_start_failed', { error: err.message });
     process.exit(1);
   }
 }

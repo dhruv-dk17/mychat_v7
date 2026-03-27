@@ -153,8 +153,8 @@
           </button>
           <div class="divider">or join</div>
           <div style="display:flex;flex-direction:column;gap:0.5rem;margin-top:0.75rem">
-            <input type="text" class="input-field" id="join-room-id" placeholder="Room ID" autocomplete="off" spellcheck="false" />
-            <input type="text" class="input-field" id="join-username" placeholder="Your name" autocomplete="off" maxlength="20" />
+            <input type="text" class="input-field" id="join-room-id" placeholder="Room ID (3-32 chars)" autocomplete="off" spellcheck="false" />
+            <input type="text" class="input-field" id="join-username" placeholder="Your name" autocomplete="off" maxlength="32" />
             <button class="btn btn-ghost w-100" id="join-private-btn">→ Join Room</button>
           </div>
         </div>
@@ -168,8 +168,8 @@
           </button>
           <div class="divider">or join</div>
           <div style="display:flex;flex-direction:column;gap:0.5rem;margin-top:0.75rem">
-            <input type="text" class="input-field" id="join-group-id" placeholder="Group Room ID" autocomplete="off" />
-            <input type="text" class="input-field" id="join-group-username" placeholder="Your name" autocomplete="off" maxlength="20" />
+            <input type="text" class="input-field" id="join-group-id" placeholder="Group Room ID (3-32 chars)" autocomplete="off" />
+            <input type="text" class="input-field" id="join-group-username" placeholder="Your name" autocomplete="off" maxlength="32" />
             <button class="btn btn-ghost w-100" id="join-group-btn">→ Join Group</button>
           </div>
         </div>
@@ -198,12 +198,12 @@
 
           <!-- Join sub-section -->
           <div style="display:flex;flex-direction:column;gap:0.5rem;margin-top:0.75rem">
-            <input type="text" class="input-field" id="join-perm-id" placeholder="Room ID" autocomplete="off" spellcheck="false" maxlength="8" />
+            <input type="text" class="input-field" id="join-perm-id" placeholder="Room ID" autocomplete="off" spellcheck="false" maxlength="32" />
             <div class="input-pw-wrap">
               <input type="password" class="input-field" id="join-perm-pw" placeholder="Password" autocomplete="current-password" />
               <button class="pw-toggle" type="button" title="Show/hide password">👁</button>
             </div>
-            <input type="text" class="input-field" id="join-perm-username" placeholder="Your name" autocomplete="off" maxlength="20" />
+            <input type="text" class="input-field" id="join-perm-username" placeholder="Your name" autocomplete="off" maxlength="32" />
             <div class="inline-error" id="join-perm-error"></div>
             <button class="btn btn-ghost w-100" id="join-perm-btn">→ Join Room</button>
           </div>
@@ -328,7 +328,7 @@
       <!-- Create Room Form inside Dashboard -->
       <div class="card-desc" style="margin-bottom:1rem;">Create a new operations room:</div>
       <div style="display:flex;flex-direction:column;gap:0.5rem; margin-bottom:1.5rem; padding:1rem; background:rgba(255,255,255,0.03); border-radius:var(--r-md); border:1px solid rgba(255,255,255,0.08);">
-        <input type="text" class="input-field" id="dashboard-new-slug" placeholder="Room ID (3-8 chars, a-z 0-9)" maxlength="8" autocomplete="off" spellcheck="false" />
+        <input type="text" class="input-field" id="dashboard-new-slug" placeholder="Room ID (3-32 chars, a-z 0-9 -)" maxlength="32" autocomplete="off" spellcheck="false" />
         <div class="input-pw-wrap">
           <input type="password" class="input-field" id="dashboard-new-pw" placeholder="Room Password" />
           <button class="pw-toggle" type="button" title="Show/hide password">👁</button>

@@ -16,6 +16,10 @@ let hostPeerIdForRoom = '';
 let permanentRoomPassword = '';
 let permanentReconnectTimer = null;
 let reconnectInFlight = false;
+let outboundSequenceNumber = 0;
+const processedTransportIds = new Set();
+const lastSequenceBySender = new Map();
+const lastHeartbeatByPeer = new Map();
 
 // ── Load PeerJS lazily ────────────────────────────────────────────
 async function loadPeerJS() {
@@ -57,6 +61,49 @@ async function createPeerInstance(peerId, onReady, onLateError) {
 function setRoomKeys(primaryKey, fallbackKeys = []) {
   roomKey = primaryKey || '';
   roomKeyCandidates = Array.from(new Set([roomKey, ...fallbackKeys.filter(Boolean)]));
+}
+
+async function prepareOutboundMessage(message) {
+  if (message?.signature && message?.senderPeerId && message?.senderPublicKey) {
+    return message;
+  }
+  const normalized = {
+    ...message,
+    id: message.id || crypto.randomUUID(),
+    ts: Number.isFinite(Number(message.ts)) ? Number(message.ts) : Date.now(),
+    from: message.from || myUsername
+  };
+
+  if (!normalized.system) {
+    normalized.sequenceNumber = Number.isInteger(normalized.sequenceNumber)
+      ? normalized.sequenceNumber
+      : ++outboundSequenceNumber;
+  }
+
+  return signPayloadEnvelope(normalized);
+}
+
+async function shouldAcceptInboundMessage(message) {
+  if (!message?.type) return false;
+  if (message.system || message.type === 'ping' || message.type === 'pong' || message.type === 'join_request' || message.type === 'join_response' || message.type === 'room_sync' || message.type === 'user_list' || message.type === 'room_locked') {
+    return true;
+  }
+  const verified = await verifyPayloadEnvelope(message);
+  if (!verified) {
+    console.warn('Dropped message with invalid signature');
+    return false;
+  }
+  if (message.id && processedTransportIds.has(message.id)) return false;
+  const senderKey = message.senderPeerId || message.from;
+  const lastSeen = lastSequenceBySender.get(senderKey) || 0;
+  if (Number.isInteger(message.sequenceNumber) && message.sequenceNumber <= lastSeen) return false;
+  if (message.id) processedTransportIds.add(message.id);
+  if (processedTransportIds.size > 5000) {
+    const first = processedTransportIds.values().next().value;
+    if (first) processedTransportIds.delete(first);
+  }
+  if (Number.isInteger(message.sequenceNumber)) lastSequenceBySender.set(senderKey, message.sequenceNumber);
+  return true;
 }
 
 async function decryptWithRoomKeys(payload) {
@@ -340,17 +387,29 @@ function setupConnection(conn) {
       if (parsed.type === 'enc' && parsed.data) {
         try {
           const dec = await decryptWithRoomKeys(parsed.data);
-          handleIncomingMessage(JSON.parse(dec), conn);
+          const payload = JSON.parse(dec);
+          if (await shouldAcceptInboundMessage(payload)) {
+            handleIncomingMessage(payload, conn);
+          }
         } catch (err) {
           console.warn('E2EE Decryption failed (wrong key?)', err);
         }
       } else {
-        handleIncomingMessage(parsed, conn);
+        if (await shouldAcceptInboundMessage(parsed)) {
+          handleIncomingMessage(parsed, conn);
+        }
       }
     } catch (e) { console.warn('Bad message', e); }
   });
-  conn.on('close', () => handlePeerDisconnect(conn.peer));
-  conn.on('error', () => handlePeerDisconnect(conn.peer));
+  conn.on('open', () => lastHeartbeatByPeer.set(conn.peer, Date.now()));
+  conn.on('close', () => {
+    lastHeartbeatByPeer.delete(conn.peer);
+    handlePeerDisconnect(conn.peer);
+  });
+  conn.on('error', () => {
+    lastHeartbeatByPeer.delete(conn.peer);
+    handlePeerDisconnect(conn.peer);
+  });
 }
 
 // ── Route incoming messages ───────────────────────────────────────
@@ -456,7 +515,8 @@ function relayToAll(payload, senderConn) {
 // ── Broadcast / relay helpers ─────────────────────────────────────
 async function broadcastToPeers(message, excludeConn) {
   try {
-    const encStr = await aesEncrypt(roomKey, JSON.stringify(message));
+    const signedMessage = await prepareOutboundMessage(message);
+    const encStr = await aesEncrypt(roomKey, JSON.stringify(signedMessage));
     const finalJSON = JSON.stringify({ type: 'enc', data: encStr });
     connectedPeers.forEach(({ conn }) => {
       if (conn !== excludeConn && conn.open) conn.send(finalJSON);
@@ -467,13 +527,14 @@ async function broadcastToPeers(message, excludeConn) {
 }
 
 async function broadcastOrRelay(msg) {
+  const signedMessage = await prepareOutboundMessage(msg);
   if (myRole === 'host') {
-    broadcastToPeers(msg);
+    broadcastToPeers(signedMessage);
   } else {
     const hostConn = [...connectedPeers.values()].find(p => p.role === 'host')?.conn || [...connectedPeers.values()][0]?.conn;
     if (hostConn?.open) {
       try {
-        const encStr = await aesEncrypt(roomKey, JSON.stringify(msg));
+        const encStr = await aesEncrypt(roomKey, JSON.stringify(signedMessage));
         hostConn.send(JSON.stringify({ type: 'enc', data: encStr }));
       } catch (e) {
         console.error('E2EE Relay Encrypt error', e);
@@ -597,13 +658,20 @@ function endRoom(shouldNavigateHome = true) {
 const _pingMap = new Map();
 
 function updatePeerPing(peerId, sentTs) {
+  lastHeartbeatByPeer.set(peerId, Date.now());
   _pingMap.set(peerId, Date.now() - sentTs);
   refreshUserPingDot(peerId, _pingMap.get(peerId));
 }
 
 setInterval(() => {
   const now = Date.now();
-  connectedPeers.forEach(({ conn }) => {
+  connectedPeers.forEach(({ conn }, peerId) => {
+    const lastHeartbeat = lastHeartbeatByPeer.get(peerId) || now;
+    if (now - lastHeartbeat > CONFIG.PING_TIMEOUT_MS) {
+      try { conn.close(); } catch (e) {}
+      handlePeerDisconnect(peerId);
+      return;
+    }
     if (conn.open) conn.send(JSON.stringify({ type: 'ping', ts: now }));
   });
 }, CONFIG.PING_INTERVAL_MS);

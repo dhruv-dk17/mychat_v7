@@ -597,48 +597,7 @@ function searchMessages(query) {
   matches[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
-// ── Render Rich Media Message ─────────────────────────────────────
-// function renderRichMediaMessage(msg, isOwn) { // Redundant! Consolidated at end of file.
-  const feed = document.getElementById('chat-feed');
-  if (!feed) return;
 
-  const last = feed.lastElementChild;
-  const isCts = last && last.dataset.sender === msg.from && !last.classList.contains('msg-system');
-  if (isCts) last.classList.add('msg-cts');
-
-  const el = document.createElement('div');
-  el.className   = 'msg ' + (isOwn ? 'msg-out' : 'msg-in');
-  if (isCts) el.classList.add('msg-cts-next');
-  el.dataset.msgId  = msg.id;
-  el.dataset.sender = msg.from;
-
-  const showFrom = !isOwn && !isCts;
-
-  el.innerHTML = `
-    ${showFrom ? `<span class="msg-user">${escHtml(msg.from)}</span>` : ''}
-    <div class="msg-bubble media-bubble">
-      <img src="${msg.url}" style="max-width:240px; border-radius:12px; transition: transform 0.2s;" loading="lazy" onclick="window.open('${msg.url}', '_blank')">
-    </div>
-    <span class="msg-time">${fmtTime(msg.ts)}</span>
-    <div class="msg-reactions" id="reactions-${msg.id}"></div>
-    <div class="msg-checkbox" style="display:none;">✓</div>
-  `;
-
-  el.addEventListener('click', e => {
-    if (isMultiSelectMode && isOwn) {
-      e.preventDefault(); e.stopPropagation();
-      toggleMessageSelection(msg.id, el);
-    }
-  });
-  el.addEventListener('contextmenu', e => { e.preventDefault(); showContextMenu(e, msg, isOwn); });
-  el.addEventListener('touchstart',  e => {
-    const t = setTimeout(() => showContextMenu(e.touches[0], msg, isOwn), 500);
-    el.addEventListener('touchend', () => clearTimeout(t), { once: true });
-  });
-
-  feed.appendChild(el);
-  feed.scrollTop = feed.scrollHeight;
-// } // End redundant function
 
 function getReceiptMarkup(msg, isOwn) {
   if (!isOwn) return '';

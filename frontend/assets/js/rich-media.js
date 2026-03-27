@@ -27,8 +27,23 @@ const EMOJI_LIST = Array.from(new Set(
   })
 ));
 
-const TENOR_API_KEY = 'LIVDULZ6S78F'; // Using a public demo key - User should replace with their own
-const TENOR_BASE_URL = 'https://tenor.googleapis.com/v2';
+const FALLBACK_GIFS = [
+  { url: "https://media.giphy.com/media/JIX9t2j0ZTN9S/giphy.gif", tags: ["cat", "typing", "work", "computer"] },
+  { url: "https://media.giphy.com/media/vFKqnCdLPNOKc/giphy.gif", tags: ["dog", "happy", "smile", "cute"] },
+  { url: "https://media.giphy.com/media/3o7TKSjRrfIPjeiVyM/giphy.gif", tags: ["wow", "amaze", "surprise", "cat"] },
+  { url: "https://media.giphy.com/media/l41lOdm2mFEXhzpe8/giphy.gif", tags: ["clap", "applause", "good", "bravo"] },
+  { url: "https://media.giphy.com/media/xT0xeJpnrWC4XWblEk/giphy.gif", tags: ["thumbs up", "yes", "agree", "ok"] },
+  { url: "https://media.giphy.com/media/11ISwbgCxEzMyY/giphy.gif", tags: ["no", "never", "refuse", "headshake"] },
+  { url: "https://media.giphy.com/media/26AHONQ79FdWZhAI0/giphy.gif", tags: ["dance", "party", "celebrate", "happy"] },
+  { url: "https://media.giphy.com/media/5wWf7GMbT1ZUGlTD31g/giphy.gif", tags: ["laugh", "lol", "funny", "haha"] }
+];
+
+const FALLBACK_STICKERS = [
+  { url: "https://media.giphy.com/media/aBHe0H82A1w0R9bXl0/giphy.gif", tags: ["yes", "sticker", "check", "approve"] },
+  { url: "https://media.giphy.com/media/L0qTl8hl84AQgPcgfP/giphy.gif", tags: ["cool", "dog", "sunglasses", "swag"] },
+  { url: "https://media.giphy.com/media/8RjQcweNqX1Xk3yJ5K/giphy.gif", tags: ["bye", "wave", "leave", "cya"] },
+  { url: "https://media.giphy.com/media/xUOrwaR1d2x5y0vIfu/giphy.gif", tags: ["heart", "love", "cute"] }
+];
 
 document.addEventListener('DOMContentLoaded', () => {
   const drawerBtn = document.getElementById('media-drawer-btn');
@@ -102,26 +117,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ── Handlers & Fallbacks ─────────────────────────────
   
-  const FALLBACK_GIFS = [
-    { media_formats: { gif: { url: "https://media.tenor.com/2RoCBzvBKhAAAAAM/cat-typing.gif" } }, tags: ['typing', 'work', 'computer', 'cat'] },
-    { media_formats: { gif: { url: "https://media.tenor.com/_H3e-fEa1M8AAAAM/cute-cat.gif" } }, tags: ['cute', 'cat', 'love', 'smile'] },
-    { media_formats: { gif: { url: "https://media.tenor.com/t3VdZOf0oHAAAAAM/cat-yes.gif" } }, tags: ['yes', 'agree', 'ok', 'cat'] },
-    { media_formats: { gif: { url: "https://media.tenor.com/QW0zXj0XU3sAAAAM/cat-dance.gif" } }, tags: ['dance', 'party', 'happy', 'cat'] },
-    { media_formats: { gif: { url: "https://media.tenor.com/xHq3n_60UAAAAAAM/cat-funny.gif" } }, tags: ['funny', 'lol', 'haha', 'cat'] },
-    { media_formats: { gif: { url: "https://media.tenor.com/PZcM_j6Gg3wAAAAM/cat-no.gif" } }, tags: ['no', 'refuse', 'never', 'cat'] },
-    { media_formats: { gif: { url: "https://media.tenor.com/b9a3z2P6oAAAAAAM/ok-agreed.gif" } }, tags: ['ok', 'agree', 'nod'] },
-    { media_formats: { gif: { url: "https://media.tenor.com/gK22a0q5x8MAAAAM/thumbs-up.gif" } }, tags: ['thumb', 'good', 'nice'] },
-    { media_formats: { gif: { url: "https://media.tenor.com/-pA3b-EPEjYAAAAM/crying-sad.gif" } }, tags: ['sad', 'cry', 'tears'] },
-    { media_formats: { gif: { url: "https://media.tenor.com/lM_L1M9f-vAAAAAM/wow-omg.gif" } }, tags: ['wow', 'omg', 'surprise'] },
-    { media_formats: { gif: { url: "https://media.tenor.com/JvC-r27jOlcAAAAM/angry-mad.gif" } }, tags: ['angry', 'mad', 'rage'] },
-    { media_formats: { gif: { url: "https://media.tenor.com/Z4oR-R0-U78AAAAM/laughing-lol.gif" } }, tags: ['lol', 'laugh', 'funny'] }
-  ];
-
-  function getFallbackSubset(query) {
-    if (!query) return FALLBACK_GIFS.sort(() => 0.5 - Math.random()).slice(0, 12);
+  function getMediaSubset(query, type) {
+    const dataSource = type === 'stickers' ? FALLBACK_STICKERS : FALLBACK_GIFS;
+    if (!query) return dataSource.slice().sort(() => 0.5 - Math.random());
     const lq = query.toLowerCase();
-    const filtered = FALLBACK_GIFS.filter(g => g.tags.some(t => t.includes(lq) || lq.includes(t)));
-    return filtered.length > 0 ? filtered : FALLBACK_GIFS.sort(() => 0.5 - Math.random()).slice(0, 8);
+    const filtered = dataSource.filter(g => g.tags.some(t => t.includes(lq) || lq.includes(t)));
+    return filtered.length > 0 ? filtered : dataSource.slice().sort(() => 0.5 - Math.random());
   }
 
   async function loadTrending(type) {
@@ -130,18 +131,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if (resEl.dataset.loaded === 'trending' && !document.getElementById('media-search-input').value) return;
 
     resEl.innerHTML = '<div class="media-loading">Loading Trending...</div>';
-    try {
-      const endpoint = type === 'stickers' ? '/featured?searchfilter=sticker' : '/featured?';
-      const resp = await fetch(`${TENOR_BASE_URL}${endpoint}&key=${TENOR_API_KEY}&limit=12&media_filter=gif,tinygif`);
-      if (!resp.ok) throw new Error('API Error');
-      const json = await resp.json();
-      renderResults(json.results, resEl, type);
+    
+    // Simulate slight network delay for UI feedback
+    setTimeout(() => {
+      renderResults(getMediaSubset('', type), resEl, type);
       resEl.dataset.loaded = 'trending';
-    } catch (e) {
-      console.warn('Tenor API Rate Limited/Invalid:', e);
-      renderResults(getFallbackSubset(''), resEl, type);
-      resEl.dataset.loaded = 'trending';
-    }
+    }, 200);
   }
 
   async function searchMedia(query, type) {
@@ -149,18 +144,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!resEl) return;
 
     resEl.innerHTML = '<div class="media-loading">Searching...</div>';
-    try {
-      const endpoint = type === 'stickers' ? '/search?searchfilter=sticker' : '/search?';
-      const resp = await fetch(`${TENOR_BASE_URL}${endpoint}&q=${encodeURIComponent(query)}&key=${TENOR_API_KEY}&limit=15&media_filter=gif,tinygif`);
-      if (!resp.ok) throw new Error('API Error');
-      const json = await resp.json();
-      renderResults(json.results, resEl, type);
+    
+    // Simulate slight network delay for UI feedback
+    setTimeout(() => {
+      renderResults(getMediaSubset(query, type), resEl, type);
       resEl.dataset.loaded = 'search';
-    } catch (e) {
-      console.warn('Tenor API Rate Limited/Invalid:', e);
-      renderResults(getFallbackSubset(query), resEl, type);
-      resEl.dataset.loaded = 'search';
-    }
+    }, 200);
   }
 
   function renderResults(results, container, type) {
@@ -171,17 +160,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     results.forEach(item => {
-      const media = item.media_formats.tinygif || item.media_formats.gif;
-      if (!media) return;
+      const url = item.url;
+      if (!url) return;
 
       const img = document.createElement('img');
-      img.src = media.url;
+      img.src = url;
       img.className = 'media-item';
       img.loading = 'lazy';
       img.onclick = () => {
-        const fullMedia = item.media_formats.gif || item.media_formats.tinygif;
-        if (!fullMedia?.url) return;
-        sendRichMedia(fullMedia.url, type === 'stickers' ? 'sticker' : 'gif');
+        sendRichMedia(url, type === 'stickers' ? 'sticker' : 'gif');
         drawer.classList.remove('drawer-active');
       };
       container.appendChild(img);

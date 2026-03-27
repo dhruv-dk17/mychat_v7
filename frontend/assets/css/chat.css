@@ -406,9 +406,11 @@ body[data-page="chat"]::before {
 
 /* ── Message Bubbles ─────────────────────────── */
 .msg {
-  display: flex;
+  display: inline-flex;
   flex-direction: column;
-  max-width: 25%;
+  max-width: min(60%, 520px);
+  width: fit-content;
+  height: auto;
   flex: 0 0 auto;
   animation: msg-pop 0.3s var(--ease-snap);
 }
@@ -482,6 +484,19 @@ body[data-page="chat"]::before {
 
 .media-bubble { background: transparent !important; padding: 0 !important; border: none !important; box-shadow: none !important; }
 .media-bubble::before, .media-bubble::after { display: none !important; }
+
+.msg-media-image {
+  max-width: 240px;
+  max-height: 240px;
+  border-radius: 12px;
+  object-fit: contain;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+  background-color: rgba(255, 255, 255, 0.05); /* Placeholder skeleton background */
+}
+.msg-media-image:hover {
+  transform: scale(1.02);
+}
 
 .msg-time {
   font-size: 0.65rem;

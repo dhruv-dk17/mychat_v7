@@ -411,8 +411,9 @@ async function sendVoiceMessage() {
 
 function receiveVoiceMessage(msg) {
   if (typeof rememberMessage === 'function' && !rememberMessage(msg)) return;
-  renderVoiceMessage(msg, msg.from === myUsername);
-  if (msg.from !== myUsername) {
+  const isOwn = typeof isOwnMessage === 'function' ? isOwnMessage(msg) : msg.from === myUsername;
+  renderVoiceMessage(msg, isOwn);
+  if (!isOwn) {
     playMessageSound();
     if (typeof acknowledgeIncomingMessage === 'function') acknowledgeIncomingMessage(msg);
   }

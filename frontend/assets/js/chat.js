@@ -7,6 +7,24 @@ let isDisappearingMode = false;
 let pendingReply = null;
 const DISAPPEAR_SECONDS = 60;
 
+function getOwnIdentityPeerId() {
+  return typeof getCurrentIdentityPeerId === 'function' ? getCurrentIdentityPeerId() : '';
+}
+
+function isOwnMessage(msg) {
+  if (!msg) return false;
+  const ownPeerId = getOwnIdentityPeerId();
+  if (ownPeerId && msg.senderPeerId) return msg.senderPeerId === ownPeerId;
+  return msg.from === myUsername;
+}
+
+function isReceiptForCurrentUser(payload) {
+  if (!payload?.messageId) return false;
+  const ownPeerId = getOwnIdentityPeerId();
+  if (ownPeerId && payload.targetPeerId) return payload.targetPeerId === ownPeerId;
+  return payload.target === myUsername;
+}
+
 function hasMessage(messageId) {
   return Boolean(messageId) && messages.some(msg => msg.id === messageId);
 }
@@ -109,7 +127,7 @@ function updateMessageReceipt(messageId, patch) {
 }
 
 function applyMessageReceipt(payload) {
-  if (!payload?.messageId || payload.target !== myUsername) return;
+  if (!isReceiptForCurrentUser(payload)) return;
   if (payload.type === 'read_receipt') {
     updateMessageReceipt(payload.messageId, { deliveredAt: payload.ts, readAt: payload.ts });
     return;
@@ -117,21 +135,24 @@ function applyMessageReceipt(payload) {
   updateMessageReceipt(payload.messageId, { deliveredAt: payload.ts });
 }
 
-function sendReceipt(type, messageId, targetUser) {
-  if (!messageId || !targetUser || targetUser === myUsername) return;
+function sendReceipt(type, messageId, targetUser, targetPeerId) {
+  const ownPeerId = getOwnIdentityPeerId();
+  if (!messageId || !targetUser) return;
+  if ((targetPeerId && ownPeerId && targetPeerId === ownPeerId) || (!targetPeerId && targetUser === myUsername)) return;
   broadcastOrRelay({
     type,
     messageId,
     target: targetUser,
+    targetPeerId: targetPeerId || null,
     from: myUsername,
     ts: Date.now()
   });
 }
 
 function acknowledgeIncomingMessage(msg) {
-  if (!msg?.id || msg.from === myUsername || msg.system) return;
-  sendReceipt('receipt', msg.id, msg.from);
-  requestAnimationFrame(() => sendReceipt('read_receipt', msg.id, msg.from));
+  if (!msg?.id || isOwnMessage(msg) || msg.system) return;
+  sendReceipt('receipt', msg.id, msg.from, msg.senderPeerId);
+  requestAnimationFrame(() => sendReceipt('read_receipt', msg.id, msg.from, msg.senderPeerId));
 }
 
 // ── Send text message ─────────────────────────────────────────────
@@ -164,7 +185,7 @@ function sendTextMessage(text) {
 function receiveTextMessage(msg) {
   if (msg.system) { addSystemMessage(msg.text); return; }
   if (!rememberMessage(msg)) return;
-  const isOwn = msg.from === myUsername;
+  const isOwn = isOwnMessage(msg);
   renderMessage(msg, isOwn);
   if (!isOwn) playMessageSound();
   acknowledgeIncomingMessage(msg);
@@ -177,7 +198,7 @@ function receiveTextMessage(msg) {
 // ── Receive rich media ────────────────────────────────────────────
 function receiveRichMedia(msg) {
   if (!rememberMessage(msg)) return;
-  const isOwn = msg.from === myUsername;
+  const isOwn = isOwnMessage(msg);
   renderRichMediaMessage(msg, isOwn);
   if (!isOwn) playMessageSound();
   acknowledgeIncomingMessage(msg);
@@ -458,7 +479,7 @@ function applyReaction(msg) {
   pill.textContent   = `${msg.emoji} ${users.length}`;
   pill.title         = users.join(', ');
 
-  const isMe = msg.from === myUsername && !msg.remove;
+  const isMe = isOwnMessage(msg) && !msg.remove;
   pill.classList.toggle('reacted-by-me', isMe || users.includes(myUsername));
 }
 

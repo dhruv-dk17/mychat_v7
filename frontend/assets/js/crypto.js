@@ -1,5 +1,7 @@
 'use strict';
 
+let currentIdentityPeerId = '';
+
 async function sha256(str) {
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
   return Array.from(new Uint8Array(buf))
@@ -120,6 +122,7 @@ async function loadIdentityMaterial() {
       const parsed = JSON.parse(cached);
       const privateKey = await crypto.subtle.importKey('jwk', parsed.privateKeyJwk, { name: 'ECDSA', namedCurve: 'P-256' }, true, ['sign']);
       const publicKey = await importPublicKeyBase64(parsed.publicKey);
+      currentIdentityPeerId = parsed.peerId || '';
       return { ...parsed, privateKey, publicKey };
     } catch (e) {
       console.warn('Failed to load cached identity, generating new one', e);
@@ -132,6 +135,7 @@ async function loadIdentityMaterial() {
   const privateKeyJwk = await crypto.subtle.exportKey('jwk', keyPair.privateKey);
   const peerId = await sha256(publicKey);
   const material = { peerId, publicKey, privateKeyJwk };
+  currentIdentityPeerId = peerId;
   localStorage.setItem(storageKey, JSON.stringify(material));
   return { ...material, privateKey: keyPair.privateKey, publicKey: keyPair.publicKey };
 }
@@ -143,6 +147,10 @@ async function getIdentityMaterial() {
     identityMaterialPromise = loadIdentityMaterial();
   }
   return identityMaterialPromise;
+}
+
+function getCurrentIdentityPeerId() {
+  return currentIdentityPeerId;
 }
 
 async function signPayloadEnvelope(payload) {

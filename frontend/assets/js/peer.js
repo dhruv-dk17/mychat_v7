@@ -165,23 +165,36 @@ function initiateHandshake(hostId, password, showWaitingModal = false) {
 
 function stopPermanentReconnectLoop() {
   reconnectInFlight = false;
+  reconnectAttempt = 0;
   if (permanentReconnectTimer) {
-    clearInterval(permanentReconnectTimer);
+    clearTimeout(permanentReconnectTimer);
     permanentReconnectTimer = null;
   }
 }
 
+let reconnectAttempt = 0;
+const MAX_RECONNECT_DELAY_MS = 30000;
+
 function schedulePermanentReconnect() {
   if (currentRoomType !== 'permanent' || myRole === 'host' || !hostPeerIdForRoom || !peerInstance) return;
   if (permanentReconnectTimer) return;
-  permanentReconnectTimer = setInterval(() => {
+
+  reconnectAttempt++;
+  const baseDelay = CONFIG.PERMANENT_RECONNECT_MS || 4000;
+  const expDelay = Math.min(baseDelay * Math.pow(1.5, reconnectAttempt - 1), MAX_RECONNECT_DELAY_MS);
+  const jitter = Math.random() * 1000;
+  const delay = Math.round(expDelay + jitter);
+
+  permanentReconnectTimer = setTimeout(() => {
+    permanentReconnectTimer = null;
     const hostConn = connectedPeers.get(hostPeerIdForRoom)?.conn;
     if (hostConn?.open) {
-      stopPermanentReconnectLoop();
+      reconnectAttempt = 0;
       return;
     }
     initiateHandshake(hostPeerIdForRoom, permanentRoomPassword, false);
-  }, CONFIG.PERMANENT_RECONNECT_MS);
+    schedulePermanentReconnect();
+  }, delay);
 }
 
 function shouldClaimPermanentTransportHost() {

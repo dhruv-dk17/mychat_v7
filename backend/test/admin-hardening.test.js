@@ -1,31 +1,18 @@
-const assert = require('node:assert/strict');
-
 const adminRoute = require('../src/routes/admin');
 const { ensureUserIdentityColumns } = require('../src/db/database');
 
 const helpers = adminRoute._test;
 
-async function run(name, fn) {
-  try {
-    await fn();
-    console.log(`✓ ${name}`);
-  } catch (error) {
-    console.error(`✗ ${name}`);
-    console.error(error);
-    process.exitCode = 1;
-  }
-}
-
-async function main() {
-  await run('parseAdminUid accepts the admin uid formats we support', async () => {
-    assert.equal(helpers.parseAdminUid('u42'), 42);
-    assert.equal(helpers.parseAdminUid('42'), 42);
-    assert.equal(helpers.parseAdminUid(' U7 '), 7);
-    assert.equal(helpers.parseAdminUid('abc'), null);
-    assert.equal(helpers.parseAdminUid('u0'), null);
+describe('Admin Hardening', () => {
+  it('parseAdminUid accepts the admin uid formats we support', () => {
+    expect(helpers.parseAdminUid('u42')).toBe(42);
+    expect(helpers.parseAdminUid('42')).toBe(42);
+    expect(helpers.parseAdminUid(' U7 ')).toBe(7);
+    expect(helpers.parseAdminUid('abc')).toBe(null);
+    expect(helpers.parseAdminUid('u0')).toBe(null);
   });
 
-  await run('deleteAdminUser runs inside a transaction and commits on success', async () => {
+  it('deleteAdminUser runs inside a transaction and commits on success', async () => {
     const calls = [];
     const client = {
       async query(sql, params) {
@@ -47,18 +34,18 @@ async function main() {
 
     await helpers.deleteAdminUser({ connect: async () => client }, 17);
 
-    assert.deepEqual(calls.map(call => call.sql), [
+    expect(calls.map(call => call.sql)).toEqual([
       'BEGIN',
       'UPDATE users SET is_deleted = TRUE, token = NULL WHERE internal_id = $1 AND is_deleted = FALSE RETURNING username',
       'DELETE FROM rooms WHERE owner_username = $1',
       'COMMIT',
       'RELEASE',
     ]);
-    assert.deepEqual(calls[1].params, [17]);
-    assert.deepEqual(calls[2].params, ['alice']);
+    expect(calls[1].params).toEqual([17]);
+    expect(calls[2].params).toEqual(['alice']);
   });
 
-  await run('deleteAdminUser rolls back if room cleanup fails', async () => {
+  it('deleteAdminUser rolls back if room cleanup fails', async () => {
     const calls = [];
     const client = {
       async query(sql, params) {
@@ -78,16 +65,14 @@ async function main() {
       },
     };
 
-    await assert.rejects(
-      helpers.deleteAdminUser({ connect: async () => client }, 17),
-      /room cleanup failed/
-    );
+    await expect(helpers.deleteAdminUser({ connect: async () => client }, 17))
+      .rejects.toThrow('room cleanup failed');
 
-    assert(calls.some(call => call.sql === 'ROLLBACK'));
-    assert.equal(calls[calls.length - 1].sql, 'RELEASE');
+    expect(calls.some(call => call.sql === 'ROLLBACK')).toBe(true);
+    expect(calls[calls.length - 1].sql).toBe('RELEASE');
   });
 
-  await run('ensureUserIdentityColumns backfills legacy users and sets the sequence', async () => {
+  it('ensureUserIdentityColumns backfills legacy users and sets the sequence', async () => {
     const calls = [];
     const existingColumns = new Set();
     const client = {
@@ -110,26 +95,17 @@ async function main() {
 
     await ensureUserIdentityColumns(client);
 
-    assert(calls.some(call => call.sql === 'ALTER TABLE users ADD COLUMN internal_id INTEGER'));
-    assert(calls.some(call => call.sql === 'CREATE SEQUENCE IF NOT EXISTS users_internal_id_seq'));
-    assert(calls.some(call => call.sql === 'UPDATE users SET internal_id = nextval(\'users_internal_id_seq\') WHERE internal_id IS NULL'));
+    expect(calls.some(call => call.sql === 'ALTER TABLE users ADD COLUMN internal_id INTEGER')).toBe(true);
+    expect(calls.some(call => call.sql === 'CREATE SEQUENCE IF NOT EXISTS users_internal_id_seq')).toBe(true);
+    expect(calls.some(call => call.sql === 'UPDATE users SET internal_id = nextval(\'users_internal_id_seq\') WHERE internal_id IS NULL')).toBe(true);
     const setvalCall = calls.find(call => call.sql.startsWith('SELECT setval('));
-    assert.deepEqual(setvalCall.params, [42]);
+    expect(setvalCall.params).toEqual([42]);
   });
 
-  await run('parseOptionalTimestamp accepts numeric or date inputs and rejects bad values', async () => {
-    assert.equal(helpers.parseOptionalTimestamp(1234), 1234);
-    assert.equal(helpers.parseOptionalTimestamp('1234'), 1234);
-    assert.equal(helpers.parseOptionalTimestamp('2026-03-26T00:00:00Z'), Date.parse('2026-03-26T00:00:00Z'));
-    assert.equal(helpers.parseOptionalTimestamp('nope'), null);
+  it('parseOptionalTimestamp accepts numeric or date inputs and rejects bad values', () => {
+    expect(helpers.parseOptionalTimestamp(1234)).toBe(1234);
+    expect(helpers.parseOptionalTimestamp('1234')).toBe(1234);
+    expect(helpers.parseOptionalTimestamp('2026-03-26T00:00:00Z')).toBe(Date.parse('2026-03-26T00:00:00Z'));
+    expect(helpers.parseOptionalTimestamp('nope')).toBe(null);
   });
-
-  if (process.exitCode) {
-    process.exit(process.exitCode);
-  }
-}
-
-main().catch(error => {
-  console.error(error);
-  process.exit(1);
 });

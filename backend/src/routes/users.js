@@ -1,8 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const crypto = require('crypto');
+const bcrypt = require('bcrypt');
 const rateLimit = require('express-rate-limit');
 const { pool } = require('../db/database');
+
+const BCRYPT_ROUNDS = 12;
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, 
@@ -20,10 +23,11 @@ router.post('/register', authLimiter, async (req, res) => {
   }
   
   try {
+    const hashedPassword = await bcrypt.hash(passwordHash, BCRYPT_ROUNDS);
     const token = crypto.randomBytes(48).toString('hex');
     await pool.query(
       'INSERT INTO users (username, password_hash, token, created_at, last_seen) VALUES ($1, $2, $3, $4, $5)',
-      [username.toLowerCase(), passwordHash, token, Date.now(), Date.now()]
+      [username.toLowerCase(), hashedPassword, token, Date.now(), Date.now()]
     );
     res.json({ success: true, token, username: username.toLowerCase() });
   } catch (e) {
@@ -38,18 +42,33 @@ router.post('/login', authLimiter, async (req, res) => {
   if (!username || !passwordHash) return res.status(400).json({ error: 'Missing credentials' });
   
   try {
-    const r = await pool.query('SELECT password_hash FROM users WHERE username = $1', [username.toLowerCase()]);
+    const r = await pool.query('SELECT password_hash FROM users WHERE username = $1 AND is_deleted = FALSE', [username.toLowerCase()]);
     if (!r.rows.length) return res.status(401).json({ error: 'Invalid credentials' });
-    
-    // Constant time comparison
-    if (!timingSafeEqual(r.rows[0].password_hash, passwordHash)) {
+
+    const storedHash = r.rows[0].password_hash;
+    let isValid = false;
+
+    // Support both bcrypt hashes (new) and legacy SHA-256 hashes (old)
+    if (storedHash.startsWith('$2b$') || storedHash.startsWith('$2a$')) {
+      isValid = await bcrypt.compare(passwordHash, storedHash);
+    } else {
+      // Legacy: direct SHA-256 comparison (timing-safe)
+      isValid = timingSafeEqual(storedHash, passwordHash);
+      // Upgrade legacy hash to bcrypt on successful login
+      if (isValid) {
+        const upgraded = await bcrypt.hash(passwordHash, BCRYPT_ROUNDS);
+        await pool.query('UPDATE users SET password_hash = $1 WHERE username = $2', [upgraded, r.rows[0].username || username.toLowerCase()]);
+      }
+    }
+
+    if (!isValid) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
-    
+
     // Generate new session token
     const token = crypto.randomBytes(48).toString('hex');
     await pool.query('UPDATE users SET token = $1, last_seen = $2 WHERE username = $3', [token, Date.now(), username.toLowerCase()]);
-    
+
     res.json({ success: true, token, username: username.toLowerCase() });
   } catch (e) {
     console.error('Login error:', e.message);

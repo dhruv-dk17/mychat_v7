@@ -1,7 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const rateLimit = require('express-rate-limit');
+const bcrypt = require('bcrypt');
 const { pool } = require('../db/database');
+
+const BCRYPT_ROUNDS = 12;
 const { validateSlug, validateHash } = require('../middleware/validate');
 
 const registerLimiter = rateLimit({
@@ -38,10 +41,12 @@ router.post('/register', registerLimiter, async (req, res) => {
       const u = await pool.query('SELECT username FROM users WHERE username = $1 AND token = $2', [username.toLowerCase(), token]);
       if (u.rows.length) ownerUsername = u.rows[0].username;
     }
-  
+
+    const hashedPassword = await bcrypt.hash(passwordHash, BCRYPT_ROUNDS);
+    const hashedOwnerToken = await bcrypt.hash(ownerTokenHash, BCRYPT_ROUNDS);
     await pool.query(
       'INSERT INTO rooms (slug, password_hash, owner_token_hash, owner_username, created_at) VALUES ($1, $2, $3, $4, $5)',
-      [slug.toLowerCase(), passwordHash, ownerTokenHash, ownerUsername, Date.now()]
+      [slug.toLowerCase(), hashedPassword, hashedOwnerToken, ownerUsername, Date.now()]
     );
     res.json({ success: true, slug: slug.toLowerCase() });
   } catch (e) {
@@ -52,14 +57,33 @@ router.post('/register', registerLimiter, async (req, res) => {
 });
 
 // POST /api/rooms/verify-password
-router.post('/verify-password', async (req, res) => {
+const verifyPasswordLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: { error: 'Too many password attempts. Try again later.' }
+});
+router.post('/verify-password', verifyPasswordLimiter, async (req, res) => {
   const { slug, passwordHash } = req.body;
   if (!validateSlug(slug))         return res.status(400).json({ error: 'Invalid slug' });
   if (!validateHash(passwordHash)) return res.status(400).json({ error: 'Invalid hash' });
   try {
     const r = await pool.query('SELECT password_hash FROM rooms WHERE slug = $1', [slug.toLowerCase()]);
     if (!r.rows.length) return res.status(404).json({ error: 'Room not found' });
-    res.json({ valid: timingSafeEqual(r.rows[0].password_hash, passwordHash) });
+
+    const storedHash = r.rows[0].password_hash;
+    let isValid = false;
+
+    if (storedHash.startsWith('$2b$') || storedHash.startsWith('$2a$')) {
+      isValid = await bcrypt.compare(passwordHash, storedHash);
+    } else {
+      isValid = timingSafeEqual(storedHash, passwordHash);
+      if (isValid) {
+        const upgraded = await bcrypt.hash(passwordHash, BCRYPT_ROUNDS);
+        await pool.query('UPDATE rooms SET password_hash = $1 WHERE slug = $2', [upgraded, slug.toLowerCase()]);
+      }
+    }
+
+    res.json({ valid: isValid });
   } catch (e) {
     console.error('Verify-password error:', e.message);
     res.status(500).json({ error: 'Verification failed' });
@@ -74,7 +98,21 @@ router.post('/verify-owner', async (req, res) => {
   try {
     const r = await pool.query('SELECT owner_token_hash FROM rooms WHERE slug = $1', [slug.toLowerCase()]);
     if (!r.rows.length) return res.status(404).json({ error: 'Room not found' });
-    res.json({ valid: timingSafeEqual(r.rows[0].owner_token_hash, ownerTokenHash) });
+
+    const storedHash = r.rows[0].owner_token_hash;
+    let isValid = false;
+
+    if (storedHash.startsWith('$2b$') || storedHash.startsWith('$2a$')) {
+      isValid = await bcrypt.compare(ownerTokenHash, storedHash);
+    } else {
+      isValid = timingSafeEqual(storedHash, ownerTokenHash);
+      if (isValid) {
+        const upgraded = await bcrypt.hash(ownerTokenHash, BCRYPT_ROUNDS);
+        await pool.query('UPDATE rooms SET owner_token_hash = $1 WHERE slug = $2', [upgraded, slug.toLowerCase()]);
+      }
+    }
+
+    res.json({ valid: isValid });
   } catch (e) {
     console.error('Verify-owner error:', e.message);
     res.status(500).json({ error: 'Verification failed' });
@@ -96,7 +134,21 @@ async function authorizeRoomByPasswordHash(slug, passwordHash) {
     [slug.toLowerCase()]
   );
   if (!room.rows.length) return null;
-  if (!timingSafeEqual(room.rows[0].password_hash, passwordHash)) return false;
+
+  const storedHash = room.rows[0].password_hash;
+  let isValid = false;
+
+  if (storedHash.startsWith('$2b$') || storedHash.startsWith('$2a$')) {
+    isValid = await bcrypt.compare(passwordHash, storedHash);
+  } else {
+    isValid = timingSafeEqual(storedHash, passwordHash);
+    if (isValid) {
+      const upgraded = await bcrypt.hash(passwordHash, BCRYPT_ROUNDS);
+      await pool.query('UPDATE rooms SET password_hash = $1 WHERE slug = $2', [upgraded, slug.toLowerCase()]);
+    }
+  }
+
+  if (!isValid) return false;
   return room.rows[0].slug;
 }
 

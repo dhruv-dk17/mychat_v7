@@ -539,10 +539,10 @@ function searchMessages(query) {
   const feed = document.getElementById('chat-feed');
   if (!feed) return;
 
-  // Remove existing highlights
-  feed.querySelectorAll('.search-highlight').forEach(h => {
-    const parent = h.parentNode;
-    parent.replaceChild(document.createTextNode(h.textContent), h);
+  // Remove existing highlights safely
+  feed.querySelectorAll('.search-highlight').forEach(mark => {
+    const parent = mark.parentNode;
+    parent.replaceChild(document.createTextNode(mark.textContent), mark);
     parent.normalize();
   });
   feed.querySelectorAll('.search-match').forEach(el => el.classList.remove('search-match'));
@@ -554,18 +554,38 @@ function searchMessages(query) {
   const matches = [];
 
   feed.querySelectorAll('.msg-text, .msg-reply-text').forEach(el => {
-    const text = el.textContent;
-    if (text.toLowerCase().includes(q)) {
-      const html = escHtml(text).replace(
-        new RegExp(normalized.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'),
-        m => `<mark class="search-highlight">${m}</mark>`
-      );
-      el.innerHTML = html;
-      const row = el.closest('.msg');
-      if (row) {
-        row.classList.add('search-match');
-        matches.push(row);
-      }
+    if (!el.textContent.toLowerCase().includes(q)) return;
+
+    // TreeWalker: wrap matching text nodes without destroying innerHTML/event listeners
+    const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null);
+    const textNodes = [];
+    let node;
+    while ((node = walker.nextNode())) textNodes.push(node);
+
+    for (const textNode of textNodes) {
+      const text = textNode.nodeValue;
+      const idx = text.toLowerCase().indexOf(q);
+      if (idx === -1) continue;
+
+      const before = text.slice(0, idx);
+      const matchText = text.slice(idx, idx + normalized.length);
+      const after = text.slice(idx + normalized.length);
+
+      const frag = document.createDocumentFragment();
+      if (before) frag.appendChild(document.createTextNode(before));
+      const mark = document.createElement('mark');
+      mark.className = 'search-highlight';
+      mark.textContent = matchText;
+      frag.appendChild(mark);
+      if (after) frag.appendChild(document.createTextNode(after));
+
+      textNode.parentNode.replaceChild(frag, textNode);
+    }
+
+    const row = el.closest('.msg');
+    if (row) {
+      row.classList.add('search-match');
+      matches.push(row);
     }
   });
 

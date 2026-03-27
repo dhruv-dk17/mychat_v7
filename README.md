@@ -28,4 +28,24 @@ For manual development, run the backend from `backend/` and open `frontend/index
 - External monitoring stack such as Prometheus/Grafana
 - Separate staging/production environments with managed secrets
 
+<<<<<<< HEAD
 See `DOCUMENTATION.md` for the broader architecture and implementation notes.
+=======
+See `DOCUMENTATION.md` for full feature reference.
+
+## Security
+
+- Messages: RAM only, gone on disconnect
+- Passwords: SHA-256 hashed in browser before leaving device  
+- Backend: One table (`rooms`), four columns, nothing else
+- Transport: WebRTC DTLS (text) + SRTP (voice)
+- CORS: Locked to Render frontend URL only
+
+---
+
+
+
+## The Journey
+(v1 to v7): We started as a basic WebRTC prototype and evolved into a hardened, zero-trust operations platform. The architecture shifted from basic sockets to a STUN/TURN mesh network, eliminating server dependencies and moving to a purely ephemeral, RAM-only state. We integrated 10 layers of anti-surveillance tech, DOM-safe searches, exponential backoff, and Bcrypt security—all while keeping hosting costs at absolute **$0**.
+
+>>>>>>> 0c1f0ca1c71a966bb8dcbdf41ee8e2db5e2b246a

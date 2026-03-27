@@ -105,24 +105,29 @@ function stableStringify(value) {
 }
 
 async function exportPublicKeyBase64(key) {
-  return toBase64(await crypto.subtle.exportKey('raw', key));
+  return toBase64(await crypto.subtle.exportKey('spki', key));
 }
 
 async function importPublicKeyBase64(base64) {
-  return crypto.subtle.importKey('raw', fromBase64(base64), { name: 'Ed25519' }, true, ['verify']);
+  return crypto.subtle.importKey('spki', fromBase64(base64), { name: 'ECDSA', namedCurve: 'P-256' }, true, ['verify']);
 }
 
 async function loadIdentityMaterial() {
-  const storageKey = 'mychat_identity_v1';
+  const storageKey = 'mychat_identity_v2';
   const cached = localStorage.getItem(storageKey);
   if (cached) {
-    const parsed = JSON.parse(cached);
-    const privateKey = await crypto.subtle.importKey('jwk', parsed.privateKeyJwk, { name: 'Ed25519' }, true, ['sign']);
-    const publicKey = await importPublicKeyBase64(parsed.publicKey);
-    return { ...parsed, privateKey, publicKey };
+    try {
+      const parsed = JSON.parse(cached);
+      const privateKey = await crypto.subtle.importKey('jwk', parsed.privateKeyJwk, { name: 'ECDSA', namedCurve: 'P-256' }, true, ['sign']);
+      const publicKey = await importPublicKeyBase64(parsed.publicKey);
+      return { ...parsed, privateKey, publicKey };
+    } catch (e) {
+      console.warn('Failed to load cached identity, generating new one', e);
+      localStorage.removeItem(storageKey);
+    }
   }
 
-  const keyPair = await crypto.subtle.generateKey({ name: 'Ed25519' }, true, ['sign', 'verify']);
+  const keyPair = await crypto.subtle.generateKey({ name: 'ECDSA', namedCurve: 'P-256' }, true, ['sign', 'verify']);
   const publicKey = await exportPublicKeyBase64(keyPair.publicKey);
   const privateKeyJwk = await crypto.subtle.exportKey('jwk', keyPair.privateKey);
   const peerId = await sha256(publicKey);
@@ -148,7 +153,7 @@ async function signPayloadEnvelope(payload) {
     senderPublicKey: identity.publicKey
   };
   const signatureBytes = await crypto.subtle.sign(
-    { name: 'Ed25519' },
+    { name: 'ECDSA', hash: 'SHA-256' },
     identity.privateKey,
     new TextEncoder().encode(stableStringify(body))
   );
@@ -162,13 +167,18 @@ async function verifyPayloadEnvelope(payload) {
   if (!payload?.senderPeerId || !payload?.senderPublicKey || !payload?.signature) return false;
   const expectedPeerId = await sha256(payload.senderPublicKey);
   if (expectedPeerId !== payload.senderPeerId) return false;
-  const publicKey = await importPublicKeyBase64(payload.senderPublicKey);
-  const body = { ...payload };
-  delete body.signature;
-  return crypto.subtle.verify(
-    { name: 'Ed25519' },
-    publicKey,
-    fromBase64(payload.signature),
-    new TextEncoder().encode(stableStringify(body))
-  );
+  try {
+    const publicKey = await importPublicKeyBase64(payload.senderPublicKey);
+    const body = { ...payload };
+    delete body.signature;
+    return crypto.subtle.verify(
+      { name: 'ECDSA', hash: 'SHA-256' },
+      publicKey,
+      fromBase64(payload.signature),
+      new TextEncoder().encode(stableStringify(body))
+    );
+  } catch (e) {
+    console.warn('Signature verification throw:', e);
+    return false;
+  }
 }

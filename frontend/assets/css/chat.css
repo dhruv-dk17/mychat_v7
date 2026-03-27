@@ -428,7 +428,7 @@ body[data-page="chat"]::before {
 
 .msg-bubble {
   display: inline-block;
-  max-width: min(25%, 16rem);
+  max-width: 75%;
   width: auto;
   height: auto;
   padding: 0.46rem 0.72rem !important;

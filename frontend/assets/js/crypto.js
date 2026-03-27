@@ -100,6 +100,24 @@ function fromBase64(value) {
   return Uint8Array.from(atob(value), c => c.charCodeAt(0));
 }
 
+function canonicalizeForSigning(value) {
+  if (value === undefined) return undefined;
+  if (value === null || typeof value !== 'object') return value;
+  if (Array.isArray(value)) {
+    return value.map(item => {
+      const normalized = canonicalizeForSigning(item);
+      return normalized === undefined ? null : normalized;
+    });
+  }
+
+  const out = {};
+  Object.keys(value).sort().forEach(key => {
+    const normalized = canonicalizeForSigning(value[key]);
+    if (normalized !== undefined) out[key] = normalized;
+  });
+  return out;
+}
+
 function stableStringify(value) {
   if (value === null || typeof value !== 'object') return JSON.stringify(value);
   if (Array.isArray(value)) return `[${value.map(stableStringify).join(',')}]`;
@@ -155,11 +173,11 @@ function getCurrentIdentityPeerId() {
 
 async function signPayloadEnvelope(payload) {
   const identity = await getIdentityMaterial();
-  const body = {
+  const body = canonicalizeForSigning({
     ...payload,
     senderPeerId: identity.peerId,
     senderPublicKey: identity.publicKey
-  };
+  });
   const signatureBytes = await crypto.subtle.sign(
     { name: 'ECDSA', hash: 'SHA-256' },
     identity.privateKey,
@@ -177,7 +195,7 @@ async function verifyPayloadEnvelope(payload) {
   if (expectedPeerId !== payload.senderPeerId) return false;
   try {
     const publicKey = await importPublicKeyBase64(payload.senderPublicKey);
-    const body = { ...payload };
+    const body = canonicalizeForSigning({ ...payload });
     delete body.signature;
     return crypto.subtle.verify(
       { name: 'ECDSA', hash: 'SHA-256' },

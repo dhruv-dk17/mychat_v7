@@ -585,7 +585,7 @@ async function initChatPage() {
     ridEl.textContent = params.roomId;
     ridEl.addEventListener('click', () => copyToClipboard(params.roomId));
   }
-  const topBarName = document.getElementById('top-bar-room-name');
+  const topBarName = document.getElementById('top-bar-room-id-mirror');
   if (topBarName) topBarName.textContent = params.roomId;
   
   const badge = document.querySelector('.badge-purple'); // Group/Private badge
@@ -678,28 +678,14 @@ async function initChatPage() {
     leaveCurrentRoom();
   });
 
-  // Sidebar toggle (Mobile)
-  const chatSidebar = document.getElementById('chat-sidebar');
-  const chatSidebarOverlay = document.getElementById('chat-sidebar-overlay');
-  
-  document.getElementById('chat-sidebar-toggle')?.addEventListener('click', () => {
-    chatSidebar?.classList.toggle('csidebar-open');
-    chatSidebarOverlay?.classList.toggle('overlay-visible');
-  });
-
-  chatSidebarOverlay?.addEventListener('click', () => {
-    chatSidebar?.classList.remove('csidebar-open');
-    chatSidebarOverlay?.classList.remove('overlay-visible');
-  });
-
-  document.getElementById('close-chat-sidebar-btn')?.addEventListener('click', () => {
-    chatSidebar?.classList.remove('csidebar-open');
-    chatSidebarOverlay?.classList.remove('overlay-visible');
-  });
-
   // User panel toggle
   document.getElementById('users-btn')?.addEventListener('click', () => {
     document.getElementById('user-panel')?.classList.toggle('panel-visible');
+  });
+  document.getElementById('users-btn-mobile')?.addEventListener('click', () => {
+    document.getElementById('user-panel')?.classList.toggle('panel-visible');
+    document.getElementById('chat-sidebar')?.classList.remove('csidebar-open');
+    document.getElementById('chat-sidebar-overlay')?.classList.remove('overlay-visible');
   });
   document.getElementById('close-panel-btn')?.addEventListener('click', () => {
     document.getElementById('user-panel')?.classList.remove('panel-visible');

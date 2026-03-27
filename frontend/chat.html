@@ -414,9 +414,6 @@
         const observer = new MutationObserver(() => { mirrorEl.textContent = ridEl.textContent; });
         observer.observe(ridEl, { childList: true, characterData: true, subtree: true });
       }
-      // Wire mobile search/users to sidebar buttons
-      document.getElementById('search-btn-mobile')?.addEventListener('click', () => document.getElementById('search-btn')?.click());
-      document.getElementById('users-btn-mobile')?.addEventListener('click', () => document.getElementById('users-btn')?.click());
     })();
   </script>
 </body>

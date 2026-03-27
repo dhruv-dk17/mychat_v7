@@ -385,9 +385,13 @@ function showIncomingCallUI(callerPeerId, callback) {
 
 // ── Search UI Toggle ──────────────────────────────────────────────
 function initSearchUI() {
-  const btn = document.getElementById('search-btn');
+  const buttons = [
+    document.getElementById('search-btn'),
+    document.getElementById('search-btn-mobile')
+  ].filter(Boolean);
   const feed = document.getElementById('chat-main');
-  if (!btn || !feed) return;
+  const topBar = document.getElementById('top-bar');
+  if (!buttons.length || !feed) return;
 
   let searchBar = document.getElementById('search-bar');
   if (!searchBar) {
@@ -401,12 +405,16 @@ function initSearchUI() {
         <button class="btn btn-sm" id="search-close-btn" style="padding: 8px 12px; font-size: 0.8rem;">Close</button>
       </div>
     `;
-    feed.insertBefore(searchBar, feed.firstChild);
+    if (topBar && topBar.parentNode === feed) {
+      feed.insertBefore(searchBar, topBar.nextSibling);
+    } else {
+      feed.insertBefore(searchBar, feed.firstChild);
+    }
   }
 
   const input = searchBar.querySelector('#search-input');
   const closeBtn = searchBar.querySelector('#search-close-btn');
-  if (!input || !closeBtn || btn.dataset.searchBound === 'true') return;
+  if (!input || !closeBtn || buttons[0].dataset.searchBound === 'true') return;
 
   const closeSearch = () => {
     searchBar.hidden = true;
@@ -415,16 +423,24 @@ function initSearchUI() {
     if (typeof searchMessages === 'function') searchMessages('');
   };
 
-  btn.dataset.searchBound = 'true';
-  btn.addEventListener('click', () => {
-    if (!searchBar.hidden) {
-      closeSearch();
-      return;
-    }
+  const openSearch = () => {
     searchBar.hidden = false;
     searchBar.classList.add('search-visible');
     input.focus();
     input.select();
+    document.getElementById('chat-sidebar')?.classList.remove('csidebar-open');
+    document.getElementById('chat-sidebar-overlay')?.classList.remove('overlay-visible');
+  };
+
+  buttons.forEach(btn => {
+    btn.dataset.searchBound = 'true';
+    btn.addEventListener('click', () => {
+      if (!searchBar.hidden) {
+        closeSearch();
+        return;
+      }
+      openSearch();
+    });
   });
 
   closeBtn.addEventListener('click', closeSearch);

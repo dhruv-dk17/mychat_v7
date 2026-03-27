@@ -77,7 +77,7 @@ async function prepareOutboundMessage(message) {
   if (!normalized.system) {
     normalized.sequenceNumber = Number.isInteger(normalized.sequenceNumber)
       ? normalized.sequenceNumber
-      : ++outboundSequenceNumber;
+      : Date.now() * 1000 + (++outboundSequenceNumber);
   }
 
   return signPayloadEnvelope(normalized);

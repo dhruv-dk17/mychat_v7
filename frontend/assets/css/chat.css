@@ -431,17 +431,16 @@ body[data-page="chat"]::before {
   max-width: 75%;
   width: auto;
   height: auto;
-  padding: 0.46rem 0.72rem !important;
+  padding: 0.35rem 0.75rem !important;
   border-radius: 0.85rem;
   font-size: 0.88rem;
-  line-height: 1.32 !important;
+  line-height: 1.35 !important;
   word-break: break-word;
-  white-space: pre-wrap;
   box-shadow: 0 2px 8px rgba(0,0,0,.15);
   position: relative;
 }
 
-.msg-text { margin: 0 !important; padding: 0 !important; }
+.msg-text { margin: 0 !important; padding: 0 !important; white-space: pre-wrap; }
 .msg-bubble p { margin: 0; }
 
 @keyframes msg-pop {

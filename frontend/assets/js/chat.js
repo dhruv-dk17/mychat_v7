@@ -79,12 +79,7 @@ function updateReplyComposer() {
 
 function renderReplyBlock(replyTo) {
   if (!replyTo?.id) return '';
-  return `
-    <button class="msg-reply-chip" type="button" data-reply-target="${replyTo.id}">
-      <span class="msg-reply-from">${escHtml(replyTo.from || 'Message')}</span>
-      <span class="msg-reply-text">${escHtml(replyTo.text || '')}</span>
-    </button>
-  `;
+  return `<button class="msg-reply-chip" type="button" data-reply-target="${replyTo.id}"><span class="msg-reply-from">${escHtml(replyTo.from || 'Message')}</span><span class="msg-reply-text">${escHtml(replyTo.text || '')}</span></button>`;
 }
 
 function getReceiptMarkup(msg, isOwn) {
@@ -227,19 +222,7 @@ function renderMessage(msg, isOwn) {
 
   const showFrom = !isOwn && !isCts;
 
-  el.innerHTML = `
-    ${showFrom ? `<span class="msg-user">${escHtml(msg.from)}</span>` : ''}
-    <div class="msg-bubble">
-      ${renderReplyBlock(msg.replyTo)}
-      <p class="msg-text">${escHtml(msg.text)}</p>
-    </div>
-    <div class="msg-meta">
-      <span class="msg-time">${fmtTime(msg.ts)}</span>
-      ${getReceiptMarkup(msg, isOwn)}
-    </div>
-    <div class="msg-reactions" id="reactions-${msg.id}"></div>
-    <div class="msg-checkbox" style="display:none;">✓</div>
-  `;
+  el.innerHTML = `${showFrom?`<span class="msg-user">${escHtml(msg.from)}</span>`:''}<div class="msg-bubble">${renderReplyBlock(msg.replyTo)}<p class="msg-text">${escHtml(msg.text)}</p></div><div class="msg-meta"><span class="msg-time">${fmtTime(msg.ts)}</span>${getReceiptMarkup(msg, isOwn)}</div><div class="msg-reactions" id="reactions-${msg.id}"></div><div class="msg-checkbox" style="display:none;">✓</div>`;
 
   // Click handler for multi-select
   el.addEventListener('click', e => {
@@ -718,19 +701,7 @@ function renderRichMediaMessage(msg, isOwn) {
 
   const showFrom = !isOwn && !isCts;
 
-  el.innerHTML = `
-    ${showFrom ? `<span class="msg-user">${escHtml(msg.from)}</span>` : ''}
-    <div class="msg-bubble media-bubble">
-      ${renderReplyBlock(msg.replyTo)}
-      <img src="${msg.url}" class="msg-media-image" loading="lazy" alt="${escHtml(msg.mediaType || 'media')}">
-    </div>
-    <div class="msg-meta">
-      <span class="msg-time">${fmtTime(msg.ts)}</span>
-      ${getReceiptMarkup(msg, isOwn)}
-    </div>
-    <div class="msg-reactions" id="reactions-${msg.id}"></div>
-    <div class="msg-checkbox" style="display:none;">✓</div>
-  `;
+  el.innerHTML = `${showFrom?`<span class="msg-user">${escHtml(msg.from)}</span>`:''}<div class="msg-bubble media-bubble">${renderReplyBlock(msg.replyTo)}<img src="${msg.url}" class="msg-media-image" loading="lazy" alt="${escHtml(msg.mediaType || 'media')}"></div><div class="msg-meta"><span class="msg-time">${fmtTime(msg.ts)}</span>${getReceiptMarkup(msg, isOwn)}</div><div class="msg-reactions" id="reactions-${msg.id}"></div><div class="msg-checkbox" style="display:none;">✓</div>`;
 
   el.addEventListener('click', event => {
     if (isMultiSelectMode && isOwn) {

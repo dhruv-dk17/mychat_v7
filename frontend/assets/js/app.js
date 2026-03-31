@@ -525,6 +525,33 @@ let permanentHistoryTimer = null;
 let currentPermanentPassword = '';
 let handledPermanentEventIds = new Set();
 
+function getDraftStorageKey(roomId, username) {
+  if (!roomId || !username) return '';
+  return `mychat_draft_${currentRoomType || 'private'}_${roomId}_${String(username).toLowerCase()}`;
+}
+
+function loadRoomDraft(roomId, username) {
+  const key = getDraftStorageKey(roomId, username);
+  if (!key) return '';
+  return sessionStorage.getItem(key) || '';
+}
+
+function saveRoomDraft(roomId, username, value) {
+  const key = getDraftStorageKey(roomId, username);
+  if (!key) return;
+  const text = typeof value === 'string' ? value : '';
+  if (text.trim()) {
+    sessionStorage.setItem(key, text);
+  } else {
+    sessionStorage.removeItem(key);
+  }
+}
+
+function clearRoomDraft(roomId, username) {
+  const key = getDraftStorageKey(roomId, username);
+  if (key) sessionStorage.removeItem(key);
+}
+
 function stopPermanentHistoryPolling() {
   if (permanentHistoryTimer) {
     clearInterval(permanentHistoryTimer);
@@ -682,9 +709,18 @@ async function initChatPage() {
   const input = document.getElementById('msg-input');
 
   // Auto-resize textarea
+  if (input) {
+    const savedDraft = loadRoomDraft(params.roomId, params.username);
+    if (savedDraft) {
+      input.value = savedDraft;
+      input.style.height = Math.min(input.scrollHeight, 110) + 'px';
+    }
+  }
+
   input?.addEventListener('input', () => {
     input.style.height = '44px';
     input.style.height = Math.min(input.scrollHeight, 110) + 'px';
+    saveRoomDraft(params.roomId, params.username, input.value);
     sendTypingIndicator();
   });
 
@@ -692,13 +728,23 @@ async function initChatPage() {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       const t = input.value.trim();
-      if (t) { sendTextMessage(t); input.value = ''; input.style.height = '44px'; }
+      if (t) {
+        sendTextMessage(t);
+        clearRoomDraft(params.roomId, params.username);
+        input.value = '';
+        input.style.height = '44px';
+      }
     }
   });
 
   document.getElementById('send-btn')?.addEventListener('click', () => {
     const t = input?.value.trim();
-    if (t) { sendTextMessage(t); input.value = ''; input.style.height = '44px'; }
+    if (t) {
+      sendTextMessage(t);
+      clearRoomDraft(params.roomId, params.username);
+      input.value = '';
+      input.style.height = '44px';
+    }
   });
 
   // File picker

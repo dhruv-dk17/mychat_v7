@@ -222,9 +222,10 @@ async function loadIdentityMaterial() {
     try {
       const parsed = JSON.parse(cached);
       const privateKey = await crypto.subtle.importKey('jwk', parsed.privateKeyJwk, { name: 'ECDSA', namedCurve: 'P-256' }, true, ['sign']);
-      const publicKey = await importPublicKeyBase64(parsed.publicKey);
+      const publicKeyBase64 = parsed.publicKey;
+      const publicKey = await importPublicKeyBase64(publicKeyBase64);
       currentIdentityPeerId = parsed.peerId || '';
-      return { ...parsed, privateKey, publicKey };
+      return { ...parsed, publicKeyBase64, publicKey, privateKey };
     } catch (e) {
       console.warn('Failed to load cached identity, generating new one', e);
       removeStorageValue(localStorage, storageKey);
@@ -238,7 +239,12 @@ async function loadIdentityMaterial() {
   const material = { peerId, publicKey, privateKeyJwk };
   currentIdentityPeerId = peerId;
   setStorageValue(localStorage, storageKey, JSON.stringify(material));
-  return { ...material, privateKey: keyPair.privateKey, publicKey: keyPair.publicKey };
+  return {
+    ...material,
+    publicKeyBase64: publicKey,
+    publicKey: keyPair.publicKey,
+    privateKey: keyPair.privateKey
+  };
 }
 
 let identityMaterialPromise = null;
@@ -294,7 +300,7 @@ async function signPayloadEnvelope(payload) {
   const body = canonicalizeForSigning({
     ...payload,
     senderPeerId: identity.peerId,
-    senderPublicKey: identity.publicKey
+    senderPublicKey: identity.publicKeyBase64 || identity.publicKey
   });
   const signatureBytes = await crypto.subtle.sign(
     { name: 'ECDSA', hash: 'SHA-256' },

@@ -513,34 +513,50 @@ function relayToAll(payload, senderConn) {
 }
 
 // ── Broadcast / relay helpers ─────────────────────────────────────
-async function broadcastToPeers(message, excludeConn) {
-  try {
-    const signedMessage = await prepareOutboundMessage(message);
-    const encStr = await aesEncrypt(roomKey, JSON.stringify(signedMessage));
-    const finalJSON = JSON.stringify({ type: 'enc', data: encStr });
-    connectedPeers.forEach(({ conn }) => {
-      if (conn !== excludeConn && conn.open) conn.send(finalJSON);
-    });
-  } catch (e) {
-    console.error('E2EE Encrypt error', e);
-  }
+let outboundTransportQueue = Promise.resolve();
+
+function _broadcastToPeers(message, excludeConn) {
+  return async () => {
+    try {
+      const signedMessage = await prepareOutboundMessage(message);
+      const encStr = await aesEncrypt(roomKey, JSON.stringify(signedMessage));
+      const finalJSON = JSON.stringify({ type: 'enc', data: encStr });
+      connectedPeers.forEach(({ conn }) => {
+        if (conn !== excludeConn && conn.open) conn.send(finalJSON);
+      });
+    } catch (e) {
+      console.error('E2EE Encrypt error', e);
+    }
+  };
 }
 
-async function broadcastOrRelay(msg) {
-  const signedMessage = await prepareOutboundMessage(msg);
-  if (myRole === 'host') {
-    broadcastToPeers(signedMessage);
-  } else {
-    const hostConn = [...connectedPeers.values()].find(p => p.role === 'host')?.conn || [...connectedPeers.values()][0]?.conn;
-    if (hostConn?.open) {
-      try {
+function broadcastToPeers(message, excludeConn) {
+  outboundTransportQueue = outboundTransportQueue.then(_broadcastToPeers(message, excludeConn));
+  return outboundTransportQueue;
+}
+
+function broadcastOrRelay(msg) {
+  outboundTransportQueue = outboundTransportQueue.then(async () => {
+    try {
+      const signedMessage = await prepareOutboundMessage(msg);
+      if (myRole === 'host') {
         const encStr = await aesEncrypt(roomKey, JSON.stringify(signedMessage));
-        hostConn.send(JSON.stringify({ type: 'enc', data: encStr }));
-      } catch (e) {
-        console.error('E2EE Relay Encrypt error', e);
+        const finalJSON = JSON.stringify({ type: 'enc', data: encStr });
+        connectedPeers.forEach(({ conn }) => {
+          if (conn.open) conn.send(finalJSON);
+        });
+      } else {
+        const hostConn = [...connectedPeers.values()].find(p => p.role === 'host')?.conn || [...connectedPeers.values()][0]?.conn;
+        if (hostConn?.open) {
+          const encStr = await aesEncrypt(roomKey, JSON.stringify(signedMessage));
+          hostConn.send(JSON.stringify({ type: 'enc', data: encStr }));
+        }
       }
+    } catch (e) {
+      console.error('E2EE Relay Encrypt error', e);
     }
-  }
+  });
+  return outboundTransportQueue;
 }
 
 function broadcastUserList() {

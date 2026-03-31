@@ -369,6 +369,7 @@ function finalizeJoin(conn, username, accepted) {
       conn.send(JSON.stringify({ type: 'room_sync', roomKey }));
     }
     broadcastUserList();
+    if (typeof announceActiveRoomCall === 'function') announceActiveRoomCall();
     broadcastSystemMessage(`${username} joined`);
     addUserToPanel(conn.peer, username, 'guest');
     updateOnlineCount();
@@ -473,6 +474,11 @@ function handleIncomingMessage(msg, conn) {
     case 'pong': updatePeerPing(conn.peer, msg.ts); break;
     case 'reaction': applyReaction(msg); shouldRelayFromGuest = true; break;
     case 'call_event': handleCallEvent(msg); shouldRelayFromGuest = true; break;
+    case 'room_call_invite': handleRoomCallInvite(msg); shouldRelayFromGuest = true; break;
+    case 'room_call_join': handleRoomCallJoin(msg); shouldRelayFromGuest = true; break;
+    case 'room_call_leave': handleRoomCallLeave(msg); shouldRelayFromGuest = true; break;
+    case 'room_call_end': handleRoomCallEnd(msg); shouldRelayFromGuest = true; break;
+    case 'room_call_state': handleRoomCallState(msg); shouldRelayFromGuest = true; break;
     case 'delete_msg': deleteMessage(msg.messageId); shouldRelayFromGuest = true; break;
     case 'disappearing_mode': 
       if (typeof isDisappearingMode !== 'undefined') {
@@ -590,6 +596,7 @@ function handlePeerDisconnect(peerId) {
     : `${p.username} left`);
   if (myRole === 'host') broadcastUserList();
   updateOnlineCount();
+  if (typeof onRoomCallPeerDisconnected === 'function') onRoomCallPeerDisconnected(peerId);
   if (p.role !== 'host') return;
 
   if (currentRoomType === 'private') {

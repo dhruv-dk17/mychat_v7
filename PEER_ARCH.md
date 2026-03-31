@@ -1,47 +1,75 @@
-# MyChat v7 P2P Architecture
+# Mychat v7 P2P Architecture
 
-This document describes the high-level design of the Peer-to-Peer (P2P) messaging pipeline, identity management, and End-to-End Encryption (E2EE) implementation.
+This document describes the high-level design of the messaging pipeline, tab-scoped identity model, encrypted transport, and room-call negotiation flow.
 
 ## 1. Top-Level Flow
 
-MyChat is a "zero-knowledge, zero-server" platform. Messages are exchanged directly between participants using WebRTC without ever passing through a centralized message store.
+Mychat uses WebRTC through PeerJS for peer discovery and transport. The backend supports room registration, password checks, and encrypted permanent-room history, but live message delivery stays peer-to-peer.
 
-### Layers:
-1.  **Signaling Layer (PeerJS)**: Coordinates the initial discovery. Tabs find each other by connecting to a shared Room ID.
-2.  **Identity Layer (ECDSA)**: Every tab session generates ephemeral elliptic-curve keys. Each tab is uniquely identified by a `peerId` (SHA256 fingerprint of its public key).
-3.  **Security Layer (E2EE)**: Payloads are encrypted via AES-GCM and signed via ECDSA.
-4.  **Transport Layer**: Reliable DataChannels carry the encrypted binary/JSON blobs.
+### Layers
 
----
+1. Signaling Layer: PeerJS coordinates peer discovery and WebRTC session setup.
+2. Identity Layer: every tab session generates an ephemeral ECDSA keypair, and the tab is identified by a `peerId` derived from the public key.
+3. Security Layer: payloads are signed with ECDSA and encrypted with AES-GCM.
+4. Transport Layer: reliable data channels carry encrypted events, and media connections carry audio/video streams.
 
 ## 2. Messaging Pipeline
 
 ### Sending a Message
-1.  **Prepare**: Generate a unique message `id` and `ts`.
-2.  **Sign**: Canonicalize the message and sign it with the tab's **private key**. 
-    - The signature and the **public key** are attached to the payload.
-3.  **Encrypt**: The entire signed payload is encrypted using the `roomKey` (AES-GCM).
-4.  **Transmit**: Send the encrypted string via PeerJS to either the Host (relay mode) or all peers (direct mode).
+
+1. Generate a message `id`, timestamp, and sequence number.
+2. Canonicalize the payload and sign it with the tab's private key.
+3. Encrypt the signed payload with the shared room key.
+4. Send the encrypted payload through PeerJS, either directly or through the room host relay.
 
 ### Receiving a Message
-1.  **Decrypt**: Decrypt the blob using the shared `roomKey`. If decryption fails, the message is dropped (indicating someone switched rooms or has the wrong key).
-2.  **Verify Signature**: Check that the message was signed by the key claimed in the payload.
-3.  **Anti-Replay & Order**: Compare the message's `sequenceNumber` against the `lastSequenceSeen` for that specific sender. If the number is old or already processed, the message is dropped.
-4.  **Identity Check**: `isOwnMessage()` compares the `senderPeerId` from the signature against the local `peerId` to decide if the bubble should be rendered on the right (sent) or left (received).
 
----
+1. Decrypt the payload with the current room key or an allowed fallback key.
+2. Verify the signature and confirm the claimed `senderPeerId` matches the attached public key.
+3. Drop replayed or out-of-order payloads using per-sender sequence tracking.
+4. Render the message as outgoing or incoming by comparing the signed `senderPeerId` with the local tab identity.
 
-## 3. Reliability & Security
+## 3. Identity and Tab Isolation
 
-### Sequential Transport
-Since Web Crypto (AES-GCM) is asynchronous, MyChat uses an internal **Outbound Queue** in `peer.js`. This ensures that even if encryption for Message B finishes faster than Message A, Message A always hits the wire first. This preserves the strict sequence numbers required for anti-replay verification.
+- Identity keys are stored per tab in `sessionStorage`, not shared `localStorage`.
+- This keeps duplicated tabs from reusing one sender identity and prevents the "both sides show my own message" bug.
+- File sharing, receipts, and normal chat messages all rely on the same signed sender identity.
 
-### Tab Isolation
-Identity keys are **ephemeral** and stored only in RAM (or cleared from sessionStorage on load). This prevents "cloned" tabs (duplicated tabs) from sharing the same identity and causing UI glitches where messages appear sent by oneself in both tabs.
+## 4. Room Call Flow
 
----
+Room calls use the existing data channel for coordination and PeerJS media connections for camera/mic streams.
 
-## 4. Room Modes
--   **Private Room**: Direct P2P.
--   **Group Room**: Host acts as a "blind relay," moving traffic between guests without being able to modify the signatures (which are verified guest-to-guest).
--   **Permanent Room**: A stable relay point is used for participants to join asynchronously.
+### Signaling Events
+
+- `room_call_invite`: announces a live room call and includes the current call ID plus the current participant list.
+- `room_call_join`: sent after a participant accepts the invite and enters the call.
+- `room_call_leave`: sent when a participant leaves but the rest of the call continues.
+- `room_call_end`: sent when the current call is ended for everyone.
+- `room_call_state`: lightweight state sync for mute and camera status.
+
+### Media Negotiation Rule
+
+- Calls are capped at 6 simultaneous video participants.
+- To avoid duplicate PeerJS media offers, the participant with the lexicographically lower `senderPeerId` initiates the media connection for each pair.
+- This creates a deterministic full-mesh pattern for the supported participant cap.
+
+### Join and Mid-Call Behavior
+
+1. A participant starts a room call, creates a `callId`, and broadcasts `room_call_invite`.
+2. Other participants accept the invite and broadcast `room_call_join`.
+3. Existing participants compare peer IDs and open media connections only for peers they are responsible for dialing.
+4. New participants joining the room while a call is active receive a fresh invite announcement and can join without resetting the rest of the call.
+
+### UI Behavior
+
+- Remote participants render as a responsive grid of tiles.
+- One tile can be pinned to a larger layout by click or double-click.
+- The local camera preview is shown in a movable picture-in-picture card.
+- Status pills show joined, muted, camera-off, and reconnecting states.
+- The active speaker ring is driven by client-side audio level sampling on remote streams.
+
+## 5. Room Modes
+
+- Private Room: direct P2P messaging and room calls.
+- Group Room: host-relayed messaging plus mesh-based room calls for up to 6 video participants.
+- Permanent Room: stable relay behavior for room membership plus encrypted rolling history and room calls.

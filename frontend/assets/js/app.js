@@ -405,7 +405,7 @@ async function initHomePage() {
       if (!input) return;
       const show = input.type === 'password';
       input.type = show ? 'text' : 'password';
-      btn.textContent = show ? '🙈' : '👁';
+      btn.textContent = show ? 'Hide' : 'Show';
     });
   });
 
@@ -681,11 +681,6 @@ async function initChatPage() {
   addUserToPanel('self', params.username, isPerm ? 'guest' : (isHost ? 'host' : 'guest'));
   updateOnlineCount(1);
   
-  if (currentRoomType === 'group') {
-    const callBtn = document.getElementById('call-btn');
-    if (callBtn) callBtn.style.display = 'none';
-  }
-
   // Init peer
   if (isPerm) {
     await initPermanentParticipant(params.username, params.roomId, storedPermPassword, e2eeKey, fallbackRoomKeys);
@@ -762,8 +757,9 @@ async function initChatPage() {
   micBtn?.addEventListener('touchend',   stopVoiceRecording);
   micBtn?.addEventListener('mouseleave', stopVoiceRecording);
 
-  // Call button
-  document.getElementById('call-btn')?.addEventListener('click', initiateCall);
+  // Call buttons
+  document.getElementById('call-btn')?.addEventListener('click', () => initiateCall(true));
+  document.getElementById('voice-btn')?.addEventListener('click', () => initiateCall(true));
 
   // Clear chat
   document.getElementById('clear-btn')?.addEventListener('click', broadcastClearChat);
@@ -808,10 +804,6 @@ async function initChatPage() {
   document.getElementById('copy-room-btn')?.addEventListener('click', () => {
     copyToClipboard(params.roomId);
   });
-
-  // Call bar: mute / end
-  document.getElementById('mute-btn')?.addEventListener('click', toggleMicInCall);
-  document.getElementById('end-call-btn')?.addEventListener('click', endCall);
 
   // Host-only: lock room, end room
   document.getElementById('lock-btn')?.addEventListener('click',     lockRoom);

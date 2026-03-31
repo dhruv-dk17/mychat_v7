@@ -3,60 +3,48 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Mychat — Private Operations Rooms</title>
-  <meta name="description" content="Mychat v7 — private operations rooms with encrypted delivery, password-protected entry, and rolling 7-day room history." />
+  <title>Mychat - Private Operations Rooms</title>
+  <meta name="description" content="Mychat v7 - private operations rooms with encrypted delivery, password-protected entry, and rolling 7-day room history." />
   <meta name="theme-color" content="#080810" />
 
-  <!-- Fonts CDN -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Sora:wght@300;400;500;600;700&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
 
-  <!-- CSS -->
-  <link rel="stylesheet" href="assets/css/main.css?v=20260323" />
-  <link rel="stylesheet" href="assets/css/home.css?v=20260323" />
-  <link rel="stylesheet" href="assets/css/anti-surveillance.css?v=20260321e" />
+  <link rel="stylesheet" href="assets/css/main.css?v=20260331" />
+  <link rel="stylesheet" href="assets/css/home.css?v=20260331" />
+  <link rel="stylesheet" href="assets/css/anti-surveillance.css?v=20260331" />
 </head>
 <body data-page="home">
-
-  <!-- System overlays -->
-  <div id="network-banner">⚠ No internet connection</div>
+  <div id="network-banner">Offline - reconnect to resume syncing</div>
   <div id="cold-start-banner" aria-live="polite">
-    <span class="cold-start-text">⏳ Server waking up — please wait (~30s)</span>
+    <span class="cold-start-text">Server waking up - please wait about 30 seconds</span>
     <div class="cold-start-bar"></div>
   </div>
   <div id="toast-container"></div>
 
-  <!-- Privacy Banner (Rotating Tips) -->
   <div id="privacy-banner">
-    <span id="privacy-tip" style="transition: opacity 0.5s ease-in-out;">🔒 Tip: Never use your real name or share personal ID until you trust them.</span>
+    <span id="privacy-tip">🛡️ Tip: Keep room aliases separate from your real-world identity.</span>
   </div>
 
-  <!-- Optional wipe screen (triggered by surveillance) -->
   <div id="wipe-screen">
     <div class="wipe-icon">🔒</div>
     <div class="wipe-title">SESSION WIPED</div>
     <div class="wipe-sub">All data cleared. Redirecting...</div>
   </div>
 
-  <!-- ═══════════════════════════════════════
-       APP SHELL — Sidebar + Content
-  ════════════════════════════════════════ -->
   <div class="app-shell">
+    <aside class="home-sidebar glass-panel" id="home-sidebar">
+      <a class="sidebar-brand brand-link brand-pulse-once" href="index.html" aria-label="Mychat home">
+        <span class="brand-mark-wrap">
+          <img class="brand-mark" src="assets/brand/mychat-mark.svg" alt="Mychat" />
+        </span>
+        <span class="brand-wordmark sidebar-brand-text">
+          <span class="brand-name">Mychat</span>
+          <span class="brand-subtitle">🔐 Private & Encrypted</span>
+        </span>
+      </a>
 
-    <!-- ── LEFT SIDEBAR ── -->
-    <aside class="home-sidebar" id="home-sidebar">
-
-      <!-- Brand -->
-      <div class="sidebar-brand">
-        <div class="home-logo">🔒</div>
-        <div class="sidebar-brand-text">
-          <div class="home-title">Mychat</div>
-          <div class="home-tagline">Private · Encrypted</div>
-        </div>
-      </div>
-
-      <!-- Nav -->
       <nav class="sidebar-nav">
         <div class="sidebar-section-label">Rooms</div>
         <button class="sidebar-nav-item active" data-room="private" id="nav-private">
@@ -68,49 +56,47 @@
           <span class="sidebar-nav-label">Group Room</span>
         </button>
         <button class="sidebar-nav-item" data-room="permanent" id="nav-permanent">
-          <span class="sidebar-nav-icon">⚡</span>
+          <span class="sidebar-nav-icon">🏢</span>
           <span class="sidebar-nav-label">Operations Room</span>
         </button>
       </nav>
 
-      <!-- Spacer -->
       <div class="sidebar-spacer"></div>
 
-      <!-- Footer / Auth -->
       <div class="sidebar-footer">
         <div class="sidebar-status">
-          <span class="badge badge-green"><span class="dot dot-green"></span> P2P</span>
+          <span class="badge badge-green"><span class="dot dot-green"></span> 🌐 P2P</span>
           <span class="version-pill">v7</span>
         </div>
         <div class="sidebar-auth">
-          <button id="open-auth-btn" class="btn btn-ghost sidebar-auth-btn">Sign In</button>
+          <button id="open-auth-btn" class="btn btn-ghost sidebar-auth-btn">✨ Sign In</button>
           <div id="user-profile-dropdown" style="display:none; cursor:pointer;"></div>
         </div>
       </div>
     </aside>
 
-    <!-- Mobile sidebar overlay -->
     <div class="sidebar-overlay" id="sidebar-overlay"></div>
 
-    <!-- ── MAIN CONTENT ── -->
     <main class="home-content">
-
-      <!-- Mobile top bar -->
-      <div class="mobile-topbar">
-        <button class="btn-icon" id="sidebar-toggle" title="Menu">
+      <div class="mobile-topbar glass-panel">
+        <button class="btn-icon" id="sidebar-toggle" title="Menu" type="button">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
         </button>
-        <div class="mobile-brand">
-          <div class="home-logo" style="width:28px;height:28px;font-size:0.9rem;">🔒</div>
-          <span class="home-title" style="font-size:1.1rem;">Mychat</span>
-        </div>
+        <a class="mobile-brand brand-link brand-link-compact" href="index.html" aria-label="Mychat home">
+          <span class="brand-mark-wrap">
+            <img class="brand-mark" src="assets/brand/mychat-mark.svg" alt="Mychat" />
+          </span>
+          <span class="brand-wordmark">
+            <span class="brand-name">Mychat</span>
+            <span class="brand-subtitle">⚡ Ops rooms</span>
+          </span>
+        </a>
         <div style="display:flex;gap:0.5rem;align-items:center;">
-          <span class="badge badge-green" style="font-size:0.6rem;"><span class="dot dot-green"></span> P2P</span>
+          <span class="badge badge-green" style="font-size:0.6rem;"><span class="dot dot-green"></span> 🌐 P2P</span>
           <span class="version-pill">v7</span>
         </div>
       </div>
 
-      <!-- Content area heading -->
       <div class="content-header" id="content-header">
         <div class="content-header-icon" id="content-header-icon">🔒</div>
         <div>
@@ -119,149 +105,131 @@
         </div>
       </div>
 
-      <!-- Premium product strip -->
       <section class="hero-strip" aria-label="Product highlights">
         <div class="hero-copy">
-          <div class="hero-eyebrow">Private infrastructure, public polish</div>
-          <h1>Run sensitive coordination without handing your workflow to someone else.</h1>
+          <div class="hero-eyebrow">✨ Private infrastructure, polished delivery</div>
+          <h1>Coordinate fast, look sharp, and keep the room under your control.</h1>
           <p>
-            Mychat blends P2P privacy, password-protected operations rooms, and a rolling
-            7-day encrypted history for teams coordinating work that should stay contained.
+            Mychat blends P2P privacy, password-protected operations rooms, room-call support,
+            and a rolling 7-day encrypted history for teams coordinating work that should stay contained.
           </p>
         </div>
         <div class="hero-metrics">
           <div class="metric-card">
-            <span class="metric-value">P2P</span>
+            <span class="metric-value">🌐 P2P</span>
             <span class="metric-label">No message relay server</span>
           </div>
           <div class="metric-card">
-            <span class="metric-value">50</span>
+            <span class="metric-value">👥 50</span>
             <span class="metric-label">Participants in group rooms</span>
           </div>
           <div class="metric-card">
-            <span class="metric-value">25 MB</span>
+            <span class="metric-value">📁 100 MB</span>
             <span class="metric-label">Per file transfer</span>
           </div>
         </div>
       </section>
 
-      <!-- ── PRIVATE ROOM PANEL ── -->
       <div class="room-panel active" id="panel-private">
-        <div class="room-card">
-          <button class="btn btn-primary w-100" id="create-private-btn" style="margin-bottom:1rem">
-            ◉ Create Private Room
+        <div class="room-card glass-panel">
+          <button class="btn btn-primary w-100" id="create-private-btn" style="margin-bottom:1rem" type="button">
+            🔒 Create Private Room
           </button>
           <div class="divider">or join</div>
           <div style="display:flex;flex-direction:column;gap:0.5rem;margin-top:0.75rem">
             <input type="text" class="input-field" id="join-room-id" placeholder="Room ID (3-32 chars)" autocomplete="off" spellcheck="false" />
             <input type="text" class="input-field" id="join-username" placeholder="Your name" autocomplete="off" maxlength="32" />
-            <button class="btn btn-ghost w-100" id="join-private-btn">→ Join Room</button>
+            <button class="btn btn-ghost w-100" id="join-private-btn" type="button">🚀 Join Room</button>
           </div>
         </div>
       </div>
 
-      <!-- ── GROUP ROOM PANEL ── -->
       <div class="room-panel" id="panel-group">
-        <div class="room-card">
-          <button class="btn btn-primary w-100" id="create-group-btn" style="margin-bottom:1rem">
-            ◎ Create Group Room
+        <div class="room-card glass-panel">
+          <button class="btn btn-primary w-100" id="create-group-btn" style="margin-bottom:1rem" type="button">
+            👥 Create Group Room
           </button>
           <div class="divider">or join</div>
           <div style="display:flex;flex-direction:column;gap:0.5rem;margin-top:0.75rem">
             <input type="text" class="input-field" id="join-group-id" placeholder="Group Room ID (3-32 chars)" autocomplete="off" />
             <input type="text" class="input-field" id="join-group-username" placeholder="Your name" autocomplete="off" maxlength="32" />
-            <button class="btn btn-ghost w-100" id="join-group-btn">→ Join Group</button>
+            <button class="btn btn-ghost w-100" id="join-group-btn" type="button">🚀 Join Group</button>
           </div>
         </div>
       </div>
 
-      <!-- ── PERMANENT ROOM PANEL ── -->
       <div class="room-panel" id="panel-permanent">
-        <div class="room-card room-card-perm">
-
-          <!-- Logged out view -->
+        <div class="room-card room-card-perm glass-panel">
           <div id="perm-logged-out-view">
             <center style="margin: 1.5rem 0;">
-              <p style="font-size: 0.85rem; color: var(--text-dim); margin-bottom: 1rem;">Sign in to create and manage private operations rooms with rolling 7-day history.</p>
-              <button class="btn btn-primary w-100" id="open-auth-permanent-btn">Sign in / Register</button>
+              <p style="font-size: 0.85rem; color: var(--text-dim); margin-bottom: 1rem;">🔐 Sign in to create and manage private operations rooms with rolling 7-day history.</p>
+              <button class="btn btn-primary w-100" id="open-auth-permanent-btn" type="button">✨ Sign in / Register</button>
             </center>
           </div>
 
-          <!-- Logged in view -->
           <div id="perm-logged-in-view" style="display:none;">
-            <button class="btn btn-primary w-100" id="open-dashboard-btn" style="margin-top:0.75rem; margin-bottom:1rem">
-              Open Room Console
+            <button class="btn btn-primary w-100" id="open-dashboard-btn" style="margin-top:0.75rem; margin-bottom:1rem" type="button">
+              🖥️ Open Room Console
             </button>
           </div>
 
           <div class="divider">or join existing</div>
 
-          <!-- Join sub-section -->
           <div style="display:flex;flex-direction:column;gap:0.5rem;margin-top:0.75rem">
             <input type="text" class="input-field" id="join-perm-id" placeholder="Room ID" autocomplete="off" spellcheck="false" maxlength="32" />
             <div class="input-pw-wrap">
               <input type="password" class="input-field" id="join-perm-pw" placeholder="Password" autocomplete="current-password" />
-              <button class="pw-toggle" type="button" title="Show/hide password">👁</button>
+              <button class="pw-toggle" type="button" title="Show or hide password">Show</button>
             </div>
             <input type="text" class="input-field" id="join-perm-username" placeholder="Your name" autocomplete="off" maxlength="32" />
             <div class="inline-error" id="join-perm-error"></div>
-            <button class="btn btn-ghost w-100" id="join-perm-btn">→ Join Room</button>
+            <button class="btn btn-ghost w-100" id="join-perm-btn" type="button">🚀 Join Room</button>
           </div>
         </div>
       </div>
 
-      <!-- Footer -->
       <div class="home-footer">
-        Mychat v7 · Direct delivery where possible · 7-day rolling room history · <a href="#" onclick="showModal('privacy-tips-modal'); return false;" style="color:var(--accent); text-decoration:none;">Privacy Tips</a>
+        Mychat v7 — ⚡ direct delivery where possible — 📅 7-day rolling room history —
+        <a href="#" onclick="showModal('privacy-tips-modal'); return false;" style="color:var(--accent); text-decoration:none;">🛡️ Privacy Tips</a>
       </div>
-
     </main>
   </div>
 
-  <!-- Platform Messages Modal -->
   <div class="modal-backdrop" id="platform-messages-modal">
     <div class="modal-box" style="width: 400px;">
       <div class="modal-title">📢 System Notice</div>
-      <div id="platform-messages-container" style="max-height: 300px; overflow-y: auto; margin: 1rem 0;">
-        <!-- Messages here -->
-      </div>
+      <div id="platform-messages-container" style="max-height: 300px; overflow-y: auto; margin: 1rem 0;"></div>
       <div class="modal-actions">
-        <button class="btn btn-primary w-100" id="platform-messages-close-btn">I Understand</button>
+        <button class="btn btn-primary w-100" id="platform-messages-close-btn" type="button">✅ I Understand</button>
       </div>
     </div>
   </div>
 
-  <!-- Privacy Tips Modal -->
   <div class="modal-backdrop" id="privacy-tips-modal">
     <div class="modal-box" style="width: 400px;">
-      <div class="modal-title">🛡 Privacy Guidelines</div>
-      <div class="modal-subtitle">Stay safe while using Mychat.</div>
+      <div class="modal-title">🛡️ Privacy Guidelines</div>
+      <div class="modal-subtitle">Stay safe while using Mychat ✨</div>
       <ul style="margin: 1rem 0; padding-left: 1.2rem; font-size: 0.9rem; line-height: 1.6; color: var(--text-dim);">
-        <li><strong>Anonymity First:</strong> Use a pseudonym. Avoid names that link to your social media.</li>
-        <li><strong>History Window:</strong> Operations room messages stay encrypted and auto-expire after 7 days. Private rooms remain live-only.</li>
-        <li><strong>Verification:</strong> Never share sensitive documents or location data with strangers.</li>
-        <li><strong>Security:</strong> Save your owner tokens offline. We cannot recover them.</li>
-        <li><strong>Scams:</strong> Mychat staff will NEVER ask for your password or token.</li>
+        <li><strong>🎭 Anonymity First:</strong> Use a pseudonym. Avoid names that link to your social media.</li>
+        <li><strong>📅 History Window:</strong> Operations room messages stay encrypted and auto-expire after 7 days. Private rooms remain live-only.</li>
+        <li><strong>🔍 Verification:</strong> Never share sensitive documents or location data with strangers.</li>
+        <li><strong>🔑 Security:</strong> Save your owner tokens offline. We cannot recover them.</li>
+        <li><strong>🚫 Scams:</strong> Mychat staff will never ask for your password or token.</li>
       </ul>
-      <button class="btn btn-ghost w-100" onclick="hideModal('privacy-tips-modal')">Close</button>
+      <button class="btn btn-ghost w-100" onclick="hideModal('privacy-tips-modal')" type="button">Close</button>
     </div>
   </div>
 
-  <!-- ═══════════════════════════════════════
-       MODALS (unchanged)
-  ════════════════════════════════════════ -->
-
-  <!-- Success Modal (after register) -->
   <div class="modal-backdrop" id="success-modal">
     <div class="modal-box">
-      <div class="modal-title">✓ Room Registered!</div>
-      <div class="modal-subtitle">Your operations room is ready. Save your owner token — it cannot be recovered.</div>
+      <div class="modal-title">🎉 Room Registered</div>
+      <div class="modal-subtitle">Your operations room is ready. Save your owner token - it cannot be recovered.</div>
 
       <div style="margin-bottom:0.75rem">
         <div class="input-label" style="margin-bottom:0.35rem">Room ID</div>
         <div class="code-display">
           <span class="code-display-text" id="success-slug"></span>
-          <button class="copy-btn" id="copy-slug-btn">Copy</button>
+          <button class="copy-btn" id="copy-slug-btn" type="button">Copy</button>
         </div>
       </div>
 
@@ -269,110 +237,100 @@
         <div class="input-label" style="margin-bottom:0.35rem">Owner Token</div>
         <div class="code-display" style="flex-direction:column;align-items:stretch;gap:0.5rem">
           <span class="token-display" id="success-token"></span>
-          <button class="copy-btn" id="copy-token-btn">Copy</button>
+          <button class="copy-btn" id="copy-token-btn" type="button">Copy</button>
         </div>
       </div>
 
       <div class="success-warning">
-        ⚠ SAVE YOUR OWNER TOKEN — it cannot be recovered if lost. This token proves you own this room.
+        ⚠️ Save your owner token. It cannot be recovered if lost, and it proves you own this room.
       </div>
 
       <div class="modal-actions">
-        <button class="btn btn-ghost" onclick="hideModal('success-modal')">Close</button>
-        <button class="btn btn-primary" id="enter-room-btn">Enter Room →</button>
+        <button class="btn btn-ghost" onclick="hideModal('success-modal')" type="button">Close</button>
+        <button class="btn btn-primary" id="enter-room-btn" type="button">🚀 Enter Room</button>
       </div>
     </div>
   </div>
 
-  <!-- Floating Scan Button -->
-  <button class="btn btn-primary" style="position: fixed; bottom: 20px; right: 20px; border-radius: 50%; width: 56px; height: 56px; box-shadow: var(--glow-accent); z-index: 100; font-size: 1.5rem; display: flex; align-items: center; justify-content: center;" onclick="startQRScanner()" title="Scan QR Code">
-    📷
+  <button class="btn btn-primary" style="position: fixed; bottom: 20px; right: 20px; border-radius: 999px; min-width: 56px; height: 56px; box-shadow: var(--glow-accent); z-index: 100; display: flex; align-items: center; justify-content: center;" onclick="startQRScanner()" title="Scan QR Code" type="button">
+    Scan 📷
   </button>
 
-  <!-- QR Scanner Modal -->
   <div class="modal-backdrop" id="qr-scan-modal">
     <div class="modal-box" style="width: 360px; text-align: center;">
-      <div class="modal-title" style="margin-bottom: 1rem;">Scan Room QR</div>
+      <div class="modal-title" style="margin-bottom: 1rem;">📷 Scan Room QR</div>
       <div style="width: 100%; aspect-ratio: 1; background: #000; border-radius: var(--r-md); overflow: hidden; position: relative;">
         <video id="qr-video" style="width: 100%; height: 100%; object-fit: cover;" playsinline></video>
         <div id="qr-scan-text" style="position: absolute; bottom: 10px; width: 100%; color: var(--text-white); font-size: 0.85rem; text-shadow: 0 1px 4px rgba(0,0,0,0.8);">Searching for QR code...</div>
       </div>
-      <button class="btn btn-ghost w-100" style="margin-top: 1rem;" onclick="stopQRScanner(); hideModal('qr-scan-modal')">Cancel</button>
-      <button class="btn btn-ghost" style="position: absolute; top:10px; right:10px; border:none; padding:10px;" onclick="stopQRScanner(); hideModal('qr-scan-modal')">✕</button>
+      <button class="btn btn-ghost w-100" style="margin-top: 1rem;" onclick="stopQRScanner(); hideModal('qr-scan-modal')" type="button">Cancel</button>
+      <button class="btn btn-ghost" style="position: absolute; top:10px; right:10px; border:none; padding:10px;" onclick="stopQRScanner(); hideModal('qr-scan-modal')" type="button">Close</button>
     </div>
   </div>
 
-  <!-- User Auth Modal -->
   <div class="modal-backdrop" id="auth-modal">
     <div class="modal-box" style="width: 320px;">
-      <div class="modal-title" style="text-align: center; margin-bottom: 1rem;">Sign In / Register</div>
+      <div class="modal-title" style="text-align: center; margin-bottom: 1rem;">✨ Sign In / Register</div>
       <div style="display:flex;flex-direction:column;gap:0.75rem;">
         <input type="text" class="input-field" id="auth-username" placeholder="Username (3-32 chars)" autocomplete="off" spellcheck="false" maxlength="32" />
         <input type="password" class="input-field" id="auth-password" placeholder="Password" />
         <div class="inline-error" id="auth-error" style="text-align:center;"></div>
-        <button class="btn btn-primary w-100" id="auth-login-btn">Log In</button>
-        <button class="btn btn-ghost w-100" id="auth-register-btn" style="margin-top:-0.25rem;">Create Account</button>
+        <button class="btn btn-primary w-100" id="auth-login-btn" type="button">🔑 Log In</button>
+        <button class="btn btn-ghost w-100" id="auth-register-btn" style="margin-top:-0.25rem;" type="button">🆕 Create Account</button>
       </div>
-      <button class="btn btn-ghost" style="position: absolute; top:10px; right:10px; border:none; padding:10px;" onclick="hideModal('auth-modal')">✕</button>
+      <button class="btn btn-ghost" style="position: absolute; top:10px; right:10px; border:none; padding:10px;" onclick="hideModal('auth-modal')" type="button">Close</button>
     </div>
   </div>
 
-  <!-- Permanent Rooms Dashboard -->
   <div class="modal-backdrop" id="dashboard-modal">
     <div class="modal-box" style="width: 440px; max-height: 90vh; overflow-y: auto;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
-        <div class="modal-title">Your Operations Rooms</div>
-        <button class="btn btn-ghost" style="border:none; padding:10px;" onclick="hideModal('dashboard-modal')">✕</button>
+        <div class="modal-title">🏢 Your Operations Rooms</div>
+        <button class="btn btn-ghost" style="border:none; padding:10px;" onclick="hideModal('dashboard-modal')" type="button">Close</button>
       </div>
-      
-      <!-- Create Room Form inside Dashboard -->
+
       <div class="card-desc" style="margin-bottom:1rem;">Create a new operations room:</div>
       <div style="display:flex;flex-direction:column;gap:0.5rem; margin-bottom:1.5rem; padding:1rem; background:rgba(255,255,255,0.03); border-radius:var(--r-md); border:1px solid rgba(255,255,255,0.08);">
         <input type="text" class="input-field" id="dashboard-new-slug" placeholder="Room ID (3-32 chars, a-z 0-9 -)" maxlength="32" autocomplete="off" spellcheck="false" />
         <div class="input-pw-wrap">
           <input type="password" class="input-field" id="dashboard-new-pw" placeholder="Room Password" />
-          <button class="pw-toggle" type="button" title="Show/hide password">👁</button>
+          <button class="pw-toggle" type="button" title="Show or hide password">Show</button>
         </div>
         <div class="inline-error" id="dashboard-new-error"></div>
-        <button class="btn btn-primary w-100" id="dashboard-create-btn">◎ Register &amp; Host</button>
+        <button class="btn btn-primary w-100" id="dashboard-create-btn" type="button">🚀 Register and Host</button>
       </div>
 
-      <div class="card-desc">Your Active Rooms:</div>
-      <div id="dashboard-rooms-list" style="display:flex; flex-direction:column; gap:0.5rem; margin-top:0.75rem;">
-        <!-- Injected dynamically -->
-      </div>
+      <div class="card-desc">📋 Your Active Rooms:</div>
+      <div id="dashboard-rooms-list" style="display:flex; flex-direction:column; gap:0.5rem; margin-top:0.75rem;"></div>
     </div>
   </div>
 
-  <!-- User Settings Modal -->
   <div class="modal-backdrop" id="user-settings-modal">
     <div class="modal-box" style="width: 320px;">
-      <div class="modal-title" style="text-align: center; margin-bottom: 1rem;">Account Settings</div>
+      <div class="modal-title" style="text-align: center; margin-bottom: 1rem;">⚙️ Account Settings</div>
       <div style="display:flex;flex-direction:column;gap:0.75rem;">
-        <button class="btn btn-ghost w-100" id="settings-logout-btn">Log Out</button>
-        <button class="btn btn-ghost w-100" id="settings-delete-account-btn" style="color:var(--accent-red);">Delete Account &amp; Rooms</button>
+        <button class="btn btn-ghost w-100" id="settings-logout-btn" type="button">🚪 Log Out</button>
+        <button class="btn btn-ghost w-100" id="settings-delete-account-btn" style="color:var(--accent-red);" type="button">🗑️ Delete Account and Rooms</button>
       </div>
-      <button class="btn btn-ghost" style="position: absolute; top:10px; right:10px; border:none; padding:10px;" onclick="hideModal('user-settings-modal')">✕</button>
+      <button class="btn btn-ghost" style="position: absolute; top:10px; right:10px; border:none; padding:10px;" onclick="hideModal('user-settings-modal')" type="button">Close</button>
     </div>
   </div>
 
-  <!-- Scripts (order matters) -->
   <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
-  <script src="assets/js/config.js?v=20260323"></script>
-  <script src="assets/js/crypto.js?v=20260323"></script>
-  <script src="assets/js/rooms.js?v=20260323"></script>
-  <script src="assets/js/ui.js?v=20260323"></script>
-  <script src="assets/js/peer.js?v=20260323"></script>
-  <script src="assets/js/surveillance.js?v=20260323"></script>
-  <script src="assets/js/app.js?v=20260323"></script>
+  <script src="assets/js/config.js?v=20260331"></script>
+  <script src="assets/js/crypto.js?v=20260331"></script>
+  <script src="assets/js/rooms.js?v=20260331"></script>
+  <script src="assets/js/ui.js?v=20260331"></script>
+  <script src="assets/js/peer.js?v=20260331"></script>
+  <script src="assets/js/surveillance.js?v=20260331"></script>
+  <script src="assets/js/app.js?v=20260331"></script>
 
-  <!-- Sidebar nav switcher -->
   <script>
     (function() {
       const panels = {
-        private: { icon: '🔒', title: 'Private Room', sub: 'Direct P2P connection. End-to-end encrypted. 2 people max.' },
-        group:   { icon: '👥', title: 'Group Room',   sub: 'Star topology. Host relays messages. Up to 50 participants.' },
-        permanent:{ icon: '⚡', title: 'Operations Room', sub: 'Password-protected shared room with encrypted rolling 7-day history.' }
+        private: { icon: '🔒', title: 'Private Room', sub: '🔐 Direct P2P connection. End-to-end encrypted. 2 people max.' },
+        group:   { icon: '👥', title: 'Group Room', sub: '⭐ Star topology. Host relays messages. Up to 50 participants.' },
+        permanent: { icon: '🏢', title: 'Operations Room', sub: '🔑 Password-protected shared room with encrypted rolling 7-day history.' }
       };
 
       function switchPanel(room) {
@@ -388,7 +346,6 @@
           document.getElementById('content-header-title').textContent = info.title;
           document.getElementById('content-header-sub').textContent = info.sub;
         }
-        // Close mobile sidebar
         document.getElementById('home-sidebar')?.classList.remove('sidebar-open');
         document.getElementById('sidebar-overlay')?.classList.remove('overlay-visible');
       }
@@ -397,7 +354,6 @@
         btn.addEventListener('click', () => switchPanel(btn.dataset.room));
       });
 
-      // Mobile sidebar toggle
       document.getElementById('sidebar-toggle')?.addEventListener('click', () => {
         document.getElementById('home-sidebar')?.classList.toggle('sidebar-open');
         document.getElementById('sidebar-overlay')?.classList.toggle('overlay-visible');

@@ -3,80 +3,114 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Mychat — Chat Room</title>
+  <title>Mychat - Chat Room</title>
   <meta name="description" content="Mychat v7 secure chat room" />
   <meta name="theme-color" content="#080810" />
 
-  <!-- Fonts CDN -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Sora:wght@300;400;500;600;700&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
 
-  <!-- CSS -->
-  <link rel="stylesheet" href="assets/css/main.css?v=20260323" />
-  <link rel="stylesheet" href="assets/css/chat.css?v=20260323" />
-  <link rel="stylesheet" href="assets/css/anti-surveillance.css?v=20260321e" />
+  <link rel="stylesheet" href="assets/css/main.css?v=20260331" />
+  <link rel="stylesheet" href="assets/css/chat.css?v=20260331" />
+  <link rel="stylesheet" href="assets/css/anti-surveillance.css?v=20260331" />
 </head>
 <body data-page="chat">
   <div id="toast-container"></div>
 
-  <!-- Privacy Banner (Rotating Tips) -->
   <div id="privacy-banner">
-    <span id="privacy-tip">🔒 Tip: Never use your real name or share personal ID until you trust them.</span>
+    <span id="privacy-tip">🛡️ Tip: Keep room aliases separate from your real-world identity.</span>
   </div>
 
-  <!-- Blur Shield Overlay -->
   <div id="blur-shield">
-    <div class="blur-shield-icon">🛡</div>
-    <div class="blur-shield-title">Chat Protected</div>
+    <div class="blur-shield-icon">🛡️</div>
+    <div class="blur-shield-title">🔒 Chat Protected</div>
     <div class="blur-shield-reason" id="blur-reason">Privacy activated</div>
     <div class="blur-shield-tap">Tap or click to resume</div>
   </div>
 
-  <!-- Emergency Wipe Screen -->
   <div id="wipe-screen">
     <div class="wipe-icon">🔒</div>
     <div class="wipe-title">SESSION WIPED</div>
     <div class="wipe-sub">All data cleared. Redirecting home...</div>
   </div>
 
-  <!-- ═══════════════════════════════════════
-       ACTIVE CALL BAR (full-width, above layout)
-  ════════════════════════════════════════ -->
-  <div id="call-bar">
-    <div class="call-bar-info">
-      <div class="call-bar-dot"></div>
-      <span>Voice call active</span>
-    </div>
-    <div class="call-bar-actions">
-      <button class="btn btn-ghost call-mute-btn" id="mute-btn">🎙 Mute</button>
-      <button class="btn btn-danger-ghost call-end-btn" id="end-call-btn">✕ End</button>
+  <div id="video-call-overlay" hidden>
+    <div class="video-call-shell">
+      <div class="video-call-topbar glass-panel">
+        <a class="brand-link brand-link-compact overlay-home-link" href="index.html" aria-label="Mychat home">
+          <span class="brand-mark-wrap">
+            <img class="brand-mark" src="assets/brand/mychat-mark.svg" alt="Mychat" />
+          </span>
+          <span class="brand-wordmark">
+            <span class="brand-name">Mychat</span>
+            <span class="brand-subtitle">📞 Room call</span>
+          </span>
+        </a>
+        <div class="video-call-summary">
+          <div class="video-call-title" id="video-call-title">📞 Room Call</div>
+          <div class="video-call-status" id="video-call-status">✨ Waiting for people to join</div>
+        </div>
+        <button class="glass-pill-btn" id="video-chat-return-btn" type="button" title="Return to chat">⬅️ Back to Chat</button>
+      </div>
+
+      <div class="video-call-stage">
+        <div id="remote-video-grid" aria-live="polite"></div>
+        <div id="video-call-empty" class="video-call-empty glass-panel">
+          <span class="video-call-empty-kicker">📞 Live room call</span>
+          <strong>✨ Waiting for people to join...</strong>
+          <span>Invite people in the room to join the call. The first 6 participants are supported.</span>
+        </div>
+
+        <div id="local-video-container" class="video-pip glass-panel" aria-label="Your camera preview">
+          <div class="video-pip-header">
+            <span class="presence-pill" id="local-video-state">Camera on</span>
+            <span class="presence-pill presence-pill-muted" id="local-audio-state">Mic live</span>
+          </div>
+          <video id="local-video" autoplay playsinline muted></video>
+          <div class="video-pip-footer">
+            <span class="video-participant-name">You</span>
+            <span class="video-participant-role" id="video-local-role">Live</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="video-call-controls glass-panel" id="video-call-controls">
+        <div class="video-call-meta-strip">
+          <span class="video-call-chip" id="video-call-count-chip">1 participant</span>
+          <span class="video-call-chip" id="video-call-duration-chip">00:00</span>
+        </div>
+        <div class="video-call-button-row">
+          <button class="btn-icon call-control-btn" id="vc-flip-btn" title="Flip camera" type="button">🔄 Flip</button>
+          <button class="btn-icon call-control-btn" id="vc-video-btn" title="Toggle camera" type="button">📷 Camera</button>
+          <button class="btn-icon call-control-btn" id="vc-mute-btn" title="Toggle microphone" type="button">🎙️ Mic</button>
+          <button class="btn-icon call-control-btn danger" id="vc-end-btn" title="Leave or end call" type="button">📵 End</button>
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- ═══════════════════════════════════════
-       MAIN CHAT SHELL — Sidebar + Content
-  ════════════════════════════════════════ -->
-
-
   <div class="chat-shell">
-
-    <!-- ── LEFT SIDEBAR ── -->
-    <aside class="chat-sidebar" id="chat-sidebar">
-
-      <!-- Sidebar Top Bar (mobile close) -->
+    <aside class="chat-sidebar glass-panel" id="chat-sidebar">
       <div class="csidebar-topbar">
-        <div class="csidebar-brand">🔒 Mychat</div>
-        <button class="btn-icon" id="close-chat-sidebar-btn" title="Close sidebar">✕</button>
+        <a class="brand-link brand-link-compact" href="index.html" aria-label="Mychat home">
+          <span class="brand-mark-wrap">
+            <img class="brand-mark" src="assets/brand/mychat-mark.svg" alt="Mychat" />
+          </span>
+          <span class="brand-wordmark">
+            <span class="brand-name">Mychat</span>
+            <span class="brand-subtitle">🔐 Secure room</span>
+          </span>
+        </a>
+        <button class="btn-icon" id="close-chat-sidebar-btn" title="Close sidebar" type="button">✕</button>
       </div>
 
-      <!-- Room Info -->
       <div class="csidebar-section">
         <div class="csidebar-section-label">Room</div>
         <div class="csidebar-room-info">
           <div class="csidebar-room-id-wrap">
             <span id="room-id-display" title="Click to copy Room ID"></span>
-            <span class="room-type-badge"></span>
+            <span class="room-type-badge badge badge-purple"></span>
           </div>
           <div class="csidebar-online">
             <span class="online-count" id="online-count">
@@ -84,122 +118,107 @@
             </span>
           </div>
         </div>
-        <!-- Host badge -->
-        <span class="badge badge-amber" id="host-badge" style="display:none; margin-top:0.5rem;">👑 Host</span>
+        <span class="badge badge-amber" id="host-badge" style="display:none; margin-top:0.5rem;">Host</span>
       </div>
 
-      <!-- Shield status -->
       <div class="csidebar-section">
         <div class="csidebar-section-label">Security</div>
-        <div class="shield-indicator" title="Anti-surveillance shield">
-          🛡 Shield <span class="shield-dot shield-green"></span>
+        <div class="shield-indicator" title="Privacy shield status">
+          🛡️ Shield <span class="shield-dot shield-green"></span>
         </div>
       </div>
 
-      <!-- Actions -->
       <div class="csidebar-section">
         <div class="csidebar-section-label">Actions</div>
         <nav class="csidebar-actions">
-          <button class="csidebar-action-btn" id="search-btn" title="Search messages">
-            🔍 <span>Search</span>
+          <button class="csidebar-action-btn" id="search-btn" title="Search messages" type="button">
+            <span>🔍 Search</span>
           </button>
-          <button class="csidebar-action-btn" id="sound-btn" title="Toggle sound">
-            🔔 <span>Sound</span>
+          <button class="csidebar-action-btn" id="sound-btn" title="Toggle sound" type="button">
+            <span>🔔 Sound</span>
           </button>
-          <button class="csidebar-action-btn" id="qr-btn" title="QR code">
-            ⬛ <span>QR Code</span>
+          <button class="csidebar-action-btn" id="qr-btn" title="QR code" type="button">
+            <span>📷 QR Code</span>
           </button>
-          <button class="csidebar-action-btn" id="voice-btn" title="Voice call">
-            🔋 <span>Voice</span>
+          <button class="csidebar-action-btn" id="voice-btn" title="Start room call" type="button">
+            <span>📞 Room Call</span>
           </button>
-          <button class="csidebar-action-btn" id="privacy-tips-btn" title="Privacy Tips">
-            🛡 <span>Privacy</span>
+          <button class="csidebar-action-btn" id="privacy-tips-btn" title="Privacy tips" type="button">
+            <span>🛡️ Privacy</span>
           </button>
-          <button class="csidebar-action-btn" id="theme-btn" title="Change Theme">
-            🎨 <span>Theme</span>
+          <button class="csidebar-action-btn" id="theme-btn" title="Change theme" type="button">
+            <span>🎨 Theme</span>
           </button>
-          <button class="csidebar-action-btn" id="users-btn" title="Participants">
-            👥 <span>Members</span>
+          <button class="csidebar-action-btn" id="users-btn" title="Participants" type="button">
+            <span>👥 Members</span>
           </button>
         </nav>
       </div>
 
-      <!-- Host Controls (shown via JS when host) -->
       <div class="csidebar-section csidebar-host-section" id="host-controls-section" style="display:none;">
         <div class="csidebar-section-label">Host Controls</div>
         <nav class="csidebar-actions">
-          <button class="csidebar-action-btn host-only" id="lock-btn" title="Lock/unlock room" style="display:none;">
-            🔐 <span>Lock Room</span>
+          <button class="csidebar-action-btn host-only" id="lock-btn" title="Lock or unlock room" style="display:none;" type="button">
+            <span>🔒 Lock Room</span>
           </button>
-          <button class="csidebar-action-btn host-only" id="disappearing-btn" title="Toggle Disappearing Mode" style="display:none;">
-            ⏳ <span id="disappearing-label">Disappear: OFF</span>
+          <button class="csidebar-action-btn host-only" id="disappearing-btn" title="Toggle disappearing mode" style="display:none;" type="button">
+            <span id="disappearing-label">💨 Disappear: OFF</span>
           </button>
-          <button class="csidebar-action-btn host-only danger" id="end-room-btn" title="End room for all" style="display:none;">
-            ⏹ <span>End Room</span>
+          <button class="csidebar-action-btn host-only danger" id="end-room-btn" title="End room for all" style="display:none;" type="button">
+            <span>🚫 End Room</span>
           </button>
         </nav>
       </div>
 
-      <!-- Spacer -->
       <div style="flex:1;"></div>
 
-      <!-- Footer Actions -->
       <div class="csidebar-section" style="margin-top: auto; padding-top: 1rem; padding-bottom: 2rem;">
         <nav class="csidebar-actions">
-          <button class="csidebar-action-btn danger" id="back-btn" title="Leave room">
-            ← <span>Leave Room</span>
+          <button class="csidebar-action-btn danger" id="back-btn" title="Leave room" type="button">
+            <span>🚪 Leave Room</span>
           </button>
         </nav>
       </div>
     </aside>
 
-    <!-- Mobile sidebar overlay -->
     <div class="chat-sidebar-overlay" id="chat-sidebar-overlay"></div>
 
-    <!-- ── CHAT MAIN ── -->
     <div class="chat-main-wrap">
-
-      <!-- Top Bar (simplified for desktop, full on mobile) -->
-      <header id="top-bar">
+      <header id="top-bar" class="glass-panel">
         <div class="top-bar-left">
-          <!-- Mobile: sidebar toggle -->
-          <button class="btn-icon mobile-only" id="chat-sidebar-toggle" title="Menu">
+          <button class="btn-icon mobile-only" id="chat-sidebar-toggle" title="Menu" type="button">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
           </button>
-          <!-- Room identifier (always visible) -->
+          <a class="brand-link brand-link-compact top-bar-brand" href="index.html" aria-label="Mychat home">
+            <span class="brand-mark-wrap">
+              <img class="brand-mark" src="assets/brand/mychat-mark.svg" alt="Mychat" />
+            </span>
+          </a>
           <div class="top-bar-room-info">
             <span class="top-bar-hash">#</span>
             <span id="top-bar-room-id-mirror" class="top-bar-room-name">...</span>
           </div>
-          <!-- Mobile: quick counts -->
           <span class="online-count mobile-only" id="online-count-mobile" style="display:none;">
             <span class="dot dot-green"></span>
           </span>
         </div>
         <div class="top-bar-right">
-          <!-- Mobile-only icons (desktop uses sidebar) -->
-          <button class="btn-icon mobile-only" id="search-btn-mobile" title="Search">🔍</button>
-          <button class="btn-icon mobile-only" id="users-btn-mobile" title="Members">👥</button>
-          <!-- Shield always visible -->
-          <div class="shield-indicator desktop-only" title="Anti-surveillance shield">
-            🛡 <span class="shield-dot shield-green"></span>
+          <button class="btn-icon mobile-only" id="search-btn-mobile" title="Search" type="button">🔍</button>
+          <button class="btn-icon mobile-only" id="users-btn-mobile" title="Members" type="button">👥</button>
+          <div class="shield-indicator desktop-only" title="Privacy shield status">
+            🛡️ Shield <span class="shield-dot shield-green"></span>
           </div>
         </div>
       </header>
 
-      <!-- ══ Chat Content ══ -->
       <div id="chat-main">
-
-        <!-- Typing indicator -->
         <div id="typing-indicator">
           <div class="typing-dots"><span></span><span></span><span></span></div>
           <span id="typing-name"></span> is typing...
         </div>
 
-        <!-- Message feed -->
         <div id="chat-feed" role="log" aria-live="polite" aria-label="Chat messages"></div>
 
-        <!-- Voice Note Recording Overlay (Near Mic) -->
         <div id="recording-indicator" hidden>
           <div class="recording-info">
             <span class="recording-dot"></span>
@@ -207,44 +226,38 @@
             <strong id="recording-timer">0:00</strong>
           </div>
           <div class="recording-controls">
-            <button class="rec-btn-preview" id="rec-play-btn" title="Preview" type="button" hidden>▶</button>
-            <button class="rec-btn-delete" id="rec-delete-btn" title="Discard" type="button">🗑</button>
-            <button class="rec-btn-send" id="rec-send-btn" title="Send Voice Message" type="button" hidden>📤</button>
-            <button class="rec-btn-stop" id="rec-stop-btn" title="Stop Recording" type="button">⏹</button>
+            <button class="rec-btn-preview" id="rec-play-btn" title="Preview" type="button" hidden>Play</button>
+            <button class="rec-btn-delete" id="rec-delete-btn" title="Discard" type="button">Delete</button>
+            <button class="rec-btn-send" id="rec-send-btn" title="Send voice message" type="button" hidden>Send</button>
+            <button class="rec-btn-stop" id="rec-stop-btn" title="Stop recording" type="button">Stop</button>
           </div>
         </div>
 
-        <!-- Multi-select bar (hidden by default) -->
         <div id="multi-select-bar" style="display:none; position:absolute; bottom: 80px; left:50%; transform:translateX(-50%); background:var(--surface-high); padding:0.5rem 1rem; border-radius:var(--r-full); box-shadow:0 10px 30px rgba(0,0,0,0.8); z-index:100; align-items:center; gap:1rem; border:1px solid rgba(255,255,255,0.1);">
           <span id="select-count" style="font-size:0.85rem;font-weight:600;">0 selected</span>
-          <button class="btn btn-danger-ghost" style="padding:0.4rem 0.8rem;font-size:0.8rem;" id="multi-delete-btn">🗑 Delete</button>
-          <button class="btn btn-ghost" style="padding:0.4rem 0.8rem;font-size:0.8rem;" id="multi-cancel-btn">✕ Cancel</button>
+          <button class="btn btn-danger-ghost" style="padding:0.4rem 0.8rem;font-size:0.8rem;" id="multi-delete-btn" type="button">Delete</button>
+          <button class="btn btn-ghost" style="padding:0.4rem 0.8rem;font-size:0.8rem;" id="multi-cancel-btn" type="button">Cancel</button>
         </div>
 
-        <!-- Input bar -->
         <footer id="input-bar">
           <div id="extra-bar">
-            <button class="extra-action danger" id="clear-btn" title="Clear chat for everyone">🗑 Clear Chat</button>
-            <button class="extra-action" id="copy-room-btn" title="Copy Room ID">🔗 Copy ID</button>
+            <button class="extra-action danger" id="clear-btn" title="Clear chat for everyone" type="button">🗑️ Clear Chat</button>
+            <button class="extra-action" id="copy-room-btn" title="Copy Room ID" type="button">📋 Copy ID</button>
           </div>
           <div id="reply-preview" hidden>
             <div class="reply-preview-copy">
               <span id="reply-preview-from"></span>
               <span id="reply-preview-text"></span>
             </div>
-            <button class="btn-icon" id="reply-cancel-btn" title="Cancel reply" type="button">✕</button>
+            <button class="btn-icon" id="reply-cancel-btn" title="Cancel reply" type="button">Close</button>
           </div>
-          <div class="input-row">
-            <!-- File attachment -->
+          <div class="input-row glass-panel">
             <label class="btn-icon" for="file-input" title="Share file" style="cursor:pointer">
-              📎
+              📎 Attach
               <input type="file" id="file-input" style="display:none" />
             </label>
-            <!-- Rich Media Button -->
-            <button class="btn-icon" id="media-drawer-btn" title="Emojis, GIFs, Stickers">😀</button>
-            <!-- Mic (voice message) -->
-            <button class="btn-icon" id="mic-btn" title="Hold to record voice message">🎤</button>
-            <!-- Text input -->
+            <button class="btn-icon" id="media-drawer-btn" title="Emojis, GIFs, stickers" type="button">😊</button>
+            <button class="btn-icon" id="mic-btn" title="Hold to record voice message" type="button">🎙️</button>
             <textarea
               id="msg-input"
               placeholder="Message..."
@@ -253,161 +266,133 @@
               spellcheck="true"
               aria-label="Type a message"
             ></textarea>
-            <!-- Voice call -->
-            <button class="btn-icon" id="call-btn" title="Start voice call">📞</button>
-            <!-- Send -->
-            <button id="send-btn" title="Send message" aria-label="Send">
+            <button class="btn-icon" id="call-btn" title="Start room call" type="button">📞</button>
+            <button id="send-btn" title="Send message" aria-label="Send" type="button">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
             </button>
           </div>
         </footer>
       </div>
 
-      <!-- User panel (slide from right) -->
-      <aside id="user-panel" aria-label="Participants">
+      <aside id="user-panel" aria-label="Participants" class="glass-panel">
         <div class="user-panel-header">
           <span class="user-panel-title">Participants</span>
-          <button class="btn-icon" id="close-panel-btn">✕</button>
+          <button class="btn-icon" id="close-panel-btn" type="button">✕</button>
         </div>
         <div id="user-list" role="list"></div>
       </aside>
-
     </div>
   </div>
 
-  <!-- ═══════════════════════════════════════
-       MODALS
-  ════════════════════════════════════════ -->
-
-  <!-- Incoming call -->
   <div class="modal-backdrop" id="incoming-call-modal">
     <div class="modal-box" style="text-align:center">
       <div class="call-avatar-large">📞</div>
       <div class="modal-title" id="caller-name">Unknown</div>
-      <div class="modal-subtitle">Incoming voice call</div>
+      <div class="modal-subtitle" id="incoming-call-subtitle">✨ Incoming room call</div>
       <div class="call-incoming-actions">
-        <button class="btn-decline-call" id="decline-call-btn" title="Decline">✕</button>
-        <button class="btn-accept-call"  id="accept-call-btn"  title="Accept">✓</button>
+        <button class="btn-decline-call" id="decline-call-btn" title="Decline" type="button">❌ Decline</button>
+        <button class="btn-accept-call" id="accept-call-btn" title="Accept" type="button">✅ Join</button>
       </div>
     </div>
   </div>
 
-  <!-- QR code -->
   <div class="modal-backdrop" id="qr-modal">
     <div class="modal-box" style="text-align:center">
-      <div class="modal-title">Share Room QR</div>
-      <div class="modal-subtitle">Scan to join this room</div>
+      <div class="modal-title">📷 Share Room QR</div>
+      <div class="modal-subtitle">📱 Scan to join this room</div>
       <div id="qr-container"></div>
       <div class="modal-actions" style="justify-content:center; flex-direction:column; gap:0.5rem; align-items:center;">
-        <button class="btn w-100" id="copy-room-link-btn" onclick="copyToClipboard(window.location.href, this)" style="display:flex; justify-content:center; gap:0.5rem;">🔗 Copy Room Link</button>
-        <button class="btn btn-ghost w-100" onclick="hideModal('qr-modal')">Close</button>
+        <button class="btn w-100" id="copy-room-link-btn" onclick="copyToClipboard(window.location.href, this)" style="display:flex; justify-content:center; gap:0.5rem;" type="button">📋 Copy Room Link</button>
+        <button class="btn btn-ghost w-100" onclick="hideModal('qr-modal')" type="button">Close</button>
       </div>
     </div>
   </div>
 
-  <!-- Message timer -->
   <div class="modal-backdrop" id="timer-modal">
     <div class="modal-box">
-      <div class="modal-title">Self-Destruct Timer</div>
-      <div class="modal-subtitle">Choose when this message disappears for everyone</div>
+      <div class="modal-title">⏱️ Self-Destruct Timer</div>
+      <div class="modal-subtitle">💨 Choose when this message disappears for everyone</div>
       <div class="timer-options">
-        <button class="timer-opt" data-seconds="5">5s</button>
-        <button class="timer-opt" data-seconds="30">30s</button>
-        <button class="timer-opt" data-seconds="60">1 min</button>
-        <button class="timer-opt" data-seconds="300">5 min</button>
-        <button class="timer-opt" data-seconds="600">10 min</button>
-        <button class="timer-opt" data-seconds="1800">30 min</button>
-        <button class="timer-opt" data-seconds="3600">1 hour</button>
+        <button class="timer-opt" data-seconds="5" type="button">5s</button>
+        <button class="timer-opt" data-seconds="30" type="button">30s</button>
+        <button class="timer-opt" data-seconds="60" type="button">1 min</button>
+        <button class="timer-opt" data-seconds="300" type="button">5 min</button>
+        <button class="timer-opt" data-seconds="600" type="button">10 min</button>
+        <button class="timer-opt" data-seconds="1800" type="button">30 min</button>
+        <button class="timer-opt" data-seconds="3600" type="button">1 hour</button>
       </div>
       <div class="modal-actions">
-        <button class="btn btn-ghost w-100" onclick="hideModal('timer-modal')">Cancel</button>
+        <button class="btn btn-ghost w-100" onclick="hideModal('timer-modal')" type="button">Cancel</button>
       </div>
     </div>
   </div>
 
-  <!-- Join Request (Host only) -->
   <div class="modal-backdrop" id="join-request-modal">
     <div class="modal-box" style="text-align:center">
       <div style="font-size:3rem; margin-bottom:1rem;">👋</div>
-      <div class="modal-title">Join Request</div>
+      <div class="modal-title">✨ Join Request</div>
       <div class="modal-subtitle"><span id="join-request-name" style="color:var(--accent-bright); font-weight:bold;">Someone</span> wants to join the room.</div>
       <div class="modal-actions" style="margin-top:2rem; gap:1rem;">
-        <button class="btn btn-danger w-100" id="reject-join-btn">Reject</button>
-        <button class="btn btn-primary w-100" id="accept-join-btn">Accept</button>
+        <button class="btn btn-danger w-100" id="reject-join-btn" type="button">❌ Reject</button>
+        <button class="btn btn-primary w-100" id="accept-join-btn" type="button">✅ Accept</button>
       </div>
     </div>
   </div>
 
-  <!-- Waiting for Host (Guest only) -->
   <div class="modal-backdrop" id="waiting-host-modal">
     <div class="modal-box" style="text-align:center">
       <div class="loading-spinner" style="margin: 0 auto 1.5rem;"></div>
-      <div class="modal-title">Please Wait</div>
-      <div class="modal-subtitle">Securing the room connection and syncing participants...</div>
+      <div class="modal-title">⏳ Please Wait</div>
+      <div class="modal-subtitle">🔒 Securing the room connection and syncing participants...</div>
     </div>
   </div>
 
-  <!-- QRCode.js CDN -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"
-    crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" crossorigin="anonymous"></script>
+  <script src="assets/js/config.js?v=20260331"></script>
+  <script src="assets/js/crypto.js?v=20260331"></script>
+  <script src="assets/js/rooms.js?v=20260331"></script>
+  <script src="assets/js/ui.js?v=20260331"></script>
+  <script src="assets/js/peer.js?v=20260331"></script>
+  <script src="assets/js/surveillance.js?v=20260331"></script>
+  <script src="assets/js/chat.js?v=20260331"></script>
+  <script src="assets/js/media.js?v=20260331"></script>
+  <script src="assets/js/rich-media.js?v=20260331"></script>
+  <script src="assets/js/app.js?v=20260331"></script>
 
-  <!-- App scripts (order matters) -->
-  <script src="assets/js/config.js?v=20260323"></script>
-  <script src="assets/js/crypto.js?v=20260323"></script>
-  <script src="assets/js/rooms.js?v=20260323"></script>
-  <script src="assets/js/ui.js?v=20260323"></script>
-  <script src="assets/js/peer.js?v=20260323"></script>
-  <script src="assets/js/surveillance.js?v=20260323"></script>
-  <script src="assets/js/chat.js?v=20260323"></script>
-  <script src="assets/js/media.js?v=20260323"></script>
-  <script src="assets/js/rich-media.js?v=20260323"></script>
-  <script src="assets/js/app.js?v=20260323"></script>
-
-  <!-- Rich Media Drawer (Giphy/Emoji) -->
   <aside id="media-drawer">
     <div class="media-tabs">
-      <button class="media-tab active" data-tab="emoji">Emoji</button>
-      <button class="media-tab" data-tab="gif">GIFs</button>
-      <button class="media-tab" data-tab="sticker">Stickers</button>
+      <button class="media-tab active" data-tab="emoji" type="button">Emoji</button>
+      <button class="media-tab" data-tab="gif" type="button">GIFs</button>
+      <button class="media-tab" data-tab="sticker" type="button">Stickers</button>
     </div>
-    
+
     <div class="media-search-wrap">
       <input type="text" id="media-search-input" placeholder="Search emojis, gifs, stickers..." autocomplete="off">
     </div>
 
-    <!-- Emojis -->
-    <div class="media-tab-content" id="tab-emoji">
-      <!-- Filled via JS -->
-    </div>
-
-    <!-- GIFs -->
+    <div class="media-tab-content" id="tab-emoji"></div>
     <div class="media-tab-content" id="tab-gif" style="display:none;">
       <div id="gif-results" class="media-results-grid"></div>
     </div>
-
-    <!-- Stickers -->
     <div class="media-tab-content" id="tab-sticker" style="display:none;">
       <div id="sticker-results" class="media-results-grid"></div>
     </div>
   </aside>
 
-  <!-- Chat sidebar toggle (mobile) + mirror room ID to top bar -->
   <script>
     (function() {
-      // Mobile sidebar toggle
       document.getElementById('chat-sidebar-toggle')?.addEventListener('click', () => {
         document.getElementById('chat-sidebar')?.classList.toggle('csidebar-open');
         document.getElementById('chat-sidebar-overlay')?.classList.toggle('overlay-visible');
       });
       document.getElementById('close-chat-sidebar-btn')?.addEventListener('click', () => {
         document.getElementById('chat-sidebar')?.classList.remove('csidebar-open');
-        document.getElementById('chat-sidebar-overlay')?.classList.remove('overlay-visible');
       });
       document.getElementById('chat-sidebar-overlay')?.addEventListener('click', () => {
         document.getElementById('chat-sidebar')?.classList.remove('csidebar-open');
         document.getElementById('chat-sidebar-overlay')?.classList.remove('overlay-visible');
       });
-      // Mirror room-id-display text to top bar
+
       const ridEl = document.getElementById('room-id-display');
       const mirrorEl = document.getElementById('top-bar-room-id-mirror');
       if (ridEl && mirrorEl) {

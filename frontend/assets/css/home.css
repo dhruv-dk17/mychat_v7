@@ -11,8 +11,8 @@ body[data-page="home"] {
   overflow: hidden;
   background: var(--bg);
   background-image:
-    radial-gradient(circle at 18% 14%, rgba(110, 163, 255, 0.14) 0%, transparent 32%),
-    radial-gradient(circle at 86% 10%, rgba(40, 210, 161, 0.08) 0%, transparent 30%);
+    radial-gradient(circle at 18% 14%, rgba(124, 58, 237, 0.16) 0%, transparent 32%),
+    radial-gradient(circle at 86% 10%, rgba(45, 212, 168, 0.1) 0%, transparent 30%);
 }
 
 .app-shell {
@@ -27,7 +27,7 @@ body[data-page="home"] {
 .home-sidebar {
   width: 260px;
   flex-shrink: 0;
-  background: rgba(11, 19, 30, 0.82);
+  background: rgba(11, 13, 26, 0.88);
   border-right: 1px solid var(--border-dim);
   display: flex;
   flex-direction: column;
@@ -43,7 +43,7 @@ body[data-page="home"] {
   position: absolute;
   top: 0; left: 0; right: 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(110, 163, 255, 0.5), transparent);
+  background: linear-gradient(90deg, transparent, rgba(124, 58, 237, 0.5), transparent);
 }
 
 /* ── Sidebar Brand ───────────────────────────── */
@@ -54,19 +54,7 @@ body[data-page="home"] {
   padding: 1.25rem 1.1rem 1rem;
   border-bottom: 1px solid var(--border-dim);
   flex-shrink: 0;
-}
-
-.home-logo {
-  width: 38px;
-  height: 38px;
-  background: var(--grad-accent);
-  border-radius: var(--r-md);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.15rem;
-  box-shadow: 0 0 15px rgba(47, 99, 246, 0.22);
-  flex-shrink: 0;
+  position: relative;
 }
 
 .sidebar-brand-text { flex: 1; min-width: 0; }
@@ -141,10 +129,17 @@ body[data-page="home"] {
 }
 
 .sidebar-nav-icon {
-  font-size: 1rem;
+  font-size: 1.15rem;
   flex-shrink: 0;
-  width: 20px;
-  text-align: center;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-md);
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.12) 0%, rgba(99, 102, 241, 0.1) 100%);
+  border: 1px solid rgba(124, 58, 237, 0.15);
+  line-height: 1;
 }
 
 .sidebar-nav-label { flex: 1; }
@@ -173,7 +168,7 @@ body[data-page="home"] {
   font-size: 0.68rem;
   color: var(--accent-bright);
   background: var(--accent-dim);
-  border: 1px solid rgba(110, 163, 255, 0.25);
+  border: 1px solid rgba(124, 58, 237, 0.25);
   border-radius: var(--r-pill);
   padding: 0.2rem 0.55rem;
 }
@@ -217,6 +212,12 @@ body[data-page="home"] {
   flex: 1;
 }
 
+.mobile-brand .brand-mark-wrap {
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
+}
+
 /* Sidebar overlay (mobile) */
 .sidebar-overlay {
   display: none;
@@ -248,8 +249,8 @@ body[data-page="home"] {
   width: 100vw;
   height: 100dvh;
   background: 
-      radial-gradient(circle at 20% 30%, rgba(110, 163, 255, 0.09) 0%, transparent 40%),
-      radial-gradient(circle at 80% 70%, rgba(40, 210, 161, 0.07) 0%, transparent 40%);
+      radial-gradient(circle at 20% 30%, rgba(124, 58, 237, 0.1) 0%, transparent 40%),
+      radial-gradient(circle at 80% 70%, rgba(45, 212, 168, 0.08) 0%, transparent 40%);
   pointer-events: none;
   z-index: 0;
 }
@@ -265,16 +266,17 @@ body[data-page="home"] {
 
 .hero-copy,
 .hero-metrics {
-  background: linear-gradient(180deg, rgba(14, 22, 35, 0.76), rgba(8, 14, 24, 0.62));
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: linear-gradient(180deg, rgba(16, 19, 42, 0.78), rgba(11, 13, 26, 0.65));
+  border: 1px solid rgba(139, 92, 246, 0.1);
   border-radius: var(--r-2xl);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.22);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.26);
 }
 
 .hero-copy {
   padding: 1.5rem 1.6rem;
+  min-height: 100%;
 }
 
 .hero-eyebrow {
@@ -320,8 +322,14 @@ body[data-page="home"] {
   min-height: 120px;
   padding: 1rem;
   border-radius: var(--r-xl);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.015));
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: linear-gradient(180deg, rgba(124, 58, 237, 0.08), rgba(99, 102, 241, 0.04));
+  border: 1px solid rgba(124, 58, 237, 0.1);
+  transition: transform 0.3s var(--ease-out), box-shadow 0.3s var(--ease-out);
+}
+
+.metric-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 32px rgba(124, 58, 237, 0.15);
 }
 
 .metric-value {
@@ -354,14 +362,14 @@ body[data-page="home"] {
 }
 
 .content-header-icon {
-  width: 48px;
-  height: 48px;
+  width: 52px;
+  height: 52px;
   background: var(--grad-accent);
-  border-radius: var(--r-lg);
+  border-radius: var(--r-xl);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.4rem;
+  font-size: 1.6rem;
   box-shadow: var(--glow-accent);
   flex-shrink: 0;
 }
@@ -412,7 +420,7 @@ body[data-page="home"] {
   transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   position: relative;
   overflow: hidden;
-  box-shadow: 0 0 40px rgba(110, 163, 255, 0.02);
+  box-shadow: 0 0 40px rgba(124, 58, 237, 0.02);
 }
 
 .room-card::before {
@@ -420,15 +428,15 @@ body[data-page="home"] {
   position: absolute;
   top: 0; left: 0; right: 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(110, 163, 255, 0.8), transparent);
+  background: linear-gradient(90deg, transparent, rgba(124, 58, 237, 0.8), transparent);
   opacity: 0;
   transform: translateX(-100%);
   transition: opacity 0.4s, transform 0.6s ease-in-out;
 }
 
 .room-card:hover { 
-  border-color: rgba(110, 163, 255, 0.4);
-  box-shadow: 0 10px 40px rgba(110, 163, 255, 0.12);
+  border-color: rgba(124, 58, 237, 0.4);
+  box-shadow: 0 10px 40px rgba(124, 58, 237, 0.12);
   transform: translateY(-4px);
 }
 .room-card:hover::before { 
@@ -461,13 +469,13 @@ body[data-page="home"] {
   border-color: transparent;
   background:
     linear-gradient(var(--surface), var(--surface)) padding-box,
-    linear-gradient(135deg, rgba(47, 99, 246, 0.5), rgba(110, 163, 255, 0.3), rgba(40, 210, 161, 0.35)) border-box;
+    linear-gradient(135deg, rgba(91, 33, 182, 0.5), rgba(124, 58, 237, 0.3), rgba(45, 212, 168, 0.35)) border-box;
 }
 
 .room-card-perm:hover {
   background:
     linear-gradient(var(--surface), var(--surface)) padding-box,
-    linear-gradient(135deg, rgba(47, 99, 246, 0.82), rgba(110, 163, 255, 0.54), rgba(40, 210, 161, 0.55)) border-box;
+    linear-gradient(135deg, rgba(91, 33, 182, 0.82), rgba(124, 58, 237, 0.54), rgba(45, 212, 168, 0.55)) border-box;
 }
 
 /* ── Success Modal ────────────────────────────── */

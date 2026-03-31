@@ -1,6 +1,8 @@
 'use strict';
 
 let currentIdentityPeerId = '';
+const IDENTITY_STORAGE_KEY = 'mychat_identity_v3';
+const LEGACY_IDENTITY_STORAGE_KEY = 'mychat_identity_v2';
 const AES_KDF_VERSION = 'mchat-v2';
 const AES_KDF_ITERATIONS = 150000;
 const AES_KDF_SALT_BYTES = 16;
@@ -215,9 +217,19 @@ function removeStorageValue(storage, key) {
   } catch (e) {}
 }
 
+function primeIdentityPeerId() {
+  const cached = getStorageValue(sessionStorage, IDENTITY_STORAGE_KEY);
+  if (!cached) return;
+  try {
+    const parsed = JSON.parse(cached);
+    currentIdentityPeerId = parsed.peerId || '';
+  } catch (e) {
+    currentIdentityPeerId = '';
+  }
+}
+
 async function loadIdentityMaterial() {
-  const storageKey = 'mychat_identity_v2';
-  const cached = getStorageValue(localStorage, storageKey);
+  const cached = getStorageValue(sessionStorage, IDENTITY_STORAGE_KEY);
   if (cached) {
     try {
       const parsed = JSON.parse(cached);
@@ -228,9 +240,14 @@ async function loadIdentityMaterial() {
       return { ...parsed, publicKeyBase64, publicKey, privateKey };
     } catch (e) {
       console.warn('Failed to load cached identity, generating new one', e);
-      removeStorageValue(localStorage, storageKey);
+      removeStorageValue(sessionStorage, IDENTITY_STORAGE_KEY);
     }
   }
+
+  // Legacy identities were stored in localStorage, which made multiple tabs share
+  // the same signing identity and caused each tab to classify the other's messages
+  // as its own. Drop the shared cache and mint a per-tab identity instead.
+  removeStorageValue(localStorage, LEGACY_IDENTITY_STORAGE_KEY);
 
   const keyPair = await crypto.subtle.generateKey({ name: 'ECDSA', namedCurve: 'P-256' }, true, ['sign', 'verify']);
   const publicKey = await exportPublicKeyBase64(keyPair.publicKey);
@@ -238,7 +255,7 @@ async function loadIdentityMaterial() {
   const peerId = await sha256(publicKey);
   const material = { peerId, publicKey, privateKeyJwk };
   currentIdentityPeerId = peerId;
-  setStorageValue(localStorage, storageKey, JSON.stringify(material));
+  setStorageValue(sessionStorage, IDENTITY_STORAGE_KEY, JSON.stringify(material));
   return {
     ...material,
     publicKeyBase64: publicKey,
@@ -338,3 +355,4 @@ window.aesDecrypt = aesDecrypt;
 window.validateMediaUrl = validateMediaUrl;
 window.normalizeMediaUrl = normalizeMediaUrl;
 window.getMediaUrlCandidate = getMediaUrlCandidate;
+primeIdentityPeerId();

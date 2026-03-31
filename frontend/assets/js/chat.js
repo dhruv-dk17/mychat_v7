@@ -14,14 +14,14 @@ function getOwnIdentityPeerId() {
 function isOwnMessage(msg) {
   if (!msg) return false;
   const ownPeerId = getOwnIdentityPeerId();
-  if (ownPeerId && msg.senderPeerId) return msg.senderPeerId === ownPeerId;
+  if (msg.senderPeerId) return Boolean(ownPeerId) && msg.senderPeerId === ownPeerId;
   return msg.from === myUsername;
 }
 
 function isReceiptForCurrentUser(payload) {
   if (!payload?.messageId) return false;
   const ownPeerId = getOwnIdentityPeerId();
-  if (ownPeerId && payload.targetPeerId) return payload.targetPeerId === ownPeerId;
+  if (payload.targetPeerId) return Boolean(ownPeerId) && payload.targetPeerId === ownPeerId;
   return payload.target === myUsername;
 }
 

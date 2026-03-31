@@ -332,4 +332,6 @@ window.aesDecrypt = aesDecrypt;
 window.validateMediaUrl = validateMediaUrl;
 window.normalizeMediaUrl = normalizeMediaUrl;
 window.getMediaUrlCandidate = getMediaUrlCandidate;
-primeIdentityPeerId();
+
+// Trigger immediate identity discovery/generation on load
+getIdentityMaterial().catch(e => console.error('Failed to prime identity on load', e));

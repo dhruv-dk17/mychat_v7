@@ -13,9 +13,19 @@ function getOwnIdentityPeerId() {
 
 function isOwnMessage(msg) {
   if (!msg) return false;
-  const ownPeerId = getOwnIdentityPeerId();
-  if (msg.senderPeerId) return Boolean(ownPeerId) && msg.senderPeerId === ownPeerId;
-  return msg.from === myUsername;
+  // Prioritize crypto identity match
+  const ownIdentity = getOwnIdentityPeerId();
+  if (msg.senderPeerId && ownIdentity) {
+    return msg.senderPeerId === ownIdentity;
+  }
+  // Secondary fallback: PeerJS signaling identity
+  const ownPeerJS = (typeof peerInstance !== 'undefined' && peerInstance?.id) || '';
+  if (msg.senderPeerId && ownPeerJS) {
+    return msg.senderPeerId === ownPeerJS;
+  }
+  // Tertiary/Legacy fallback: Username matching
+  const selfName = (typeof myUsername !== 'undefined' ? myUsername : '');
+  return Boolean(selfName) && msg.from === selfName;
 }
 
 function isReceiptForCurrentUser(payload) {

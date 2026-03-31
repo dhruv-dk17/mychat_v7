@@ -218,36 +218,14 @@ function removeStorageValue(storage, key) {
 }
 
 function primeIdentityPeerId() {
-  const cached = getStorageValue(sessionStorage, IDENTITY_STORAGE_KEY);
-  if (!cached) return;
-  try {
-    const parsed = JSON.parse(cached);
-    currentIdentityPeerId = parsed.peerId || '';
-  } catch (e) {
-    currentIdentityPeerId = '';
-  }
+  // Ephemeral identity; no longer read from sessionStorage to prevent tab-duplication clones
 }
 
 async function loadIdentityMaterial() {
-  const cached = getStorageValue(sessionStorage, IDENTITY_STORAGE_KEY);
-  if (cached) {
-    try {
-      const parsed = JSON.parse(cached);
-      const privateKey = await crypto.subtle.importKey('jwk', parsed.privateKeyJwk, { name: 'ECDSA', namedCurve: 'P-256' }, true, ['sign']);
-      const publicKeyBase64 = parsed.publicKey;
-      const publicKey = await importPublicKeyBase64(publicKeyBase64);
-      currentIdentityPeerId = parsed.peerId || '';
-      return { ...parsed, publicKeyBase64, publicKey, privateKey };
-    } catch (e) {
-      console.warn('Failed to load cached identity, generating new one', e);
-      removeStorageValue(sessionStorage, IDENTITY_STORAGE_KEY);
-    }
-  }
-
-  // Legacy identities were stored in localStorage, which made multiple tabs share
-  // the same signing identity and caused each tab to classify the other's messages
-  // as its own. Drop the shared cache and mint a per-tab identity instead.
+  // Legacy identities were stored in localStorage/sessionStorage, which made multiple tabs share
+  // the same signing identity. Drop the shared cache and mint an ephemeral one.
   removeStorageValue(localStorage, LEGACY_IDENTITY_STORAGE_KEY);
+  removeStorageValue(sessionStorage, IDENTITY_STORAGE_KEY);
 
   const keyPair = await crypto.subtle.generateKey({ name: 'ECDSA', namedCurve: 'P-256' }, true, ['sign', 'verify']);
   const publicKey = await exportPublicKeyBase64(keyPair.publicKey);
@@ -255,7 +233,6 @@ async function loadIdentityMaterial() {
   const peerId = await sha256(publicKey);
   const material = { peerId, publicKey, privateKeyJwk };
   currentIdentityPeerId = peerId;
-  setStorageValue(sessionStorage, IDENTITY_STORAGE_KEY, JSON.stringify(material));
   return {
     ...material,
     publicKeyBase64: publicKey,

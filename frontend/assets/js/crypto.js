@@ -1,6 +1,10 @@
 'use strict';
 
 let currentIdentityPeerId = '';
+const AES_KDF_VERSION = 'mchat-v2';
+const AES_KDF_ITERATIONS = 150000;
+const AES_KDF_SALT_BYTES = 16;
+const AES_KDF_IV_BYTES = 12;
 
 async function sha256(str) {
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
@@ -23,21 +27,48 @@ function randomRoomId(length = 6) {
 }
 
 async function aesEncrypt(passphrase, plaintext) {
-  const key = await getAesKey(passphrase);
-  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const salt = crypto.getRandomValues(new Uint8Array(AES_KDF_SALT_BYTES));
+  const iv = crypto.getRandomValues(new Uint8Array(AES_KDF_IV_BYTES));
+  const key = await getAesKey(passphrase, salt, AES_KDF_ITERATIONS);
   const ct = await crypto.subtle.encrypt(
     { name: 'AES-GCM', iv },
     key,
     new TextEncoder().encode(plaintext)
   );
-  const out = new Uint8Array(12 + ct.byteLength);
-  out.set(iv);
-  out.set(new Uint8Array(ct), 12);
-  return btoa(String.fromCharCode(...out));
+  return [
+    AES_KDF_VERSION,
+    String(AES_KDF_ITERATIONS),
+    toBase64(salt),
+    toBase64(iv),
+    toBase64(ct)
+  ].join(':');
 }
 
 async function aesDecrypt(passphrase, b64) {
-  const key = await getAesKey(passphrase);
+  if (typeof b64 !== 'string' || !b64) {
+    throw new Error('Invalid ciphertext');
+  }
+
+  if (b64.startsWith(`${AES_KDF_VERSION}:`)) {
+    const parts = b64.split(':');
+    if (parts.length !== 5) {
+      throw new Error('Invalid ciphertext payload');
+    }
+
+    const iterations = Number.parseInt(parts[1], 10);
+    const salt = fromBase64(parts[2]);
+    const iv = fromBase64(parts[3]);
+    const ciphertext = fromBase64(parts[4]);
+    const key = await getAesKey(passphrase, salt, Number.isFinite(iterations) ? iterations : AES_KDF_ITERATIONS);
+    const pt = await crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv },
+      key,
+      ciphertext
+    );
+    return new TextDecoder().decode(pt);
+  }
+
+  const key = await getLegacyAesKey(passphrase);
   const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
   const pt = await crypto.subtle.decrypt(
     { name: 'AES-GCM', iv: bytes.slice(0, 12) },
@@ -47,8 +78,31 @@ async function aesDecrypt(passphrase, b64) {
   return new TextDecoder().decode(pt);
 }
 
-async function getAesKey(passphrase) {
-  const raw = new TextEncoder().encode(passphrase.padEnd(32, ' ').slice(0, 32));
+async function getAesKey(passphrase, salt, iterations = AES_KDF_ITERATIONS) {
+  const baseKey = await crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(String(passphrase)),
+    'PBKDF2',
+    false,
+    ['deriveKey']
+  );
+
+  return crypto.subtle.deriveKey(
+    {
+      name: 'PBKDF2',
+      salt,
+      iterations,
+      hash: 'SHA-256'
+    },
+    baseKey,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['encrypt', 'decrypt']
+  );
+}
+
+async function getLegacyAesKey(passphrase) {
+  const raw = new TextEncoder().encode(String(passphrase).padEnd(32, ' ').slice(0, 32));
   return crypto.subtle.importKey('raw', raw, 'AES-GCM', false, ['encrypt', 'decrypt']);
 }
 
@@ -93,7 +147,13 @@ function fmtTime(ts) {
 }
 
 function toBase64(bytes) {
-  return btoa(String.fromCharCode(...new Uint8Array(bytes)));
+  const view = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
+  const chunkSize = 0x8000;
+  let binary = '';
+  for (let index = 0; index < view.length; index += chunkSize) {
+    binary += String.fromCharCode(...view.subarray(index, index + chunkSize));
+  }
+  return btoa(binary);
 }
 
 function fromBase64(value) {
@@ -132,9 +192,32 @@ async function importPublicKeyBase64(base64) {
   return crypto.subtle.importKey('spki', fromBase64(base64), { name: 'ECDSA', namedCurve: 'P-256' }, true, ['verify']);
 }
 
+function getStorageValue(storage, key) {
+  try {
+    return storage.getItem(key);
+  } catch (e) {
+    return null;
+  }
+}
+
+function setStorageValue(storage, key, value) {
+  try {
+    storage.setItem(key, value);
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+function removeStorageValue(storage, key) {
+  try {
+    storage.removeItem(key);
+  } catch (e) {}
+}
+
 async function loadIdentityMaterial() {
   const storageKey = 'mychat_identity_v2';
-  const cached = localStorage.getItem(storageKey);
+  const cached = getStorageValue(localStorage, storageKey);
   if (cached) {
     try {
       const parsed = JSON.parse(cached);
@@ -144,7 +227,7 @@ async function loadIdentityMaterial() {
       return { ...parsed, privateKey, publicKey };
     } catch (e) {
       console.warn('Failed to load cached identity, generating new one', e);
-      localStorage.removeItem(storageKey);
+      removeStorageValue(localStorage, storageKey);
     }
   }
 
@@ -154,7 +237,7 @@ async function loadIdentityMaterial() {
   const peerId = await sha256(publicKey);
   const material = { peerId, publicKey, privateKeyJwk };
   currentIdentityPeerId = peerId;
-  localStorage.setItem(storageKey, JSON.stringify(material));
+  setStorageValue(localStorage, storageKey, JSON.stringify(material));
   return { ...material, privateKey: keyPair.privateKey, publicKey: keyPair.publicKey };
 }
 
@@ -169,6 +252,41 @@ async function getIdentityMaterial() {
 
 function getCurrentIdentityPeerId() {
   return currentIdentityPeerId;
+}
+
+function getMediaUrlCandidate(url) {
+  if (typeof url !== 'string') return '';
+  const trimmed = url.trim();
+  if (!trimmed) return '';
+
+  try {
+    const parsed = new URL(trimmed, window.location.href);
+    if (parsed.protocol === 'data:') {
+      return /^data:image\/[a-z0-9.+-]+;base64,/i.test(trimmed) || /^data:image\/[a-z0-9.+-]+(?:;charset=[^;,]+)?[,;]/i.test(trimmed)
+        ? trimmed
+        : '';
+    }
+
+    if (parsed.protocol === 'blob:' || parsed.protocol === 'https:') {
+      return parsed.href;
+    }
+
+    if (parsed.protocol === 'http:' && (parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1' || parsed.origin === window.location.origin)) {
+      return parsed.href;
+    }
+  } catch (e) {
+    return '';
+  }
+
+  return '';
+}
+
+function validateMediaUrl(url) {
+  return getMediaUrlCandidate(url) !== '';
+}
+
+function normalizeMediaUrl(url) {
+  return getMediaUrlCandidate(url);
 }
 
 async function signPayloadEnvelope(payload) {
@@ -208,3 +326,9 @@ async function verifyPayloadEnvelope(payload) {
     return false;
   }
 }
+
+window.aesEncrypt = aesEncrypt;
+window.aesDecrypt = aesDecrypt;
+window.validateMediaUrl = validateMediaUrl;
+window.normalizeMediaUrl = normalizeMediaUrl;
+window.getMediaUrlCandidate = getMediaUrlCandidate;

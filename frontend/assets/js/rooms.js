@@ -1,5 +1,7 @@
 'use strict';
 
+const SESSION_STORAGE_KEY = 'mychat_user';
+
 async function registerUser(username, password) {
   const passwordHash = await sha256(password);
   const res = await fetch(`${CONFIG.API_BASE}/users/register`, {
@@ -97,31 +99,89 @@ function getPasswordStrength(pw) {
   return score;
 }
 
-function getUserSession() {
+function readSessionRecord(storage, key) {
   try {
-    const raw = localStorage.getItem('mychat_user');
+    const raw = storage.getItem(key);
     return raw ? JSON.parse(raw) : null;
   } catch (e) {
     return null;
   }
 }
 
+function writeSessionRecord(storage, key, value) {
+  try {
+    storage.setItem(key, JSON.stringify(value));
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+function removeSessionRecord(storage, key) {
+  try {
+    storage.removeItem(key);
+  } catch (e) {}
+}
+
+function isValidSessionRecord(record) {
+  return Boolean(
+    record &&
+    typeof record.username === 'string' &&
+    record.username.trim() &&
+    typeof record.token === 'string' &&
+    record.token.trim()
+  );
+}
+
+function getUserSession() {
+  const session = readSessionRecord(sessionStorage, SESSION_STORAGE_KEY);
+  if (isValidSessionRecord(session)) {
+    return session;
+  }
+
+  const legacySession = readSessionRecord(localStorage, SESSION_STORAGE_KEY);
+  if (isValidSessionRecord(legacySession)) {
+    writeSessionRecord(sessionStorage, SESSION_STORAGE_KEY, legacySession);
+    removeSessionRecord(localStorage, SESSION_STORAGE_KEY);
+    return legacySession;
+  }
+
+  return null;
+}
+
 function setUserSession(username, token) {
-  localStorage.setItem('mychat_user', JSON.stringify({ username, token }));
+  const record = {
+    username: typeof username === 'string' ? username.trim() : '',
+    token: typeof token === 'string' ? token.trim() : ''
+  };
+  if (!writeSessionRecord(sessionStorage, SESSION_STORAGE_KEY, record)) {
+    writeSessionRecord(localStorage, SESSION_STORAGE_KEY, record);
+  } else {
+    removeSessionRecord(localStorage, SESSION_STORAGE_KEY);
+  }
 }
 
 function clearUserSession() {
-  localStorage.removeItem('mychat_user');
+  removeSessionRecord(sessionStorage, SESSION_STORAGE_KEY);
+  removeSessionRecord(localStorage, SESSION_STORAGE_KEY);
+}
+
+function getAuthHeaders(session = getUserSession()) {
+  if (!session) {
+    return {};
+  }
+
+  return {
+    'X-Auth-Username': session.username,
+    'X-Auth-Token': session.token
+  };
 }
 
 async function fetchUserRooms() {
   const session = getUserSession();
   if (!session) throw new Error('Not logged in');
   const res = await fetch(`${CONFIG.API_BASE}/rooms/user`, {
-    headers: {
-      'X-Auth-Username': session.username,
-      'X-Auth-Token': session.token
-    }
+    headers: getAuthHeaders(session)
   });
   const data = await res.json();
   if (data.error) throw new Error(data.error);
@@ -133,10 +193,7 @@ async function deleteUserRoom(slug) {
   if (!session) throw new Error('Not logged in');
   const res = await fetch(`${CONFIG.API_BASE}/rooms/${encodeURIComponent(slug)}`, {
     method: 'DELETE',
-    headers: {
-      'X-Auth-Username': session.username,
-      'X-Auth-Token': session.token
-    }
+    headers: getAuthHeaders(session)
   });
   const data = await res.json();
   if (!data.success) throw new Error(data.error || 'Deletion failed');
@@ -147,7 +204,10 @@ async function fetchPlatformMessages() {
   const session = getUserSession();
   if (!session) return [];
   try {
-    const res = await fetch(`${CONFIG.API_BASE}/users/messages?username=${encodeURIComponent(session.username)}&token=${encodeURIComponent(session.token)}`);
+    const res = await fetch(`${CONFIG.API_BASE}/users/messages`, {
+      headers: getAuthHeaders(session),
+      cache: 'no-store'
+    });
     const data = await res.json();
     return data.messages || [];
   } catch (e) {

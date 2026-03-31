@@ -86,6 +86,11 @@ function renderFileMessage(msg, isOwn) {
   if (!feed) return;
 
   const isImage = msg.mimeType?.startsWith('image/');
+  const safeBlobUrl = typeof normalizeMediaUrl === 'function' ? normalizeMediaUrl(msg.blobUrl) : msg.blobUrl;
+  if (!safeBlobUrl) {
+    showToast('Blocked unsafe file preview', 'error');
+    return;
+  }
   const el = document.createElement('div');
   el.className   = 'msg ' + (isOwn ? 'msg-out' : 'msg-in');
   el.dataset.msgId  = msg.id || msg.fileId;
@@ -97,14 +102,14 @@ function renderFileMessage(msg, isOwn) {
     ${!isOwn ? `<span class="msg-from">${escHtml(msg.from)}</span>` : ''}
     <div class="msg-bubble">
       <div class="file-msg-wrap">
-        ${isImage ? `<img class="file-thumb" src="${msg.blobUrl}" alt="${escHtml(msg.name)}" loading="lazy">` : ''}
+        ${isImage ? `<img class="file-thumb" alt="${escHtml(msg.name)}" loading="lazy">` : ''}
         <div class="file-info-row">
           <span class="file-icon">${icon}</span>
           <div class="file-details">
             <div class="file-name-text" title="${escHtml(msg.name)}">${escHtml(msg.name)}</div>
             <div class="file-size-text">${fmtBytes(msg.size)}</div>
           </div>
-          <a class="file-download-btn" href="${msg.blobUrl}" download="${escHtml(msg.name)}" title="Download">⬇</a>
+          <a class="file-download-btn" download="${escHtml(msg.name)}" title="Download">⬇</a>
         </div>
         <div class="file-progress" id="fp-${msg.id || msg.fileId}">
           <div class="file-progress-fill"></div>
@@ -113,6 +118,9 @@ function renderFileMessage(msg, isOwn) {
     </div>
     <span class="msg-time">${fmtTime(msg.ts)}</span>
   `;
+
+  el.querySelector('.file-thumb')?.setAttribute('src', safeBlobUrl);
+  el.querySelector('.file-download-btn')?.setAttribute('href', safeBlobUrl);
 
   feed.appendChild(el);
   feed.scrollTop = feed.scrollHeight;

@@ -31,21 +31,68 @@ function timingSafeEqual(a, b) {
   }
 }
 
-async function compareAndUpgradeHash(table, identifierField, identifierValue, storedHash, incomingHash) {
+function getAuthCredentials(req) {
+  return {
+    username: normalizeUsername(req.get('X-Auth-Username')),
+    token: req.get('X-Auth-Token')
+  };
+}
+
+async function compareAndUpgradeHash(storedHash, incomingHash, upgrade) {
   let isValid = false;
   if (storedHash.startsWith('$2')) {
     isValid = await bcrypt.compare(incomingHash, storedHash);
   } else {
     isValid = timingSafeEqual(storedHash, incomingHash);
     if (isValid) {
-      const upgraded = await bcrypt.hash(incomingHash, BCRYPT_ROUNDS);
-      await pool.query(
-        `UPDATE ${table} SET password_hash = $1 WHERE ${identifierField} = $2`,
-        [upgraded, identifierValue]
-      );
+      await upgrade(await bcrypt.hash(incomingHash, BCRYPT_ROUNDS));
     }
   }
   return isValid;
+}
+
+async function findActiveUserByCredentials(db, username, token) {
+  const result = await db.query(
+    'SELECT username, internal_id FROM users WHERE username = $1 AND token = $2 AND is_deleted = FALSE',
+    [username, token]
+  );
+  return result.rows[0] || null;
+}
+
+async function deleteUserAccount(db, username, token) {
+  const client = await db.connect();
+  try {
+    await client.query('BEGIN');
+
+    const deleted = await client.query(
+      `
+        UPDATE users
+        SET is_deleted = TRUE, token = NULL
+        WHERE username = $1 AND token = $2 AND is_deleted = FALSE
+        RETURNING username
+      `,
+      [username, token]
+    );
+
+    if (!deleted.rows.length) {
+      const error = new Error('Invalid session or account already deleted');
+      error.code = 'USER_NOT_FOUND';
+      throw error;
+    }
+
+    await client.query('DELETE FROM rooms WHERE owner_username = $1', [username]);
+    await client.query('COMMIT');
+    return deleted.rows[0];
+  } catch (error) {
+    try {
+      await client.query('ROLLBACK');
+    } catch (rollbackError) {
+      logger.error('user_delete_rollback_failed', { username, error: rollbackError.message });
+    }
+    throw error;
+  } finally {
+    client.release();
+  }
 }
 
 router.post('/register', authLimiter, async (req, res) => {
@@ -91,7 +138,9 @@ router.post('/login', authLimiter, async (req, res) => {
     if (!result.rows.length) return res.status(401).json({ error: 'Invalid credentials' });
 
     const user = result.rows[0];
-    const isValid = await compareAndUpgradeHash('users', 'username', user.username, user.password_hash, passwordHash);
+    const isValid = await compareAndUpgradeHash(user.password_hash, passwordHash, upgraded =>
+      pool.query('UPDATE users SET password_hash = $1 WHERE username = $2', [upgraded, user.username])
+    );
     if (!isValid) return res.status(401).json({ error: 'Invalid credentials' });
 
     const token = crypto.randomBytes(48).toString('hex');
@@ -105,53 +154,37 @@ router.post('/login', authLimiter, async (req, res) => {
 });
 
 router.delete('/account', async (req, res) => {
-  const username = normalizeUsername(req.query?.username);
-  const token = req.query?.token;
+  const { username, token } = getAuthCredentials(req);
 
   if (!validateUsername(username) || !validateToken(token)) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
   try {
-    const deleted = await pool.query(
-      `
-        UPDATE users
-        SET is_deleted = TRUE, token = NULL, password_hash = 'DELETED'
-        WHERE username = $1 AND token = $2 AND is_deleted = FALSE
-        RETURNING username
-      `,
-      [username, token]
-    );
-
-    if (!deleted.rows.length) {
-      return res.status(404).json({ error: 'Invalid session or account already deleted' });
-    }
-
-    await pool.query('DELETE FROM rooms WHERE owner_username = $1', [username]);
+    await deleteUserAccount(pool, username, token);
     incrementMetric('users.deleted');
     res.json({ success: true, message: 'Account deleted' });
   } catch (e) {
+    if (e.code === 'USER_NOT_FOUND') {
+      return res.status(404).json({ error: e.message });
+    }
     logger.error('user_delete_failed', { username, error: e.message });
     res.status(500).json({ error: 'Failed to delete account' });
   }
 });
 
 router.get('/messages', async (req, res) => {
-  const username = normalizeUsername(req.query?.username);
-  const token = req.query?.token;
+  const { username, token } = getAuthCredentials(req);
 
   if (!validateUsername(username) || !validateToken(token)) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
   try {
-    const user = await pool.query(
-      'SELECT internal_id FROM users WHERE username = $1 AND token = $2 AND is_deleted = FALSE',
-      [username, token]
-    );
-    if (!user.rows.length) return res.status(401).json({ error: 'Invalid session' });
+    const user = await findActiveUserByCredentials(pool, username, token);
+    if (!user) return res.status(401).json({ error: 'Invalid session' });
 
-    const uid = user.rows[0].internal_id;
+    const uid = user.internal_id;
     const msgs = await pool.query(
       `
         SELECT id, content, created_at
@@ -171,3 +204,10 @@ router.get('/messages', async (req, res) => {
 });
 
 module.exports = router;
+module.exports._test = {
+  compareAndUpgradeHash,
+  deleteUserAccount,
+  findActiveUserByCredentials,
+  getAuthCredentials,
+  timingSafeEqual
+};

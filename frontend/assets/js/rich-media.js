@@ -234,10 +234,16 @@ document.addEventListener('DOMContentLoaded', () => {
 // sendRichMedia consolidated below.
 
 function sendRichMedia(url, type) {
+  const normalizedUrl = typeof normalizeMediaUrl === 'function' ? normalizeMediaUrl(url) : '';
+  if (!normalizedUrl) {
+    showToast('Blocked unsafe media content', 'error');
+    return;
+  }
+
   const msg = {
     type: 'rich_media',
     mediaType: type,
-    url,
+    url: normalizedUrl,
     id: crypto.randomUUID(),
     from: myUsername,
     ts: Date.now(),

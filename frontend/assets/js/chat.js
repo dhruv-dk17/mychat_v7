@@ -100,14 +100,14 @@ function renderReplyBlock(replyTo) {
   return `<button class="msg-reply-chip" type="button" data-reply-target="${replyTo.id}"><span class="msg-reply-from">${escHtml(replyTo.from || 'Message')}</span><span class="msg-reply-text">${escHtml(replyTo.text || '')}</span></button>`;
 }
 
-function getReceiptMarkup(msg, isOwn) {
+function legacyGetReceiptMarkup(msg, isOwn) {
   if (!isOwn) return '';
   const state = msg.readAt ? 'read' : (msg.deliveredAt ? 'delivered' : 'sent');
   const icon = state === 'sent' ? '✓' : '✓✓';
-  return `<span class="msg-status msg-status-${state}" data-msg-status-for="${msg.id}">${icon}</span>`;
+  return `<span class="msg-status msg-status-${state}" data-msg-status-for="${msg.id}" aria-label="${state}">${icon}</span>`;
 }
 
-function updateMessageReceipt(messageId, patch) {
+function legacyUpdateMessageReceipt(messageId, patch) {
   const msg = getMessageById(messageId);
   if (!msg) return;
   Object.assign(msg, patch);
@@ -117,12 +117,15 @@ function updateMessageReceipt(messageId, patch) {
   if (msg.readAt) {
     el.textContent = '✓✓';
     el.className = 'msg-status msg-status-read';
+    el.setAttribute('aria-label', 'read');
   } else if (msg.deliveredAt) {
     el.textContent = '✓✓';
     el.className = 'msg-status msg-status-delivered';
+    el.setAttribute('aria-label', 'delivered');
   } else {
     el.textContent = '✓';
     el.className = 'msg-status msg-status-sent';
+    el.setAttribute('aria-label', 'sent');
   }
 }
 
@@ -313,6 +316,36 @@ function renderCallEvent(msg) {
   if (!feed) return;
   const el = document.createElement('div');
   el.className = 'msg-system msg-call-event';
+
+  const text = document.createElement('span');
+  if (msg.event === 'missed') {
+    text.textContent = msg.isOwnCall !== false ? 'Missed call' : 'Incoming call missed';
+    el.appendChild(text);
+    if (msg.isOwnCall === false) {
+      const callbackButton = document.createElement('button');
+      callbackButton.type = 'button';
+      callbackButton.className = 'btn btn-primary btn-sm';
+      callbackButton.style.cssText = 'margin-left:8px;padding:2px 8px;font-size:11px;';
+      callbackButton.textContent = 'Call Back';
+      callbackButton.addEventListener('click', () => initiateCall());
+      el.appendChild(callbackButton);
+    }
+  } else if (msg.event === 'started') {
+    text.textContent = 'Voice call started';
+    el.appendChild(text);
+  } else if (msg.event === 'ended') {
+    const mins = Math.floor((msg.durationSecs || 0) / 60);
+    const secs = (msg.durationSecs || 0) % 60;
+    text.textContent = `Video call ended - ${mins}:${secs < 10 ? '0' : ''}${secs}`;
+    el.appendChild(text);
+  } else {
+    text.textContent = 'Call update';
+    el.appendChild(text);
+  }
+
+  feed.appendChild(el);
+  feed.scrollTop = feed.scrollHeight;
+  return;
   
   let content = '';
   if (msg.event === 'missed') {
@@ -486,7 +519,7 @@ function applyReaction(msg) {
 // ── Context menu ──────────────────────────────────────────────────
 let _activeCtxMenu = null;
 
-function showContextMenu(e, msg, isOwn) {
+function legacyShowContextMenu(e, msg, isOwn) {
   closeContextMenu();
 
   const menu = document.createElement('div');
@@ -709,6 +742,64 @@ function showContextMenu(e, msg, isOwn) {
 function renderRichMediaMessage(msg, isOwn) {
   const feed = document.getElementById('chat-feed');
   if (!feed) return;
+
+  const mediaUrl = typeof normalizeMediaUrl === 'function' ? normalizeMediaUrl(msg.url) : '';
+  if (!mediaUrl) {
+    addSystemMessage('Blocked unsafe media content');
+    return;
+  }
+
+  const lastSafe = feed.lastElementChild;
+  const isCtsSafe = lastSafe && lastSafe.dataset.sender === msg.from && !lastSafe.classList.contains('msg-system');
+  if (isCtsSafe) lastSafe.classList.add('msg-cts');
+
+  const safeEl = document.createElement('div');
+  safeEl.className = 'msg ' + (isOwn ? 'msg-out' : 'msg-in');
+  if (isCtsSafe) safeEl.classList.add('msg-cts-next');
+  safeEl.dataset.msgId = msg.id;
+  safeEl.dataset.sender = msg.from;
+
+  const showFromSafe = !isOwn && !isCtsSafe;
+  safeEl.innerHTML = `${showFromSafe ? `<span class="msg-user">${escHtml(msg.from)}</span>` : ''}<div class="msg-bubble media-bubble">${renderReplyBlock(msg.replyTo)}</div><div class="msg-meta"><span class="msg-time">${fmtTime(msg.ts)}</span>${getReceiptMarkup(msg, isOwn)}</div><div class="msg-reactions" id="reactions-${msg.id}"></div><div class="msg-checkbox" style="display:none;">âœ“</div>`;
+
+  const bubble = safeEl.querySelector('.media-bubble');
+  const image = document.createElement('img');
+  image.src = mediaUrl;
+  image.className = 'msg-media-image';
+  image.loading = 'lazy';
+  image.alt = String(msg.mediaType || 'media');
+  bubble.appendChild(image);
+
+  safeEl.addEventListener('click', event => {
+    if (isMultiSelectMode && isOwn) {
+      event.preventDefault();
+      event.stopPropagation();
+      toggleMessageSelection(msg.id, safeEl);
+    }
+  });
+  safeEl.addEventListener('contextmenu', event => { event.preventDefault(); showContextMenu(event, msg, isOwn); });
+  safeEl.addEventListener('touchstart', event => {
+    const timer = setTimeout(() => showContextMenu(event.touches[0], msg, isOwn), 500);
+    safeEl.addEventListener('touchend', () => clearTimeout(timer), { once: true });
+  });
+  image.addEventListener('click', () => {
+    if (typeof window.open === 'function') {
+      window.open(mediaUrl, '_blank', 'noopener');
+    }
+  });
+  safeEl.querySelector('[data-reply-target]')?.addEventListener('click', event => {
+    const targetId = event.currentTarget.dataset.replyTarget;
+    const targetEl = document.querySelector(`[data-msg-id="${targetId}"]`);
+    if (targetEl) {
+      targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      targetEl.classList.add('msg-flash');
+      setTimeout(() => targetEl.classList.remove('msg-flash'), 1200);
+    }
+  });
+
+  feed.appendChild(safeEl);
+  feed.scrollTop = feed.scrollHeight;
+  return;
 
   const last = feed.lastElementChild;
   const isCts = last && last.dataset.sender === msg.from && !last.classList.contains('msg-system');

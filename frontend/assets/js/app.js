@@ -28,9 +28,33 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ── Keep-alive (prevents Render free tier sleep) ──────────────────
+let keepAliveTimer = null;
+
+function createTextLine(text) {
+  const line = document.createElement('div');
+  line.textContent = text == null ? '' : String(text);
+  return line;
+}
+
 function initKeepAlive() {
-  fetch(CONFIG.API_BASE + '/health').catch(() => {});
-  setInterval(() => fetch(CONFIG.API_BASE + '/health').catch(() => {}), CONFIG.KEEPALIVE_MS);
+  const ping = () => {
+    if (document.hidden) return;
+    fetch(CONFIG.API_BASE + '/health', { cache: 'no-store' }).catch(() => {});
+  };
+
+  const refreshTimer = () => {
+    if (keepAliveTimer) {
+      clearInterval(keepAliveTimer);
+      keepAliveTimer = null;
+    }
+    if (!document.hidden) {
+      ping();
+      keepAliveTimer = setInterval(ping, CONFIG.KEEPALIVE_MS);
+    }
+  };
+
+  refreshTimer();
+  document.addEventListener('visibilitychange', refreshTimer);
 }
 
 // Privacy & Platform Messaging ──────────────────────────────
@@ -47,15 +71,19 @@ async function checkPlatformMessages() {
   const lastSeenMsgId = localStorage.getItem('mychat_last_msg');
   if (lastSeenMsgId === msgs[0].id.toString()) return;
 
-  container.innerHTML = '';
+  container.replaceChildren();
   msgs.forEach(m => {
-    const div = document.createElement('div');
-    div.style = 'background:rgba(255,255,255,0.03); border-radius:8px; padding:1rem; margin-bottom:0.75rem; border-left:3px solid var(--accent);';
-    div.innerHTML = `
-      <div style="font-size:0.75rem; color:var(--text-dim); margin-bottom:0.35rem;">${new Date(parseInt(m.created_at)).toLocaleDateString()}</div>
-      <div style="font-size:0.9rem;">${m.content}</div>
-    `;
-    container.appendChild(div);
+    const card = document.createElement('div');
+    card.style.cssText = 'background:rgba(255,255,255,0.03); border-radius:8px; padding:1rem; margin-bottom:0.75rem; border-left:3px solid var(--accent);';
+
+    const dateLine = createTextLine(new Date(Number.parseInt(m.created_at, 10)).toLocaleDateString());
+    dateLine.style.cssText = 'font-size:0.75rem; color:var(--text-dim); margin-bottom:0.35rem;';
+
+    const messageLine = createTextLine(m.content);
+    messageLine.style.cssText = 'font-size:0.9rem;';
+
+    card.append(dateLine, messageLine);
+    container.appendChild(card);
   });
 
   showModal('platform-messages-modal');
@@ -149,8 +177,9 @@ async function initHomePage() {
       try {
         const u = getUserSession();
         if (!u) throw new Error('Not logged in');
-        const res = await fetch(`${CONFIG.API_BASE}/users/account?username=${encodeURIComponent(u.username)}&token=${encodeURIComponent(u.token)}`, {
-          method: 'DELETE'
+        const res = await fetch(`${CONFIG.API_BASE}/users/account`, {
+          method: 'DELETE',
+          headers: getAuthHeaders(u)
         });
         const data = await res.json();
         if (!data.success) throw new Error(data.error || 'Deletion failed');
@@ -206,7 +235,15 @@ async function initHomePage() {
 
     if (session) {
       if (sBtn) sBtn.style.display = 'none';
-      if (uDD)  { uDD.style.display = 'block'; uDD.innerHTML = `<span class="user-avatar" style="width:24px;height:24px;font-size:0.7rem;display:inline-flex;margin-right:8px;vertical-align:middle;">${session.username.slice(0,2).toUpperCase()}</span>${session.username} ▼`; }
+      if (uDD) {
+        uDD.style.display = 'block';
+        uDD.replaceChildren();
+        const avatar = document.createElement('span');
+        avatar.className = 'user-avatar';
+        avatar.style.cssText = 'width:24px;height:24px;font-size:0.7rem;display:inline-flex;margin-right:8px;vertical-align:middle;';
+        avatar.textContent = session.username.slice(0, 2).toUpperCase();
+        uDD.append(avatar, document.createTextNode(`${session.username} ▼`));
+      }
       if (pOut) pOut.style.display = 'none';
       if (pIn)  pIn.style.display = 'block';
     } else {
@@ -261,23 +298,15 @@ async function initHomePage() {
       
       list.innerHTML = '';
       rooms.forEach(r => {
-        const d = document.createElement('div');
-        d.style = 'display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.05); padding:0.75rem; border-radius:var(--r-md);';
-        d.innerHTML = `
-          <div style="font-weight:600; font-family:var(--ff-mono);">${r.slug}</div>
-          <div style="display:flex; gap:0.5rem;">
-            <button class="btn btn-ghost btn-sm" onclick="joinDashboardRoom('${r.slug}')">Open Room</button>
-            <button class="btn btn-ghost btn-sm" style="color:var(--red);" onclick="attemptDeleteRoom('${r.slug}')">🗑</button>
-          </div>
-        `;
-        list.appendChild(d);
+        const row = buildDashboardRoomRow(r);
+        list.appendChild(row);
       });
     } catch (e) {
       list.innerHTML = '<center style="color:var(--red);">Failed to load rooms</center>';
     }
   }
 
-  window.joinDashboardRoom = (slug) => {
+  function joinDashboardRoom(slug) {
     const pw = prompt('Enter room password to open this room:');
     if (!pw) return;
     const session = getUserSession();
@@ -290,9 +319,9 @@ async function initHomePage() {
       }
       else showToast('Incorrect password', 'error');
     }).catch(() => showToast('Error joining', 'error'));
-  };
+  }
 
-  window.attemptDeleteRoom = async (slug) => {
+  async function attemptDeleteRoom(slug) {
     if (confirm(`Are you sure you want to PERMANENTLY delete room "${slug}"?`)) {
       try {
         await deleteUserRoom(slug);
@@ -302,7 +331,36 @@ async function initHomePage() {
         showToast(e.message, 'error');
       }
     }
-  };
+  }
+
+  function buildDashboardRoomRow(room) {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.05); padding:0.75rem; border-radius:var(--r-md);';
+
+    const slug = document.createElement('div');
+    slug.style.cssText = 'font-weight:600; font-family:var(--ff-mono);';
+    slug.textContent = room.slug;
+
+    const actions = document.createElement('div');
+    actions.style.cssText = 'display:flex; gap:0.5rem;';
+
+    const openButton = document.createElement('button');
+    openButton.className = 'btn btn-ghost btn-sm';
+    openButton.type = 'button';
+    openButton.textContent = 'Open Room';
+    openButton.addEventListener('click', () => joinDashboardRoom(room.slug));
+
+    const deleteButton = document.createElement('button');
+    deleteButton.className = 'btn btn-ghost btn-sm';
+    deleteButton.type = 'button';
+    deleteButton.style.color = 'var(--red)';
+    deleteButton.textContent = 'Delete';
+    deleteButton.addEventListener('click', () => attemptDeleteRoom(room.slug));
+
+    actions.append(openButton, deleteButton);
+    row.append(slug, actions);
+    return row;
+  }
 
   // ── Private Room ─────────────────────────────
   document.getElementById('create-private-btn')?.addEventListener('click', async () => {

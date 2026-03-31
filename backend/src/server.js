@@ -33,25 +33,34 @@ app.set('trust proxy', 1);
 app.use(express.json({ limit: '10kb' }));
 app.use(metricsMiddleware);
 
-const configuredOrigins = (process.env.ALLOWED_ORIGIN || '')
-  .split(',')
-  .map(origin => origin.trim())
-  .filter(Boolean)
-  .map(origin => {
-    if (origin === '*') return origin;
-    return origin.startsWith('http') ? origin : `https://${origin}`;
-  });
+function getConfiguredOrigins() {
+  return (process.env.ALLOWED_ORIGIN || '')
+    .split(',')
+    .map(origin => origin.trim())
+    .filter(Boolean)
+    .map(origin => {
+      if (origin === '*') return origin;
+      return origin.startsWith('http') ? origin : `https://${origin}`;
+    });
+}
 
-const allowedOrigins = new Set([
-  ...configuredOrigins,
-  'http://localhost:3000',
-  'http://127.0.0.1:3000',
-  'http://localhost:5173',
-  'http://localhost:8080'
-]);
+function getAllowedOrigins() {
+  const origins = new Set(getConfiguredOrigins());
+  if (process.env.NODE_ENV !== 'production') {
+    [
+      'http://localhost:3000',
+      'http://127.0.0.1:3000',
+      'http://localhost:5173',
+      'http://localhost:8080'
+    ].forEach(origin => origins.add(origin));
+  }
+  return origins;
+}
 
 function isAllowedCorsOrigin(origin) {
   if (!origin) return true;
+  const allowedOrigins = getAllowedOrigins();
+  if (process.env.NODE_ENV !== 'production' && allowedOrigins.has('*')) return true;
   if (allowedOrigins.has(origin)) return true;
   if (process.env.NODE_ENV !== 'production' && /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
     return true;
@@ -59,13 +68,12 @@ function isAllowedCorsOrigin(origin) {
   if (process.env.NODE_ENV !== 'production' && origin === 'null') {
     return true;
   }
-  if (process.env.NODE_ENV === 'production') {
-    try {
-      if (/\.onrender\.com$/.test(new URL(origin).hostname)) return true;
-    } catch (e) {}
-  }
-  if (allowedOrigins.has('*') && process.env.NODE_ENV !== 'production') return true;
   return false;
+}
+
+function shouldSkipGlobalRateLimit(req) {
+  const path = req.originalUrl || req.path || '';
+  return path.startsWith('/api/health');
 }
 
 const corsOptions = {
@@ -78,6 +86,7 @@ const corsOptions = {
   methods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
   allowedHeaders: [
     'Content-Type',
+    'Authorization',
     'X-Room-Password-Hash',
     'X-Admin-Secret',
     'X-Auth-Username',
@@ -94,6 +103,7 @@ app.use(rateLimit({
   max: 100,
   standardHeaders: true,
   legacyHeaders: false,
+  skip: shouldSkipGlobalRateLimit,
   message: { error: 'Too many requests. Slow down.' }
 }));
 
@@ -135,3 +145,9 @@ if (require.main === module) {
 }
 
 module.exports = { app };
+module.exports._test = {
+  getAllowedOrigins,
+  getConfiguredOrigins,
+  isAllowedCorsOrigin,
+  shouldSkipGlobalRateLimit
+};

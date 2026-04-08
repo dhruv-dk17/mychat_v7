@@ -3,60 +3,81 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Mychat - Private Operations Rooms</title>
-  <meta name="description" content="Mychat v7 - private operations rooms with encrypted delivery, password-protected entry, and rolling 7-day room history." />
-  <meta name="theme-color" content="#080810" />
-
+  <title>Mychat — Private Rooms</title>
+  <meta name="description" content="Mychat v7: private P2P rooms, group rooms, and password-protected operations rooms with encrypted delivery." />
+  <meta name="theme-color" content="#e4ece3" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
-
-  <link rel="stylesheet" href="assets/css/main.css?v=20260331" />
-  <link rel="stylesheet" href="assets/css/home.css?v=20260331" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/css/main.css?v=20260408" />
+  <link rel="stylesheet" href="assets/css/home.css?v=20260408" />
   <link rel="stylesheet" href="assets/css/anti-surveillance.css?v=20260331" />
 </head>
 <body data-page="home">
-  <div id="network-banner">Offline - reconnect to resume syncing</div>
+
+  <!-- System banners -->
+  <div id="network-banner">Offline — reconnect to resume.</div>
   <div id="cold-start-banner" aria-live="polite">
-    <span class="cold-start-text">Server waking up - please wait about 30 seconds</span>
+    <span class="cold-start-text">Server is waking up, please wait…</span>
     <div class="cold-start-bar"></div>
   </div>
   <div id="toast-container"></div>
 
+  <!-- Privacy tip ticker -->
   <div id="privacy-banner">
-    <span id="privacy-tip">🛡️ Tip: Keep room aliases separate from your real-world identity.</span>
+    <span id="privacy-tip">Keep room aliases separate from your real identity.</span>
   </div>
 
+  <!-- Session wipe screen -->
   <div id="wipe-screen">
-    <div class="wipe-icon">🔒</div>
-    <div class="wipe-title">SESSION WIPED</div>
-    <div class="wipe-sub">All data cleared. Redirecting...</div>
+    <div class="wipe-icon">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+    </div>
+    <div class="wipe-title">Session Wiped</div>
+    <div class="wipe-sub">All local data cleared.</div>
   </div>
 
+  <!-- App shell -->
   <div class="app-shell">
+
+    <!-- Sidebar -->
     <aside class="home-sidebar glass-panel" id="home-sidebar">
       <a class="sidebar-brand brand-link brand-pulse-once" href="index.html" aria-label="Mychat home">
         <span class="brand-mark-wrap">
-          <img class="brand-mark" src="assets/brand/mychat-mark.svg" alt="Mychat" />
+          <img class="brand-mark" src="assets/brand/logo.png" alt="" />
         </span>
-        <span class="brand-wordmark sidebar-brand-text">
+        <span class="brand-wordmark">
           <span class="brand-name">Mychat</span>
-          <span class="brand-subtitle">🔐 Private & Encrypted</span>
+          <span class="brand-subtitle">Private &amp; Encrypted</span>
         </span>
       </a>
 
-      <nav class="sidebar-nav">
+      <nav class="sidebar-nav" aria-label="Navigation">
+        <div class="sidebar-section-label">Contacts</div>
+        <button class="sidebar-nav-item" data-room="contacts" id="nav-contacts" type="button">
+          <span class="sidebar-nav-icon" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </span>
+          <span class="sidebar-nav-label">Contacts</span>
+        </button>
+
         <div class="sidebar-section-label">Rooms</div>
-        <button class="sidebar-nav-item active" data-room="private" id="nav-private">
-          <span class="sidebar-nav-icon">🔒</span>
+        <button class="sidebar-nav-item active" data-room="private" id="nav-private" type="button">
+          <span class="sidebar-nav-icon" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          </span>
           <span class="sidebar-nav-label">Private Room</span>
         </button>
-        <button class="sidebar-nav-item" data-room="group" id="nav-group">
-          <span class="sidebar-nav-icon">👥</span>
+        <button class="sidebar-nav-item" data-room="group" id="nav-group" type="button">
+          <span class="sidebar-nav-icon" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </span>
           <span class="sidebar-nav-label">Group Room</span>
         </button>
-        <button class="sidebar-nav-item" data-room="permanent" id="nav-permanent">
-          <span class="sidebar-nav-icon">🏢</span>
+        <button class="sidebar-nav-item" data-room="permanent" id="nav-permanent" type="button">
+          <span class="sidebar-nav-icon" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/></svg>
+          </span>
           <span class="sidebar-nav-label">Operations Room</span>
         </button>
       </nav>
@@ -65,11 +86,11 @@
 
       <div class="sidebar-footer">
         <div class="sidebar-status">
-          <span class="badge badge-green"><span class="dot dot-green"></span> 🌐 P2P</span>
+          <span class="badge badge-green"><span class="dot dot-green"></span> P2P Live</span>
           <span class="version-pill">v7</span>
         </div>
         <div class="sidebar-auth">
-          <button id="open-auth-btn" class="btn btn-ghost sidebar-auth-btn">✨ Sign In</button>
+          <button id="open-auth-btn" class="btn btn-primary w-100" type="button">Sign In</button>
           <div id="user-profile-dropdown" style="display:none; cursor:pointer;"></div>
         </div>
       </div>
@@ -77,292 +98,605 @@
 
     <div class="sidebar-overlay" id="sidebar-overlay"></div>
 
+    <!-- Main content -->
     <main class="home-content">
+
+      <!-- Mobile topbar -->
       <div class="mobile-topbar glass-panel">
-        <button class="btn-icon" id="sidebar-toggle" title="Menu" type="button">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        <button class="btn-icon" id="sidebar-toggle" title="Open menu" type="button">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
         </button>
         <a class="mobile-brand brand-link brand-link-compact" href="index.html" aria-label="Mychat home">
           <span class="brand-mark-wrap">
-            <img class="brand-mark" src="assets/brand/mychat-mark.svg" alt="Mychat" />
+            <img class="brand-mark" src="assets/brand/logo.png" alt="" />
           </span>
           <span class="brand-wordmark">
             <span class="brand-name">Mychat</span>
-            <span class="brand-subtitle">⚡ Ops rooms</span>
+            <span class="brand-subtitle">Private rooms</span>
           </span>
         </a>
-        <div style="display:flex;gap:0.5rem;align-items:center;">
-          <span class="badge badge-green" style="font-size:0.6rem;"><span class="dot dot-green"></span> 🌐 P2P</span>
-          <span class="version-pill">v7</span>
-        </div>
+        <span class="version-pill">v7</span>
       </div>
 
-      <div class="content-header" id="content-header">
-        <div class="content-header-icon" id="content-header-icon">🔒</div>
+      <!-- Page header (updates on nav switch) -->
+      <div class="page-header" id="page-header">
+        <div class="page-header-icon" id="content-header-icon" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        </div>
         <div>
-          <div class="content-header-title" id="content-header-title">Private Room</div>
-          <div class="content-header-sub" id="content-header-sub">Direct P2P connection. End-to-end encrypted. 2 people max.</div>
+          <h1 class="page-header-title" id="content-header-title">Private Room</h1>
+          <p class="page-header-sub" id="content-header-sub">Direct P2P connection, end-to-end encrypted, 2 participants.</p>
         </div>
       </div>
 
-      <section class="hero-strip" aria-label="Product highlights">
-        <div class="hero-copy">
-          <div class="hero-eyebrow">✨ Private infrastructure, polished delivery</div>
-          <h1>Coordinate fast, look sharp, and keep the room under your control.</h1>
-          <p>
-            Mychat blends P2P privacy, password-protected operations rooms, room-call support,
-            and a rolling 7-day encrypted history for teams coordinating work that should stay contained.
-          </p>
-        </div>
-        <div class="hero-metrics">
-          <div class="metric-card">
-            <span class="metric-value">🌐 P2P</span>
-            <span class="metric-label">No message relay server</span>
-          </div>
-          <div class="metric-card">
-            <span class="metric-value">👥 50</span>
-            <span class="metric-label">Participants in group rooms</span>
-          </div>
-          <div class="metric-card">
-            <span class="metric-value">📁 100 MB</span>
-            <span class="metric-label">Per file transfer</span>
-          </div>
-        </div>
-      </section>
+      <!-- Panels -->
+      <div class="panels-wrap">
 
-      <div class="room-panel active" id="panel-private">
-        <div class="room-card glass-panel">
-          <button class="btn btn-primary w-100" id="create-private-btn" style="margin-bottom:1rem" type="button">
-            🔒 Create Private Room
-          </button>
-          <div class="divider">or join</div>
-          <div style="display:flex;flex-direction:column;gap:0.5rem;margin-top:0.75rem">
-            <input type="text" class="input-field" id="join-room-id" placeholder="Room ID (3-32 chars)" autocomplete="off" spellcheck="false" />
-            <input type="text" class="input-field" id="join-username" placeholder="Your name" autocomplete="off" maxlength="32" />
-            <button class="btn btn-ghost w-100" id="join-private-btn" type="button">🚀 Join Room</button>
-          </div>
-        </div>
-      </div>
-
-      <div class="room-panel" id="panel-group">
-        <div class="room-card glass-panel">
-          <button class="btn btn-primary w-100" id="create-group-btn" style="margin-bottom:1rem" type="button">
-            👥 Create Group Room
-          </button>
-          <div class="divider">or join</div>
-          <div style="display:flex;flex-direction:column;gap:0.5rem;margin-top:0.75rem">
-            <input type="text" class="input-field" id="join-group-id" placeholder="Group Room ID (3-32 chars)" autocomplete="off" />
-            <input type="text" class="input-field" id="join-group-username" placeholder="Your name" autocomplete="off" maxlength="32" />
-            <button class="btn btn-ghost w-100" id="join-group-btn" type="button">🚀 Join Group</button>
-          </div>
-        </div>
-      </div>
-
-      <div class="room-panel" id="panel-permanent">
-        <div class="room-card room-card-perm glass-panel">
-          <div id="perm-logged-out-view">
-            <center style="margin: 1.5rem 0;">
-              <p style="font-size: 0.85rem; color: var(--text-dim); margin-bottom: 1rem;">🔐 Sign in to create and manage private operations rooms with rolling 7-day history.</p>
-              <button class="btn btn-primary w-100" id="open-auth-permanent-btn" type="button">✨ Sign in / Register</button>
-            </center>
-          </div>
-
-          <div id="perm-logged-in-view" style="display:none;">
-            <button class="btn btn-primary w-100" id="open-dashboard-btn" style="margin-top:0.75rem; margin-bottom:1rem" type="button">
-              🖥️ Open Room Console
-            </button>
-          </div>
-
-          <div class="divider">or join existing</div>
-
-          <div style="display:flex;flex-direction:column;gap:0.5rem;margin-top:0.75rem">
-            <input type="text" class="input-field" id="join-perm-id" placeholder="Room ID" autocomplete="off" spellcheck="false" maxlength="32" />
-            <div class="input-pw-wrap">
-              <input type="password" class="input-field" id="join-perm-pw" placeholder="Password" autocomplete="current-password" />
-              <button class="pw-toggle" type="button" title="Show or hide password">Show</button>
+        <!-- Contacts panel -->
+        <div class="room-panel" id="panel-contacts">
+          <div class="room-card glass-panel">
+            <div class="room-card-head" style="align-items:center;">
+              <div>
+                <span class="card-label">Global Directory</span>
+                <h2>Contacts</h2>
+              </div>
+              <button class="btn btn-ghost btn-sm" id="toggle-requests-btn" type="button" style="position:relative;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                Inbox
+                <span id="requests-badge" class="badge badge-red hidden" style="position:absolute; top:-5px; right:-5px; border-radius:50%; width:16px; height:16px; padding:0; display:flex; justify-content:center; align-items:center;">!</span>
+              </button>
             </div>
-            <input type="text" class="input-field" id="join-perm-username" placeholder="Your name" autocomplete="off" maxlength="32" />
-            <div class="inline-error" id="join-perm-error"></div>
-            <button class="btn btn-ghost w-100" id="join-perm-btn" type="button">🚀 Join Room</button>
+
+            <div id="requests-panel" class="hidden room-form" style="margin-bottom:1rem; padding:1rem; border:1px solid var(--border); border-radius:var(--r-md); background:rgba(255,255,255,0.4);">
+              <div class="input-label" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
+                <span>Pending Requests</span>
+                <button id="refresh-requests-btn" class="btn btn-sm btn-ghost" style="padding:0.25rem 0.5rem; min-height:0;">Refresh</button>
+              </div>
+              <div id="requests-list" style="display:grid; gap:0.5rem;">
+                <div class="contact-empty" style="padding:0.5rem; text-align:center; font-size:0.85rem;">No pending requests.</div>
+              </div>
+            </div>
+
+            <div class="room-tabs" style="display:flex; gap:0.5rem; margin-bottom:1rem; padding:4px; background:rgba(15, 23, 42, 0.04); border-radius:var(--r-md);">
+               <button class="btn w-100 btn-sm tab-btn active" id="tab-my-contacts" style="background:#fff; color:var(--text); box-shadow:var(--shadow-sm);">My Contacts</button>
+               <button class="btn w-100 btn-sm tab-btn" id="tab-global-search" style="background:transparent; color:var(--text-muted);">Global Search</button>
+            </div>
+
+            <div class="contacts-search-wrap">
+              <svg class="contacts-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="text" class="input-field contacts-search-field" id="contacts-view-search-input" placeholder="Search my contacts..." autocomplete="off" />
+            </div>
+
+            <div id="dynamic-contacts-list">
+            </div>
           </div>
         </div>
-      </div>
 
-      <div class="home-footer">
-        Mychat v7 — ⚡ direct delivery where possible — 📅 7-day rolling room history —
-        <a href="#" onclick="showModal('privacy-tips-modal'); return false;" style="color:var(--accent); text-decoration:none;">🛡️ Privacy Tips</a>
-      </div>
+        <!-- Private room panel -->
+        <div class="room-panel active" id="panel-private">
+          <div class="room-card glass-panel">
+            <div class="room-card-head">
+              <div>
+                <span class="card-label">Direct P2P</span>
+                <h2>Private Room</h2>
+              </div>
+              <span class="badge badge-green">
+                <span class="dot dot-green"></span> 2 people max
+              </span>
+            </div>
+
+            <button class="btn btn-primary room-create-btn" id="create-private-btn" type="button">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Create New Room
+            </button>
+
+            <div class="divider">or join existing</div>
+
+            <div class="room-form">
+              <input type="text" class="input-field" id="join-room-id" placeholder="Room ID (3–32 chars)" autocomplete="off" spellcheck="false" />
+              <input type="text" class="input-field" id="join-username" placeholder="Your display name" autocomplete="off" maxlength="32" />
+              <button class="btn btn-ghost w-100" id="join-private-btn" type="button">Join Room</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Group room panel -->
+        <div class="room-panel" id="panel-group">
+          <div class="room-card glass-panel">
+            <div class="room-card-head">
+              <div>
+                <span class="card-label">Hosted relay</span>
+                <h2>Group Room</h2>
+              </div>
+              <span class="badge badge-amber">Up to 50</span>
+            </div>
+
+            <button class="btn btn-primary room-create-btn" id="create-group-btn" type="button">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Create Group Room
+            </button>
+
+            <div class="divider">or join existing</div>
+
+            <div class="room-form">
+              <input type="text" class="input-field" id="join-group-id" placeholder="Group room ID" autocomplete="off" />
+              <input type="text" class="input-field" id="join-group-username" placeholder="Your display name" autocomplete="off" maxlength="32" />
+              <button class="btn btn-ghost w-100" id="join-group-btn" type="button">Join Group</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Operations room panel -->
+        <div class="room-panel" id="panel-permanent">
+          <div class="room-card glass-panel">
+            <div class="room-card-head">
+              <div>
+                <span class="card-label">Persistent · 7-day history</span>
+                <h2>Operations Room</h2>
+              </div>
+              <span class="badge badge-blue">Managed</span>
+            </div>
+
+            <div id="perm-logged-out-view">
+              <button class="btn btn-primary w-100" id="open-auth-permanent-btn" type="button">Sign In to Manage Rooms</button>
+            </div>
+            <div id="perm-logged-in-view" style="display:none;">
+              <button class="btn btn-primary w-100" id="open-dashboard-btn" type="button">Open Room Console</button>
+            </div>
+
+            <div class="divider">or join existing</div>
+
+            <div class="room-form">
+              <input type="text" class="input-field" id="join-perm-id" placeholder="Room ID" autocomplete="off" spellcheck="false" maxlength="32" />
+              <div class="input-pw-wrap">
+                <input type="password" class="input-field" id="join-perm-pw" placeholder="Password" autocomplete="current-password" />
+                <button class="pw-toggle" type="button" title="Show or hide password">Show</button>
+              </div>
+              <input type="text" class="input-field" id="join-perm-username" placeholder="Your display name" autocomplete="off" maxlength="32" />
+              <div class="inline-error" id="join-perm-error"></div>
+              <button class="btn btn-ghost w-100" id="join-perm-btn" type="button">Join Operations Room</button>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /panels-wrap -->
+
+      <footer class="home-footer">
+        Mychat v7 &mdash; P2P encrypted &mdash;
+        <a href="#" onclick="showModal('privacy-tips-modal'); return false;">Privacy guidelines</a>
+      </footer>
     </main>
-  </div>
+  </div><!-- /app-shell -->
+
+  <!-- Floating QR FAB -->
+  <button class="qr-fab" onclick="startQRScanner()" title="Scan invite QR code" type="button" aria-label="Scan QR code">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="3" height="3"/><line x1="20" y1="14" x2="20" y2="17"/><line x1="17" y1="17" x2="20" y2="17"/><line x1="20" y1="20" x2="20" y2="20"/></svg>
+  </button>
+
+  <!-- Modals -->
 
   <div class="modal-backdrop" id="platform-messages-modal">
-    <div class="modal-box" style="width: 400px;">
-      <div class="modal-title">📢 System Notice</div>
-      <div id="platform-messages-container" style="max-height: 300px; overflow-y: auto; margin: 1rem 0;"></div>
+    <div class="modal-box">
+      <div class="modal-title">System Notice</div>
+      <div id="platform-messages-container" style="max-height:280px; overflow-y:auto; margin:1rem 0;"></div>
       <div class="modal-actions">
-        <button class="btn btn-primary w-100" id="platform-messages-close-btn" type="button">✅ I Understand</button>
+        <button class="btn btn-primary w-100" id="platform-messages-close-btn" type="button">Dismiss</button>
       </div>
     </div>
   </div>
 
   <div class="modal-backdrop" id="privacy-tips-modal">
-    <div class="modal-box" style="width: 400px;">
-      <div class="modal-title">🛡️ Privacy Guidelines</div>
-      <div class="modal-subtitle">Stay safe while using Mychat ✨</div>
-      <ul style="margin: 1rem 0; padding-left: 1.2rem; font-size: 0.9rem; line-height: 1.6; color: var(--text-dim);">
-        <li><strong>🎭 Anonymity First:</strong> Use a pseudonym. Avoid names that link to your social media.</li>
-        <li><strong>📅 History Window:</strong> Operations room messages stay encrypted and auto-expire after 7 days. Private rooms remain live-only.</li>
-        <li><strong>🔍 Verification:</strong> Never share sensitive documents or location data with strangers.</li>
-        <li><strong>🔑 Security:</strong> Save your owner tokens offline. We cannot recover them.</li>
-        <li><strong>🚫 Scams:</strong> Mychat staff will never ask for your password or token.</li>
+    <div class="modal-box">
+      <div class="modal-title">Privacy Guidelines</div>
+      <ul class="privacy-tips-list">
+        <li><strong>Use a pseudonym.</strong> Keep room aliases separate from your real identity.</li>
+        <li><strong>Protect owner tokens.</strong> Mychat cannot recover them if lost.</li>
+        <li><strong>Share carefully.</strong> Only send sensitive data in rooms you trust.</li>
+        <li><strong>Rotate credentials.</strong> Change operations room passwords when membership changes.</li>
       </ul>
-      <button class="btn btn-ghost w-100" onclick="hideModal('privacy-tips-modal')" type="button">Close</button>
+      <div class="modal-actions">
+        <button class="btn btn-ghost w-100" onclick="hideModal('privacy-tips-modal')" type="button">Close</button>
+      </div>
     </div>
   </div>
 
   <div class="modal-backdrop" id="success-modal">
     <div class="modal-box">
-      <div class="modal-title">🎉 Room Registered</div>
-      <div class="modal-subtitle">Your operations room is ready. Save your owner token - it cannot be recovered.</div>
-
-      <div style="margin-bottom:0.75rem">
-        <div class="input-label" style="margin-bottom:0.35rem">Room ID</div>
+      <div class="modal-title">Room Registered</div>
+      <div class="modal-subtitle">Save the owner token now — it cannot be recovered.</div>
+      <div style="margin-top:1rem;">
+        <div class="input-label" style="margin-bottom:0.35rem;">Room ID</div>
         <div class="code-display">
           <span class="code-display-text" id="success-slug"></span>
           <button class="copy-btn" id="copy-slug-btn" type="button">Copy</button>
         </div>
       </div>
-
-      <div style="margin-bottom:0.75rem">
-        <div class="input-label" style="margin-bottom:0.35rem">Owner Token</div>
-        <div class="code-display" style="flex-direction:column;align-items:stretch;gap:0.5rem">
+      <div style="margin-top:0.85rem;">
+        <div class="input-label" style="margin-bottom:0.35rem;">Owner Token</div>
+        <div class="code-display" style="flex-direction:column;align-items:stretch;gap:0.5rem;">
           <span class="token-display" id="success-token"></span>
           <button class="copy-btn" id="copy-token-btn" type="button">Copy</button>
         </div>
       </div>
-
-      <div class="success-warning">
-        ⚠️ Save your owner token. It cannot be recovered if lost, and it proves you own this room.
+      <div class="success-warning" style="margin-top:0.85rem;">
+        Store the owner token somewhere safe offline.
       </div>
-
       <div class="modal-actions">
         <button class="btn btn-ghost" onclick="hideModal('success-modal')" type="button">Close</button>
-        <button class="btn btn-primary" id="enter-room-btn" type="button">🚀 Enter Room</button>
+        <button class="btn btn-primary" id="enter-room-btn" type="button">Enter Room</button>
       </div>
     </div>
   </div>
 
-  <button class="btn btn-primary" style="position: fixed; bottom: 20px; right: 20px; border-radius: 999px; min-width: 56px; height: 56px; box-shadow: var(--glow-accent); z-index: 100; display: flex; align-items: center; justify-content: center;" onclick="startQRScanner()" title="Scan QR Code" type="button">
-    Scan 📷
-  </button>
-
   <div class="modal-backdrop" id="qr-scan-modal">
-    <div class="modal-box" style="width: 360px; text-align: center;">
-      <div class="modal-title" style="margin-bottom: 1rem;">📷 Scan Room QR</div>
-      <div style="width: 100%; aspect-ratio: 1; background: #000; border-radius: var(--r-md); overflow: hidden; position: relative;">
-        <video id="qr-video" style="width: 100%; height: 100%; object-fit: cover;" playsinline></video>
-        <div id="qr-scan-text" style="position: absolute; bottom: 10px; width: 100%; color: var(--text-white); font-size: 0.85rem; text-shadow: 0 1px 4px rgba(0,0,0,0.8);">Searching for QR code...</div>
+    <div class="modal-box" style="width:340px; text-align:center;">
+      <div class="modal-title" style="margin-bottom:0.75rem;">Scan Room QR</div>
+      <div class="qr-stage">
+        <video id="qr-video" playsinline></video>
+        <div id="qr-scan-text" class="qr-stage-caption">Searching for QR code…</div>
       </div>
-      <button class="btn btn-ghost w-100" style="margin-top: 1rem;" onclick="stopQRScanner(); hideModal('qr-scan-modal')" type="button">Cancel</button>
-      <button class="btn btn-ghost" style="position: absolute; top:10px; right:10px; border:none; padding:10px;" onclick="stopQRScanner(); hideModal('qr-scan-modal')" type="button">Close</button>
+      <div class="modal-actions" style="margin-top:1rem;">
+        <button class="btn btn-ghost w-100" onclick="stopQRScanner(); hideModal('qr-scan-modal')" type="button">Cancel</button>
+      </div>
     </div>
   </div>
 
   <div class="modal-backdrop" id="auth-modal">
-    <div class="modal-box" style="width: 320px;">
-      <div class="modal-title" style="text-align: center; margin-bottom: 1rem;">✨ Sign In / Register</div>
-      <div style="display:flex;flex-direction:column;gap:0.75rem;">
-        <input type="text" class="input-field" id="auth-username" placeholder="Username (3-32 chars)" autocomplete="off" spellcheck="false" maxlength="32" />
+    <div class="modal-box" style="width:340px;">
+      <div class="modal-title" style="text-align:center; margin-bottom:1rem;">Sign In or Register</div>
+      <div class="room-form">
+        <input type="text" class="input-field" id="auth-username" placeholder="Username (3–32 chars)" autocomplete="off" spellcheck="false" maxlength="32" />
         <input type="password" class="input-field" id="auth-password" placeholder="Password" />
         <div class="inline-error" id="auth-error" style="text-align:center;"></div>
-        <button class="btn btn-primary w-100" id="auth-login-btn" type="button">🔑 Log In</button>
-        <button class="btn btn-ghost w-100" id="auth-register-btn" style="margin-top:-0.25rem;" type="button">🆕 Create Account</button>
+        <button class="btn btn-primary w-100" id="auth-login-btn" type="button">Log In</button>
+        <button class="btn btn-ghost w-100" id="auth-register-btn" type="button">Create Account</button>
       </div>
-      <button class="btn btn-ghost" style="position: absolute; top:10px; right:10px; border:none; padding:10px;" onclick="hideModal('auth-modal')" type="button">Close</button>
+      <button class="modal-x-btn" onclick="hideModal('auth-modal')" type="button" aria-label="Close">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
     </div>
   </div>
 
   <div class="modal-backdrop" id="dashboard-modal">
-    <div class="modal-box" style="width: 440px; max-height: 90vh; overflow-y: auto;">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
-        <div class="modal-title">🏢 Your Operations Rooms</div>
-        <button class="btn btn-ghost" style="border:none; padding:10px;" onclick="hideModal('dashboard-modal')" type="button">Close</button>
-      </div>
-
-      <div class="card-desc" style="margin-bottom:1rem;">Create a new operations room:</div>
-      <div style="display:flex;flex-direction:column;gap:0.5rem; margin-bottom:1.5rem; padding:1rem; background:rgba(255,255,255,0.03); border-radius:var(--r-md); border:1px solid rgba(255,255,255,0.08);">
-        <input type="text" class="input-field" id="dashboard-new-slug" placeholder="Room ID (3-32 chars, a-z 0-9 -)" maxlength="32" autocomplete="off" spellcheck="false" />
-        <div class="input-pw-wrap">
-          <input type="password" class="input-field" id="dashboard-new-pw" placeholder="Room Password" />
-          <button class="pw-toggle" type="button" title="Show or hide password">Show</button>
+    <div class="modal-box" style="width:460px; max-height:90vh; overflow-y:auto;">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:1.25rem;">
+        <div>
+          <div class="modal-title">Operations Console</div>
+          <div class="modal-subtitle">Create and manage your persistent rooms.</div>
         </div>
-        <div class="inline-error" id="dashboard-new-error"></div>
-        <button class="btn btn-primary w-100" id="dashboard-create-btn" type="button">🚀 Register and Host</button>
+        <button class="btn btn-ghost btn-sm" onclick="hideModal('dashboard-modal')" type="button">Close</button>
       </div>
 
-      <div class="card-desc">📋 Your Active Rooms:</div>
-      <div id="dashboard-rooms-list" style="display:flex; flex-direction:column; gap:0.5rem; margin-top:0.75rem;"></div>
+      <div class="room-card glass-panel" style="padding:1rem; box-shadow:none;">
+        <span class="card-label">Register new room</span>
+        <div class="room-form" style="margin-top:0.75rem;">
+          <input type="text" class="input-field" id="dashboard-new-slug" placeholder="Room ID (a-z, 0-9, hyphen)" maxlength="32" autocomplete="off" spellcheck="false" />
+          <div class="input-pw-wrap">
+            <input type="password" class="input-field" id="dashboard-new-pw" placeholder="Room password" />
+            <button class="pw-toggle" type="button">Show</button>
+          </div>
+          <div class="inline-error" id="dashboard-new-error"></div>
+          <button class="btn btn-primary w-100" id="dashboard-create-btn" type="button">Register &amp; Host</button>
+        </div>
+      </div>
+
+      <div style="margin-top:1rem;">
+        <span class="card-label">Your active rooms</span>
+        <div id="dashboard-rooms-list" style="display:grid; gap:0.6rem; margin-top:0.75rem;"></div>
+      </div>
     </div>
   </div>
 
   <div class="modal-backdrop" id="user-settings-modal">
-    <div class="modal-box" style="width: 320px;">
-      <div class="modal-title" style="text-align: center; margin-bottom: 1rem;">⚙️ Account Settings</div>
-      <div style="display:flex;flex-direction:column;gap:0.75rem;">
-        <button class="btn btn-ghost w-100" id="settings-logout-btn" type="button">🚪 Log Out</button>
-        <button class="btn btn-ghost w-100" id="settings-delete-account-btn" style="color:var(--accent-red);" type="button">🗑️ Delete Account and Rooms</button>
+    <div class="modal-box" style="width:320px;">
+      <div class="modal-title" style="text-align:center; margin-bottom:1rem;">Account Settings</div>
+      <div class="room-form">
+        <button class="btn btn-ghost w-100" id="settings-logout-btn" type="button">Log Out</button>
+        <button class="btn btn-danger-ghost w-100" id="settings-delete-account-btn" type="button">Delete Account &amp; All Rooms</button>
       </div>
-      <button class="btn btn-ghost" style="position: absolute; top:10px; right:10px; border:none; padding:10px;" onclick="hideModal('user-settings-modal')" type="button">Close</button>
+      <button class="modal-x-btn" onclick="hideModal('user-settings-modal')" type="button" aria-label="Close">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
     </div>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
   <script src="assets/js/config.js?v=20260331"></script>
+  <script src="assets/js/storage.js?v=20260402"></script>
+  <script src="assets/js/identity.js?v=20260402"></script>
+  <script src="assets/js/contacts.js?v=20260402"></script>
+  <script src="assets/js/chat-store.js?v=20260402"></script>
   <script src="assets/js/crypto.js?v=20260331"></script>
   <script src="assets/js/rooms.js?v=20260331"></script>
-  <script src="assets/js/ui.js?v=20260331"></script>
+  <script src="assets/js/ui.js?v=20260408"></script>
   <script src="assets/js/peer.js?v=20260331"></script>
   <script src="assets/js/surveillance.js?v=20260331"></script>
   <script src="assets/js/app.js?v=20260331"></script>
 
   <script>
-    (function() {
-      const panels = {
-        private: { icon: '🔒', title: 'Private Room', sub: '🔐 Direct P2P connection. End-to-end encrypted. 2 people max.' },
-        group:   { icon: '👥', title: 'Group Room', sub: '⭐ Star topology. Host relays messages. Up to 50 participants.' },
-        permanent: { icon: '🏢', title: 'Operations Room', sub: '🔑 Password-protected shared room with encrypted rolling 7-day history.' }
-      };
+  (function() {
+    /* SVG icons as strings for header updates */
+    const icons = {
+      contacts:  '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
+      private:   '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>',
+      group:     '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+      permanent: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/></svg>'
+    };
 
-      function switchPanel(room) {
-        document.querySelectorAll('.sidebar-nav-item').forEach(el => el.classList.remove('active'));
-        document.querySelectorAll('.room-panel').forEach(el => el.classList.remove('active'));
-        const btn = document.getElementById('nav-' + room);
-        const panel = document.getElementById('panel-' + room);
-        if (btn) btn.classList.add('active');
-        if (panel) panel.classList.add('active');
-        const info = panels[room];
-        if (info) {
-          document.getElementById('content-header-icon').textContent = info.icon;
-          document.getElementById('content-header-title').textContent = info.title;
-          document.getElementById('content-header-sub').textContent = info.sub;
+    const panels = {
+      contacts:  { title: 'Contacts',         sub: 'Your saved contacts — tap to start a direct conversation.' },
+      private:   { title: 'Private Room',      sub: 'Direct P2P connection, end-to-end encrypted, 2 participants.' },
+      group:     { title: 'Group Room',        sub: 'Hosted relay room — up to 50 participants.' },
+      permanent: { title: 'Operations Room',   sub: 'Password-protected room with rolling 7-day encrypted history.' }
+    };
+
+    function switchPanel(room) {
+      document.querySelectorAll('.sidebar-nav-item').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.room-panel').forEach(el => el.classList.remove('active'));
+      const btn   = document.getElementById('nav-' + room);
+      const panel = document.getElementById('panel-' + room);
+      if (btn)   btn.classList.add('active');
+      if (panel) panel.classList.add('active');
+      const info = panels[room];
+      const iconEl  = document.getElementById('content-header-icon');
+      const titleEl = document.getElementById('content-header-title');
+      const subEl   = document.getElementById('content-header-sub');
+      if (iconEl && icons[room])  iconEl.innerHTML  = icons[room];
+      if (titleEl && info) titleEl.textContent = info.title;
+      if (subEl   && info) subEl.textContent   = info.sub;
+      document.getElementById('home-sidebar')?.classList.remove('sidebar-open');
+      document.getElementById('sidebar-overlay')?.classList.remove('overlay-visible');
+    }
+
+    document.querySelectorAll('.sidebar-nav-item').forEach(btn => {
+      btn.addEventListener('click', () => switchPanel(btn.dataset.room));
+    });
+
+    document.getElementById('sidebar-toggle')?.addEventListener('click', () => {
+      document.getElementById('home-sidebar')?.classList.toggle('sidebar-open');
+      document.getElementById('sidebar-overlay')?.classList.toggle('overlay-visible');
+    });
+    document.getElementById('sidebar-overlay')?.addEventListener('click', () => {
+      document.getElementById('home-sidebar')?.classList.remove('sidebar-open');
+      document.getElementById('sidebar-overlay')?.classList.remove('overlay-visible');
+    });
+
+    /* Switch between My Contacts & Global Search */
+    let currentTab = 'my-contacts';
+
+    document.getElementById('tab-my-contacts')?.addEventListener('click', (e) => {
+      currentTab = 'my-contacts';
+      document.querySelectorAll('.tab-btn').forEach(btn => { btn.style.background='transparent'; btn.style.color='var(--text-muted)'; btn.style.boxShadow='none'; });
+      e.target.style.background='#fff'; e.target.style.color='var(--text)'; e.target.style.boxShadow='var(--shadow-sm)';
+      document.getElementById('contacts-view-search-input').placeholder = 'Search my contacts...';
+      document.getElementById('contacts-view-search-input').value = '';
+      if (typeof getAllContacts === 'function') getAllContacts().then(renderContacts);
+    });
+
+    document.getElementById('tab-global-search')?.addEventListener('click', (e) => {
+      currentTab = 'global-search';
+      document.querySelectorAll('.tab-btn').forEach(btn => { btn.style.background='transparent'; btn.style.color='var(--text-muted)'; btn.style.boxShadow='none'; });
+      e.target.style.background='#fff'; e.target.style.color='var(--text)'; e.target.style.boxShadow='var(--shadow-sm)';
+      document.getElementById('contacts-view-search-input').placeholder = 'Find username on network...';
+      document.getElementById('contacts-view-search-input').value = '';
+      renderGlobalResults([]); // Clear results
+    });
+
+    /* Inbox Toggle */
+    document.getElementById('toggle-requests-btn')?.addEventListener('click', function() {
+      const form = document.getElementById('requests-panel');
+      if (!form) return;
+      form.classList.toggle('hidden');
+      if (!form.classList.contains('hidden')) {
+        refreshRequests();
+      }
+    });
+
+    document.getElementById('refresh-requests-btn')?.addEventListener('click', refreshRequests);
+
+    async function refreshRequests() {
+      const list = document.getElementById('requests-list');
+      if (!list) return;
+      const b = document.getElementById('requests-badge');
+      try {
+        const requests = typeof apiGetPendingRequests === 'function' ? await apiGetPendingRequests() : [];
+        if (b) {
+          if (requests.length > 0) {
+            b.textContent = requests.length;
+            b.classList.remove('hidden');
+          } else {
+            b.classList.add('hidden');
+          }
         }
-        document.getElementById('home-sidebar')?.classList.remove('sidebar-open');
-        document.getElementById('sidebar-overlay')?.classList.remove('overlay-visible');
+        
+        if (requests.length === 0) {
+          list.innerHTML = `<div class="contact-empty" style="padding:0.5rem; text-align:center; font-size:0.85rem;">No pending requests.</div>`;
+          return;
+        }
+
+        list.innerHTML = '';
+        requests.forEach(r => {
+           const row = document.createElement('div');
+           row.className = 'contact-row';
+           row.style.padding = '0.5rem';
+           row.innerHTML = `
+             <div class="contact-avatar" style="background:var(--accent); width:32px; height:32px;">${(r.from_username||'U').slice(0,2).toUpperCase()}</div>
+             <div class="contact-info">
+               <span class="contact-name" style="font-size:0.9rem;">${r.from_username}</span>
+             </div>
+             <button class="btn btn-primary btn-sm accept-btn" type="button" style="padding:0.2rem 0.6rem;">Accept</button>
+             <button class="btn btn-ghost btn-sm reject-btn" type="button" style="padding:0.2rem 0.6rem;">Reject</button>
+           `;
+           row.querySelector('.accept-btn').addEventListener('click', async () => {
+              try {
+                await apiRespondContactRequest(r.id, true);
+                if (typeof showToast === 'function') showToast(`Accepted ${r.from_username}`, 'success');
+                refreshRequests();
+                if (currentTab === 'my-contacts' && typeof getAllContacts === 'function') getAllContacts().then(renderContacts);
+              } catch(e) {
+                if (typeof showToast === 'function') showToast(e.message || 'Failed to accept', 'error');
+              }
+           });
+           row.querySelector('.reject-btn').addEventListener('click', async () => {
+              try {
+                await apiRespondContactRequest(r.id, false);
+                refreshRequests();
+              } catch(e) {
+                if (typeof showToast === 'function') showToast(e.message || 'Failed to reject', 'error');
+              }
+           });
+           list.appendChild(row);
+        });
+
+      } catch(e) {
+        if(e.message === 'Not logged in') {
+           list.innerHTML = `<div class="contact-empty" style="padding:0.5rem; text-align:center; font-size:0.85rem;">Sign in to view requests.</div>`;
+        } else {
+           console.error('Failed to get requests', e);
+        }
+      }
+    }
+
+    /* Debounced Search */
+    let searchTimeout;
+    document.getElementById('contacts-view-search-input')?.addEventListener('input', function() {
+      const q = this.value.trim();
+      clearTimeout(searchTimeout);
+      
+      if (currentTab === 'my-contacts') {
+        if (typeof searchContacts === 'function') {
+          searchContacts(q).then(renderContacts);
+        }
+      } else {
+        searchTimeout = setTimeout(async () => {
+          if (!q) { renderGlobalResults([]); return; }
+          try {
+             const results = typeof apiSearchContacts === 'function' ? await apiSearchContacts(q) : [];
+             renderGlobalResults(results);
+          } catch(e) {
+             if(e.message === 'Not logged in') {
+                 document.getElementById('dynamic-contacts-list').innerHTML = `<div class="contact-empty"><p>Please Sign In to search the global network.</p></div>`;
+             } else {
+                 console.error('Search failed', e);
+             }
+          }
+        }, 400); // 400ms debounce
+      }
+    });
+
+    function renderGlobalResults(results) {
+      const list = document.getElementById('dynamic-contacts-list');
+      if (!list) return;
+      list.innerHTML = '';
+      if (!results || results.length === 0) {
+        list.innerHTML = `<div class="contact-empty">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <p>Search users globally by exact username.</p>
+        </div>`;
+        return;
       }
 
-      document.querySelectorAll('.sidebar-nav-item').forEach(btn => {
-        btn.addEventListener('click', () => switchPanel(btn.dataset.room));
-      });
+      results.forEach(c => {
+         const initials = (c.username || 'U').slice(0, 2).toUpperCase();
+         let actionHTML = '';
+         if (c.status === 'connected') {
+            actionHTML = `<button class="btn btn-ghost btn-sm disabled" disabled type="button">Added</button>`;
+         } else if (c.status === 'request_sent') {
+            actionHTML = `<button class="btn btn-ghost btn-sm disabled" disabled type="button">Requested</button>`;
+         } else if (c.status === 'request_received') {
+            actionHTML = `<button class="btn btn-primary btn-sm accept-q-btn" data-un="${c.username}" type="button">Approve</button>`;
+         } else {
+            actionHTML = `<button class="btn btn-primary btn-sm add-q-btn" data-un="${c.username}" type="button">Send Request</button>`;
+         }
 
-      document.getElementById('sidebar-toggle')?.addEventListener('click', () => {
-        document.getElementById('home-sidebar')?.classList.toggle('sidebar-open');
-        document.getElementById('sidebar-overlay')?.classList.toggle('overlay-visible');
+         const row = document.createElement('div');
+         row.className = 'contact-row';
+         row.innerHTML = `
+          <div class="contact-avatar" style="background:var(--accent);">${initials}</div>
+          <div class="contact-info">
+            <span class="contact-name">${c.username}</span>
+            <span class="contact-fp">Global Network</span>
+          </div>
+          ${actionHTML}
+         `;
+
+         row.querySelector('.add-q-btn')?.addEventListener('click', async (e) => {
+             const btn = e.target;
+             btn.disabled = true;
+             btn.textContent = 'Sending...';
+             try {
+                await apiSendContactRequest(c.username);
+                btn.className = 'btn btn-ghost btn-sm disabled';
+                btn.textContent = 'Requested';
+                if (typeof showToast === 'function') showToast(`Request sent to ${c.username}`, 'success');
+             } catch(err) {
+                btn.disabled = false;
+                btn.textContent = 'Send Request';
+                if (typeof showToast === 'function') showToast(err.message || 'Failed to send request', 'error');
+             }
+         });
+
+         list.appendChild(row);
       });
-      document.getElementById('sidebar-overlay')?.addEventListener('click', () => {
-        document.getElementById('home-sidebar')?.classList.remove('sidebar-open');
-        document.getElementById('sidebar-overlay')?.classList.remove('overlay-visible');
+    }
+
+    function renderContacts(contacts) {
+      const list = document.getElementById('dynamic-contacts-list');
+      if (!list) return;
+      if (currentTab !== 'my-contacts') return; // Don't override if user switched tabs
+      
+      list.innerHTML = '';
+      if (!contacts || contacts.length === 0) {
+        list.innerHTML = `<div class="contact-empty">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <p>No contacts yet. Use Global Search to find friends.</p>
+        </div>`;
+        return;
+      }
+      contacts.forEach(c => {
+        const initials = (c.displayName || c.fingerprint || 'U').slice(0, 2).toUpperCase();
+        const row = document.createElement('div');
+        row.className = 'contact-row';
+        row.innerHTML = `
+          <div class="contact-avatar" style="background:${c.avatarColor || 'var(--accent)'};">${initials}</div>
+          <div class="contact-info">
+            <span class="contact-name">${c.displayName || c.fingerprint}</span>
+            <span class="contact-fp">${c.fingerprint}</span>
+          </div>
+          <button class="btn btn-primary btn-sm contact-chat-btn" data-fp="${c.fingerprint}" type="button">Chat</button>
+          <button class="btn btn-ghost btn-sm contact-remove-btn" data-fp="${c.fingerprint}" type="button">Remove</button>
+        `;
+        row.querySelector('.contact-chat-btn')?.addEventListener('click', () => {
+          if (typeof navigateToChat === 'function') {
+            navigateToChat(c.fingerprint, 'private', c.displayName || 'User', 'guest');
+          }
+        });
+        row.querySelector('.contact-remove-btn')?.addEventListener('click', async () => {
+          if (typeof removeContact === 'function') await removeContact(c.fingerprint);
+          if (typeof getAllContacts === 'function') getAllContacts().then(renderContacts);
+        });
+        list.appendChild(row);
       });
-    })();
+    }
+    window.__renderContacts = renderContacts;
+
+    /* Load contacts & requests when contacts panel is shown */
+    document.getElementById('nav-contacts')?.addEventListener('click', async () => {
+      if (typeof apiSyncContacts === 'function') {
+          // Sync contacts occasionally
+          apiSyncContacts().then(() => {
+              if (currentTab === 'my-contacts' && typeof getAllContacts === 'function') {
+                  getAllContacts().then(renderContacts);
+              }
+          });
+      } else {
+          if (currentTab === 'my-contacts' && typeof getAllContacts === 'function') getAllContacts().then(renderContacts);
+      }
+      refreshRequests();
+    });
+  })();
   </script>
+
 </body>
 </html>

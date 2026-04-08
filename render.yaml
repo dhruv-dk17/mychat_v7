@@ -1,3 +1,9 @@
+databases:
+  - name: mychat-v7-db
+    databaseName: mychat
+    user: mychat_user
+    plan: free
+
 services:
   # 1. Backend Web Service (Node.js API)
   - type: web
@@ -17,7 +23,9 @@ services:
       - key: ADMIN_SECRET
         sync: false
       - key: DATABASE_URL
-        sync: false
+        fromDatabase:
+          name: mychat-v7-db
+          property: connectionString
       - key: ALLOWED_ORIGIN
         # Tells the backend to strictly only allow requests from the frontend
         fromService:

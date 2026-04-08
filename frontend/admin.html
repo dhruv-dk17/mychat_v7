@@ -4,29 +4,29 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Mychat Dashboard</title>
-  <meta name="theme-color" content="#0B0D1A" />
+  <meta name="theme-color" content="#efe8dc" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="assets/css/admin.css?v=20260326" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" crossorigin="anonymous" integrity="sha384-mhrGAQlmov/uQ/EEP1aUTHzAQnztMUFszGXLcf7VWCZ6IwM/5ya/sJlKqh3pUwNN" />
+  <link rel="stylesheet" href="assets/css/admin.css?v=20260407" />
 </head>
 <body class="admin-page">
   <div id="auth-mask" class="auth-mask">
     <section class="auth-card" aria-labelledby="auth-title">
-      <div class="auth-eyebrow">🔐 Secure admin access</div>
-      <h1 id="auth-title">🏛️ Command Center</h1>
-      <p class="auth-copy">A focused operations console for users, broadcasts, and cleanup tasks.</p>
+      <div class="auth-eyebrow">Restricted console</div>
+      <h1 id="auth-title">Mychat Control</h1>
+      <p class="auth-copy">Authenticate to review users, room ownership, and broadcast notices.</p>
 
       <form id="auth-form" class="auth-form">
         <label class="field">
-          <span class="field-label" for="secret-input">Admin secret</span>
+          <span class="field-label">Admin secret</span>
           <input id="secret-input" class="control" type="password" autocomplete="current-password" placeholder="Enter admin secret" />
         </label>
         <div id="auth-error" class="auth-status" aria-live="polite"></div>
-        <button id="auth-submit" class="btn btn-primary" type="submit">🔑 Authenticate</button>
+        <button id="auth-submit" class="btn btn-primary" type="submit">Authenticate</button>
       </form>
 
-      <p class="auth-hint">Use this console only when you need to review users, send a broadcast, or clear old records.</p>
+      <p class="auth-hint">Use this dashboard only for operational tasks that cannot be performed inside the room UI.</p>
     </section>
   </div>
 
@@ -36,38 +36,38 @@
         <div class="brand">
           <div class="brand-mark">MC</div>
           <div class="brand-copy">
-            <h2 class="brand-title">⚙️ Mychat Control</h2>
-            <div class="brand-subtitle">✨ Premium admin dashboard</div>
+            <h2 class="brand-title">Mychat Control</h2>
+            <div class="brand-subtitle">Operations dashboard</div>
           </div>
         </div>
 
         <div class="header-actions">
           <span class="chip chip-success"><strong>Live</strong><span id="last-refresh">Not synced yet</span></span>
           <button id="refresh-button" type="button" class="btn btn-ghost">Refresh</button>
-          <button id="logout-button" type="button" class="btn btn-ghost">Sign out</button>
+          <button id="logout-button" type="button" class="btn btn-ghost">Sign Out</button>
         </div>
       </header>
 
       <section class="admin-summary" aria-label="Key metrics">
         <article class="summary-card">
-          <div class="summary-label">👥 Active users</div>
+          <div class="summary-label">Active users</div>
           <div id="summary-users" class="summary-value">0</div>
-          <div class="summary-note">Current unlocked user records</div>
+          <div class="summary-note">Unlocked user records currently on file</div>
         </article>
         <article class="summary-card">
-          <div class="summary-label">🏢 Permanent rooms</div>
+          <div class="summary-label">Permanent rooms</div>
           <div id="summary-rooms" class="summary-value">0</div>
-          <div class="summary-note">Total rooms owned by active users</div>
+          <div class="summary-note">Owned operations rooms</div>
         </article>
         <article class="summary-card">
-          <div class="summary-label">📢 Broadcasts</div>
+          <div class="summary-label">Broadcasts</div>
           <div id="summary-broadcasts" class="summary-value">0</div>
-          <div class="summary-note">Messages currently on file</div>
+          <div class="summary-note">Stored platform notices</div>
         </article>
         <article class="summary-card">
-          <div class="summary-label">🧹 Needs cleanup</div>
+          <div class="summary-label">Cleanup actions</div>
           <div id="summary-cleanup" class="summary-value">0</div>
-          <div class="summary-note">Records without a stable admin ID</div>
+          <div class="summary-note">Deleted or reclaimed records</div>
         </article>
       </section>
     </div>
@@ -77,8 +77,8 @@
         <section class="panel">
           <div class="panel-head">
             <div>
-              <h3 class="panel-title">📇 User Directory</h3>
-              <div class="panel-subtitle">Search, filter, and page through the current user set.</div>
+              <h3 class="panel-title">User Directory</h3>
+              <div class="panel-subtitle">Filter by recent joins, room ownership, and exact account identifiers.</div>
             </div>
             <div class="panel-kicker" id="users-count-note">Waiting for data</div>
           </div>
@@ -86,12 +86,12 @@
           <div class="panel-body">
             <div class="toolbar">
               <label class="field search-wrap">
-                <span class="field-label" for="user-search">Search users</span>
-                <input id="user-search" class="control" type="search" placeholder="Search by user ID, join date, or room count" />
+                <span class="field-label">Search users</span>
+                <input id="user-search" class="control" type="search" placeholder="Search by user ID, alias, or room count" />
               </label>
 
               <label class="field">
-                <span class="field-label" for="user-sort">Sort</span>
+                <span class="field-label">Sort</span>
                 <select id="user-sort" class="control">
                   <option value="recent">Newest</option>
                   <option value="rooms">Most rooms</option>
@@ -100,7 +100,7 @@
               </label>
 
               <label class="field">
-                <span class="field-label" for="user-page-size">Rows</span>
+                <span class="field-label">Rows</span>
                 <select id="user-page-size" class="control">
                   <option value="10">10</option>
                   <option value="15">15</option>
@@ -112,8 +112,8 @@
               <div class="toolbar-actions">
                 <div class="filter-group" role="tablist" aria-label="User filters">
                   <button type="button" class="filter-chip active" data-user-filter="all">All</button>
-                  <button type="button" class="filter-chip" data-user-filter="actionable">Actionable</button>
-                  <button type="button" class="filter-chip" data-user-filter="needs-cleanup">Needs cleanup</button>
+                  <button type="button" class="filter-chip" data-user-filter="with-rooms">With Rooms</button>
+                  <button type="button" class="filter-chip" data-user-filter="without-rooms">Without Rooms</button>
                 </div>
               </div>
             </div>
@@ -141,8 +141,8 @@
         <section class="panel">
           <div class="panel-head">
             <div>
-              <h3 class="panel-title">📢 Broadcast Composer</h3>
-              <div class="panel-subtitle">Send a system notice to all active users or a single target.</div>
+              <h3 class="panel-title">Broadcast Composer</h3>
+              <div class="panel-subtitle">Write a room-independent system notice for all active users or a single target.</div>
             </div>
             <div class="panel-kicker" id="broadcasts-count-note">Waiting for data</div>
           </div>
@@ -150,19 +150,19 @@
           <div class="panel-body">
             <form id="broadcast-form" class="auth-form" autocomplete="off">
               <label class="field">
-                <span class="field-label" for="bc-target">Target</span>
+                <span class="field-label">Target</span>
                 <select id="bc-target" class="control">
                   <option value="">All active users</option>
                 </select>
               </label>
 
               <label class="field">
-                <span class="field-label" for="bc-content">Message</span>
-                <textarea id="bc-content" class="admin-textarea" rows="6" placeholder="Write the system message here"></textarea>
+                <span class="field-label">Message</span>
+                <textarea id="bc-content" class="admin-textarea" rows="6" placeholder="Write the broadcast notice"></textarea>
               </label>
 
-              <p class="helper">Broadcasts are stored as plain text and shown on the next login.</p>
-              <button id="bc-send-button" class="btn btn-primary" type="submit">🚀 Dispatch broadcast</button>
+              <p class="helper">Broadcasts are rendered as plain text and shown the next time the target signs in.</p>
+              <button id="bc-send-button" class="btn btn-primary" type="submit">Dispatch Broadcast</button>
             </form>
           </div>
         </section>
@@ -170,8 +170,8 @@
         <section class="panel">
           <div class="panel-head">
             <div>
-              <h3 class="panel-title">📚 Recent Broadcasts</h3>
-              <div class="panel-subtitle">Latest system notices with safe, readable rendering.</div>
+              <h3 class="panel-title">Recent Broadcasts</h3>
+              <div class="panel-subtitle">Current notices with quick deletion and readable timestamps.</div>
             </div>
           </div>
 
@@ -189,7 +189,10 @@
 
   <div id="confirm-modal" class="modal-backdrop" hidden>
     <section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
-      <h3 id="confirm-title" class="modal-title">Confirm action</h3>
+      <div class="modal-head">
+        <h3 id="confirm-title" class="modal-title">Confirm action</h3>
+        <button id="confirm-close" type="button" class="btn btn-ghost btn-sm">Close</button>
+      </div>
       <p id="confirm-body" class="modal-body"></p>
       <div id="confirm-detail" class="modal-detail"></div>
       <div id="confirm-field-wrap" class="modal-field" hidden>

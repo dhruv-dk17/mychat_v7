@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Mychat Unit Tests V3</title>
+  <style>
+    body { font-family: system-ui, sans-serif; padding: 20px; background: #0b0e14; color: #e2e8f0; }
+    #test-container { max-width: 900px; margin: 0 auto; }
+    .test-group { background: #1a1f2e; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #2d3748; }
+    .test-header { font-size: 1.2rem; font-weight: bold; margin-bottom: 10px; border-bottom: 1px solid #2d3748; padding-bottom: 5px; }
+    .test-result { padding: 8px; border-radius: 4px; border-left: 4px solid #4a5568; margin-bottom: 5px; display: flex; justify-content: space-between; align-items: center; }
+    .pass { background: rgba(56, 161, 105, 0.1); border-left-color: #38a169; }
+    .fail { background: rgba(229, 62, 62, 0.1); border-left-color: #e53e3e; }
+    .status-pass::after { content: "✓ PASS"; color: #38a169; font-weight: bold; }
+    .status-fail::after { content: "✕ FAIL"; color: #e53e3e; font-weight: bold; }
+    #summary { font-size: 1.5rem; margin-bottom: 30px; font-weight: bold; padding: 15px; border-radius: 8px; background: #161b22; }
+    code { background: rgba(255,255,255,0.05); padding: 2px 4px; border-radius: 4px; }
+    pre { background: #000; padding: 10px; border-radius: 6px; overflow-x: auto; color: #ff5555; }
+  </style>
+</head>
+<body>
+  <div id="test-container">
+    <h1>Mychat v7 Module Unit Tests (V3)</h1>
+    <div id="summary">Running tests...</div>
+    <div id="results"></div>
+  </div>
+
+  <script src="../assets/js/config.js"></script>
+  <script src="../assets/js/storage.js"></script>
+  <script src="../assets/js/identity.js"></script>
+  <script src="../assets/js/crypto.js"></script>
+  <script src="../assets/js/contacts.js"></script>
+  <script src="../assets/js/chat-store.js"></script>
+  <script src="../assets/js/reactions.js"></script>
+
+  <script>
+    window.TestReporter = {
+      groups: {},
+      stats: { total: 0, passed: 0, failed: 0 },
+      initGroup(name) {
+        if (!this.groups[name]) {
+          this.groups[name] = { pass: 0, fail: 0 };
+          const el = document.createElement('div');
+          el.className = 'test-group';
+          el.id = `group-${name.replace(/\s+/g, '-')}`;
+          el.innerHTML = `<div class="test-header">${name}</div><div class="test-list"></div>`;
+          document.getElementById('results').appendChild(el);
+        }
+      },
+      log(group, name, passed, error = null) {
+        this.stats.total++;
+        if (passed) { this.stats.passed++; this.groups[group].pass++; }
+        else { this.stats.failed++; this.groups[group].fail++; }
+        const groupEl = document.getElementById(`group-${group.replace(/\s+/g, '-')}`);
+        const listEl = groupEl.querySelector('.test-list');
+        const item = document.createElement('div');
+        item.className = `test-result ${passed ? 'pass' : 'fail'}`;
+        item.innerHTML = `<span>${name}</span><span class="${passed ? 'status-pass' : 'status-fail'}"></span>`;
+        if (error) {
+          const pre = document.createElement('pre');
+          pre.textContent = error.stack || error.toString();
+          item.appendChild(pre);
+          item.style.flexDirection = 'column';
+          item.style.alignItems = 'flex-start';
+        }
+        listEl.appendChild(item);
+        this.updateSummary();
+      },
+      updateSummary() {
+        const s = document.getElementById('summary');
+        s.textContent = `Tests: 12 | Passed: ${this.stats.passed} | Failed: ${this.stats.failed}`;
+        s.style.color = this.stats.failed > 0 ? '#e53e3e' : '#38a169';
+      }
+    };
+    async function test(group, name, fn) {
+      TestReporter.initGroup(group);
+      try { await fn(); TestReporter.log(group, name, true); }
+      catch (err) { TestReporter.log(group, name, false, err); }
+    }
+    function expect(actual, expected, message = '') {
+      if (actual !== expected) throw new Error(`${message || 'Expectation failed'}: got [${JSON.stringify(actual)}], expected [${JSON.stringify(expected)}]`);
+    }
+  </script>
+
+  <!-- Static script tag for V3 tests -->
+  <script src="unit.test.v3.js"></script>
+</body>
+</html>

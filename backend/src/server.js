@@ -51,7 +51,11 @@ function getAllowedOrigins() {
       'http://localhost:3000',
       'http://127.0.0.1:3000',
       'http://localhost:5173',
-      'http://localhost:8080'
+      'http://localhost:8080',
+      'http://localhost:8081',
+      'http://127.0.0.1:8081',
+      'http://localhost:5500',
+      'http://127.0.0.1:5500'
     ].forEach(origin => origins.add(origin));
   }
   return origins;
@@ -111,6 +115,7 @@ app.use('/api/rooms', roomRoutes);
 app.use('/api/health', healthRoutes);
 app.use('/api/users', require('./routes/users'));
 app.use('/api/admin', require('./routes/admin'));
+app.use('/api/contacts', require('./routes/contacts'));
 
 app.use((req, res) => res.status(404).json({ error: 'Not found' }));
 

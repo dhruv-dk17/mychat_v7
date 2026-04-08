@@ -110,6 +110,93 @@ function renderReplyBlock(replyTo) {
   return `<button class="msg-reply-chip" type="button" data-reply-target="${replyTo.id}"><span class="msg-reply-from">${escHtml(replyTo.from || 'Message')}</span><span class="msg-reply-text">${escHtml(replyTo.text || '')}</span></button>`;
 }
 
+function createReplyBlockElement(replyTo) {
+  if (!replyTo?.id) return null;
+  const button = document.createElement('button');
+  button.className = 'msg-reply-chip';
+  button.type = 'button';
+  button.dataset.replyTarget = String(replyTo.id);
+
+  const from = document.createElement('span');
+  from.className = 'msg-reply-from';
+  from.textContent = typeof normalizeDisplayName === 'function'
+    ? normalizeDisplayName(replyTo.from, 'Message')
+    : String(replyTo.from || 'Message');
+
+  const text = document.createElement('span');
+  text.className = 'msg-reply-text';
+  text.textContent = String(replyTo.text || '');
+
+  button.append(from, text);
+  return button;
+}
+
+function createReceiptElement(msg, isOwn) {
+  if (!isOwn) return null;
+  const state = msg.readAt ? 'read' : (msg.deliveredAt ? 'delivered' : 'sent');
+  const el = document.createElement('span');
+  el.className = `msg-status msg-status-${state}`;
+  el.dataset.msgStatusFor = msg.id;
+  el.setAttribute('aria-label', state);
+  el.textContent = state === 'sent' ? '✓' : '✓✓';
+  return el;
+}
+
+function createMessageShell(msg, isOwn, showFrom, bubbleClassName = 'msg-bubble') {
+  const root = document.createElement('div');
+  root.className = 'msg ' + (isOwn ? 'msg-out' : 'msg-in');
+  root.dataset.msgId = msg.id;
+  root.dataset.sender = msg.from;
+
+  if (showFrom) {
+    const user = document.createElement('span');
+    user.className = 'msg-user';
+    user.textContent = typeof normalizeDisplayName === 'function'
+      ? normalizeDisplayName(msg.from, 'Message')
+      : String(msg.from || 'Message');
+    root.appendChild(user);
+  }
+
+  const bubble = document.createElement('div');
+  bubble.className = bubbleClassName;
+  const reply = createReplyBlockElement(msg.replyTo);
+  if (reply) bubble.appendChild(reply);
+  root.appendChild(bubble);
+
+  const meta = document.createElement('div');
+  meta.className = 'msg-meta';
+  const time = document.createElement('span');
+  time.className = 'msg-time';
+  time.textContent = fmtTime(msg.ts);
+  meta.appendChild(time);
+  const receipt = createReceiptElement(msg, isOwn);
+  if (receipt) meta.appendChild(receipt);
+  root.appendChild(meta);
+
+  const reactions = document.createElement('div');
+  reactions.className = 'msg-reactions';
+  reactions.id = `reactions-${msg.id}`;
+  root.appendChild(reactions);
+
+  const checkbox = document.createElement('div');
+  checkbox.className = 'msg-checkbox';
+  checkbox.style.display = 'none';
+  checkbox.textContent = '✓';
+  root.appendChild(checkbox);
+
+  return { root, bubble };
+}
+
+function clearNodeChildren(node) {
+  if (node) node.replaceChildren();
+}
+
+function openUrlInNewTab(url) {
+  if (typeof window.open !== 'function') return;
+  const popup = window.open(url, '_blank', 'noopener,noreferrer');
+  if (popup) popup.opener = null;
+}
+
 function legacyGetReceiptMarkup(msg, isOwn) {
   if (!isOwn) return '';
   const state = msg.readAt ? 'read' : (msg.deliveredAt ? 'delivered' : 'sent');
@@ -188,6 +275,7 @@ function sendTextMessage(text) {
   broadcastOrRelay(msg);
   if (typeof persistCurrentRoomEvent === 'function') persistCurrentRoomEvent(msg);
   clearPendingReply();
+  if (window.announce) window.announce('Message sent');
   
   if (msg.disappearing && typeof setMessageTimer === 'function') {
     setMessageTimer(msg.id, DISAPPEAR_SECONDS, true);
@@ -202,6 +290,7 @@ function receiveTextMessage(msg) {
   renderMessage(msg, isOwn);
   if (!isOwn) playMessageSound();
   acknowledgeIncomingMessage(msg);
+  if (window.announce && !msg.isHistorical && !isOwn) window.announce(`New message from ${msg.from}`);
   
   if (msg.disappearing && typeof setMessageTimer === 'function') {
     setMessageTimer(msg.id, DISAPPEAR_SECONDS, false);
@@ -215,6 +304,7 @@ function receiveRichMedia(msg) {
   renderRichMediaMessage(msg, isOwn);
   if (!isOwn) playMessageSound();
   acknowledgeIncomingMessage(msg);
+  if (window.announce && !msg.isHistorical && !isOwn) window.announce(`New message from ${msg.from}`);
 
   if (msg.disappearing && typeof setMessageTimer === 'function') {
     setMessageTimer(msg.id, DISAPPEAR_SECONDS, false);
@@ -248,15 +338,15 @@ function renderMessage(msg, isOwn) {
   
   if (isCts) last.classList.add('msg-cts');
 
-  const el = document.createElement('div');
-  el.className   = 'msg ' + (isOwn ? 'msg-out' : 'msg-in');
-  if (isCts) el.classList.add('msg-cts-next');
-  el.dataset.msgId  = msg.id;
-  el.dataset.sender = msg.from;
-
   const showFrom = !isOwn && !isCts;
+  const shell = createMessageShell(msg, isOwn, showFrom);
+  const el = shell.root;
+  if (isCts) el.classList.add('msg-cts-next');
 
-  el.innerHTML = `${showFrom?`<span class="msg-user">${escHtml(msg.from)}</span>`:''}<div class="msg-bubble">${renderReplyBlock(msg.replyTo)}<p class="msg-text">${escHtml(msg.text)}</p></div><div class="msg-meta"><span class="msg-time">${fmtTime(msg.ts)}</span>${getReceiptMarkup(msg, isOwn)}</div><div class="msg-reactions" id="reactions-${msg.id}"></div><div class="msg-checkbox" style="display:none;">✓</div>`;
+  const text = document.createElement('p');
+  text.className = 'msg-text';
+  text.textContent = String(msg.text || '');
+  shell.bubble.appendChild(text);
 
   // Click handler for multi-select
   el.addEventListener('click', e => {
@@ -300,6 +390,7 @@ function addSystemMessage(text) {
 
 function applyPersistedRoomEvent(event) {
   if (!event?.type) return;
+  event.isHistorical = true;
   switch (event.type) {
     case 'msg':
       receiveTextMessage(event);
@@ -381,7 +472,7 @@ function executeClearChat(clearedBy) {
   messages.forEach(m => { if (m.blobUrl) URL.revokeObjectURL(m.blobUrl); });
   messages = [];
   const feed = document.getElementById('chat-feed');
-  if (feed) feed.innerHTML = '';
+  clearNodeChildren(feed);
   addSystemMessage(`${clearedBy} cleared the chat`);
   destructTimers.forEach(t => clearTimeout(t));
   destructTimers.clear();
@@ -763,16 +854,11 @@ function renderRichMediaMessage(msg, isOwn) {
   const isCtsSafe = lastSafe && lastSafe.dataset.sender === msg.from && !lastSafe.classList.contains('msg-system');
   if (isCtsSafe) lastSafe.classList.add('msg-cts');
 
-  const safeEl = document.createElement('div');
-  safeEl.className = 'msg ' + (isOwn ? 'msg-out' : 'msg-in');
-  if (isCtsSafe) safeEl.classList.add('msg-cts-next');
-  safeEl.dataset.msgId = msg.id;
-  safeEl.dataset.sender = msg.from;
-
   const showFromSafe = !isOwn && !isCtsSafe;
-  safeEl.innerHTML = `${showFromSafe ? `<span class="msg-user">${escHtml(msg.from)}</span>` : ''}<div class="msg-bubble media-bubble">${renderReplyBlock(msg.replyTo)}</div><div class="msg-meta"><span class="msg-time">${fmtTime(msg.ts)}</span>${getReceiptMarkup(msg, isOwn)}</div><div class="msg-reactions" id="reactions-${msg.id}"></div><div class="msg-checkbox" style="display:none;">âœ“</div>`;
-
-  const bubble = safeEl.querySelector('.media-bubble');
+  const shell = createMessageShell(msg, isOwn, showFromSafe, 'msg-bubble media-bubble');
+  const safeEl = shell.root;
+  if (isCtsSafe) safeEl.classList.add('msg-cts-next');
+  const bubble = shell.bubble;
   const image = document.createElement('img');
   image.src = mediaUrl;
   image.className = 'msg-media-image';
@@ -792,11 +878,7 @@ function renderRichMediaMessage(msg, isOwn) {
     const timer = setTimeout(() => showContextMenu(event.touches[0], msg, isOwn), 500);
     safeEl.addEventListener('touchend', () => clearTimeout(timer), { once: true });
   });
-  image.addEventListener('click', () => {
-    if (typeof window.open === 'function') {
-      window.open(mediaUrl, '_blank', 'noopener');
-    }
-  });
+  image.addEventListener('click', () => openUrlInNewTab(mediaUrl));
   safeEl.querySelector('[data-reply-target]')?.addEventListener('click', event => {
     const targetId = event.currentTarget.dataset.replyTarget;
     const targetEl = document.querySelector(`[data-msg-id="${targetId}"]`);
@@ -837,7 +919,7 @@ function renderRichMediaMessage(msg, isOwn) {
     const timer = setTimeout(() => showContextMenu(event.touches[0], msg, isOwn), 500);
     el.addEventListener('touchend', () => clearTimeout(timer), { once: true });
   });
-  el.querySelector('.msg-media-image')?.addEventListener('click', () => window.open(msg.url, '_blank'));
+  el.querySelector('.msg-media-image')?.addEventListener('click', () => openUrlInNewTab(msg.url));
   el.querySelector('[data-reply-target]')?.addEventListener('click', event => {
     const targetId = event.currentTarget.dataset.replyTarget;
     const targetEl = document.querySelector(`[data-msg-id="${targetId}"]`);

@@ -9,7 +9,8 @@ const {
   normalizeUsername,
   validateHash,
   validateToken,
-  validateUsername
+  validateUsername,
+  validateIdentityCard
 } = require('../middleware/validate');
 
 const router = express.Router();
@@ -17,7 +18,7 @@ const BCRYPT_ROUNDS = 12;
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 10,
+  max: 5,
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many auth attempts. Try again later.' }
@@ -98,6 +99,7 @@ async function deleteUserAccount(db, username, token) {
 router.post('/register', authLimiter, async (req, res) => {
   const username = normalizeUsername(req.body?.username);
   const passwordHash = req.body?.passwordHash;
+  const identityCard = req.body?.identityCard || null;
 
   if (!validateUsername(username)) {
     return res.status(400).json({ error: 'Invalid username format (3-32 chars, alphanumeric & underscore)' });
@@ -105,13 +107,16 @@ router.post('/register', authLimiter, async (req, res) => {
   if (!validateHash(passwordHash)) {
     return res.status(400).json({ error: 'Invalid password hash' });
   }
+  if (identityCard && !validateIdentityCard(identityCard)) {
+    return res.status(400).json({ error: 'Invalid or oversized identity card' });
+  }
 
   try {
     const hashedPassword = await bcrypt.hash(passwordHash, BCRYPT_ROUNDS);
     const token = crypto.randomBytes(48).toString('hex');
     await pool.query(
-      'INSERT INTO users (username, password_hash, token, created_at, last_seen) VALUES ($1, $2, $3, $4, $5)',
-      [username, hashedPassword, token, Date.now(), Date.now()]
+      'INSERT INTO users (username, password_hash, token, created_at, last_seen, identity_card) VALUES ($1, $2, $3, $4, $5, $6)',
+      [username, hashedPassword, token, Date.now(), Date.now(), identityCard]
     );
     incrementMetric('users.registered');
     res.json({ success: true, token, username });
@@ -125,9 +130,13 @@ router.post('/register', authLimiter, async (req, res) => {
 router.post('/login', authLimiter, async (req, res) => {
   const username = normalizeUsername(req.body?.username);
   const passwordHash = req.body?.passwordHash;
+  const identityCard = req.body?.identityCard || null;
 
   if (!validateUsername(username) || !validateHash(passwordHash)) {
     return res.status(400).json({ error: 'Missing or invalid credentials' });
+  }
+  if (identityCard && !validateIdentityCard(identityCard)) {
+    return res.status(400).json({ error: 'Invalid or oversized identity card' });
   }
 
   try {
@@ -144,7 +153,7 @@ router.post('/login', authLimiter, async (req, res) => {
     if (!isValid) return res.status(401).json({ error: 'Invalid credentials' });
 
     const token = crypto.randomBytes(48).toString('hex');
-    await pool.query('UPDATE users SET token = $1, last_seen = $2 WHERE username = $3', [token, Date.now(), username]);
+    await pool.query('UPDATE users SET token = $1, last_seen = $2, identity_card = COALESCE($3, identity_card) WHERE username = $4', [token, Date.now(), identityCard, username]);
     incrementMetric('users.loggedIn');
     res.json({ success: true, token, username });
   } catch (e) {

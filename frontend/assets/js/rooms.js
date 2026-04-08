@@ -4,10 +4,14 @@ const SESSION_STORAGE_KEY = 'mychat_user';
 
 async function registerUser(username, password) {
   const passwordHash = await sha256(password);
+  let identityCard = null;
+  if (typeof exportIdentityCard === 'function') {
+    try { identityCard = JSON.stringify(await exportIdentityCard()); } catch (e) {}
+  }
   const res = await fetch(`${CONFIG.API_BASE}/users/register`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username, passwordHash })
+    body: JSON.stringify({ username, passwordHash, identityCard })
   });
   const data = await res.json();
   if (!data.success) throw new Error(data.error || 'Registration failed');
@@ -16,10 +20,14 @@ async function registerUser(username, password) {
 
 async function loginUser(username, password) {
   const passwordHash = await sha256(password);
+  let identityCard = null;
+  if (typeof exportIdentityCard === 'function') {
+    try { identityCard = JSON.stringify(await exportIdentityCard()); } catch (e) {}
+  }
   const res = await fetch(`${CONFIG.API_BASE}/users/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username, passwordHash })
+    body: JSON.stringify({ username, passwordHash, identityCard })
   });
   const data = await res.json();
   if (!data.success) throw new Error(data.error || 'Login failed');
@@ -77,13 +85,21 @@ async function verifyOwnerToken(slug, ownerToken) {
   return data.valid === true;
 }
 
+function compactFingerprint(fingerprint) {
+  return String(fingerprint || '').replace(/[^a-z0-9]/gi, '').slice(-8).toLowerCase();
+}
+
 function hostPeerId(roomId, isPermanent) {
   return isPermanent ? `mchat-perm-${roomId}-host` : `mchat-${roomId}-host`;
 }
 
 function guestPeerId(roomId, isPermanent) {
+  const fingerprint = typeof getIdentityFingerprintSync === 'function'
+    ? compactFingerprint(getIdentityFingerprintSync())
+    : '';
   const rand = randomToken(2);
-  return isPermanent ? `mchat-perm-${roomId}-${rand}` : `mchat-${roomId}-${rand}`;
+  const suffix = `${fingerprint ? `${fingerprint}-` : ''}${rand}`;
+  return isPermanent ? `mchat-perm-${roomId}-${suffix}` : `mchat-${roomId}-${suffix}`;
 }
 
 function createTempRoom(type) {

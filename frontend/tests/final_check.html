@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Mychat Final Logic Check</title>
+  <style>
+    body { font-family: sans-serif; background: #000; color: #0f0; padding: 20px; }
+    .group { border: 1px solid #333; margin: 10px 0; padding: 10px; }
+    .test { margin: 5px 0; padding: 5px; border-left: 3px solid #333; }
+    .passed { border-left-color: #0f0; background: #020; }
+    .failed { border-left-color: #f00; background: #200; }
+    #summary { font-size: 20px; font-weight: bold; border: 2px solid #fff; padding: 10px; margin-bottom: 20px; }
+  </style>
+</head>
+<body>
+  <div id="summary">WAITING...</div>
+  <div id="results"></div>
+
+  <script src="../assets/js/config.js"></script>
+  <script src="../assets/js/storage.js"></script>
+  <script src="../assets/js/identity.js"></script>
+  <script src="../assets/js/crypto.js"></script>
+  <script src="../assets/js/contacts.js"></script>
+  <script src="../assets/js/chat-store.js"></script>
+  <script src="../assets/js/reactions.js"></script>
+
+  <script>
+    const stats = { passed: 0, total: 0 };
+    async function runTest(group, name, fn) {
+        stats.total++;
+        let groupEl = document.getElementById('group-' + group);
+        if (!groupEl) {
+            groupEl = document.createElement('div');
+            groupEl.id = 'group-' + group;
+            groupEl.className = 'group';
+            groupEl.innerHTML = '<h3>' + group + '</h3>';
+            document.getElementById('results').appendChild(groupEl);
+        }
+        const testEl = document.createElement('div');
+        testEl.className = 'test';
+        testEl.textContent = name + ': RUNNING...';
+        groupEl.appendChild(testEl);
+        
+        try {
+            await fn();
+            stats.passed++;
+            testEl.className = 'test passed';
+            testEl.textContent = name + ': PASSED';
+        } catch (e) {
+            testEl.className = 'test failed';
+            testEl.textContent = name + ': FAILED - ' + e.message;
+            console.error(e);
+        }
+        update();
+    }
+    function update() {
+        document.getElementById('summary').textContent = 'TOTAL: ' + stats.total + ' | PASSED: ' + stats.passed + (stats.total === 12 ? ' | FINISHED' : '');
+    }
+    function expect(a, b) { if (a !== b) throw new Error('Got ' + a + ', expected ' + b); }
+  </script>
+  <script src="final_check.js"></script>
+</body>
+</html>

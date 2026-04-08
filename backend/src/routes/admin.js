@@ -23,7 +23,7 @@ router.get('/summary', async (req, res) => {
     const summary = await fetchAdminSummary(pool);
     res.json({ success: true, ...summary });
   } catch (error) {
-    console.error('Admin summary error:', error.message);
+    logger.error('admin_summary_failed', { error: error.message });
     res.status(500).json({ error: 'Failed to fetch summary' });
   }
 });

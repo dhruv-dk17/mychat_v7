@@ -406,7 +406,7 @@ function syncPermanentParticipantUI() {
 }
 
 function updateHostUI() {
-  if (typeof currentRoomType !== 'undefined' && currentRoomType === 'permanent') {
+  if (typeof currentRoomType !== 'undefined' && (currentRoomType === 'permanent' || currentRoomType === 'contact')) {
     syncPermanentParticipantUI();
     return;
   }
@@ -440,7 +440,7 @@ function addUserToPanel(peerId, username, role) {
   row.id = `user-${peerId}`;
 
   const safeUsername = typeof normalizeDisplayName === 'function' ? normalizeDisplayName(username, '?') : String(username || '?');
-  const isHost = role === 'host' && currentRoomType !== 'permanent';
+  const isHost = role === 'host' && currentRoomType !== 'permanent' && currentRoomType !== 'contact';
 
   const avatar = document.createElement('div');
   avatar.className = 'user-avatar';
@@ -466,7 +466,7 @@ function addUserToPanel(peerId, username, role) {
 
   row.append(avatar, info, dot);
 
-  if (myRole === 'host' && currentRoomType !== 'permanent' && peerId !== peerInstance?.id) {
+  if (myRole === 'host' && currentRoomType !== 'permanent' && currentRoomType !== 'contact' && peerId !== peerInstance?.id) {
     const btn = document.createElement('button');
     btn.className = 'user-menu-btn';
     btn.type = 'button';

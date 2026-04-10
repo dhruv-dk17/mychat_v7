@@ -24,6 +24,11 @@ const lastIdentityCardByPeer = new Map();
 const activeRatchets = new Map();
 let guestHandshakeDh = null;
 
+// Helper: 'contact' rooms share the same leaderless P2P behavior as 'permanent' rooms
+function isPermanentLike() {
+  return currentRoomType === 'permanent' || currentRoomType === 'contact';
+}
+
 function exposePeerRuntimeState() {
   const descriptors = {
     peerInstance: { get: () => peerInstance },
@@ -280,7 +285,7 @@ async function initAsGuest(hostPeerIdStr, myPeerIdStr, username, roomId, passwor
     myPeerIdStr,
     null,
     err => {
-      if (err?.type === 'peer-unavailable' && currentRoomType === 'permanent') {
+      if (err?.type === 'peer-unavailable' && isPermanentLike()) {
         reconnectInFlight = false;
         hideModal('waiting-host-modal');
         if (shouldClaimPermanentTransportHost()) {
@@ -365,7 +370,7 @@ let reconnectAttempt = 0;
 const MAX_RECONNECT_DELAY_MS = 30000;
 
 function schedulePermanentReconnect() {
-  if (currentRoomType !== 'permanent' || myRole === 'host' || !hostPeerIdForRoom || !peerInstance) return;
+  if (!isPermanentLike() || myRole === 'host' || !hostPeerIdForRoom || !peerInstance) return;
   if (permanentReconnectTimer) return;
 
   reconnectAttempt++;
@@ -387,7 +392,7 @@ function schedulePermanentReconnect() {
 }
 
 function shouldClaimPermanentTransportHost() {
-  if (currentRoomType !== 'permanent' || !peerInstance?.id) return false;
+  if (!isPermanentLike() || !peerInstance?.id) return false;
   const candidateIds = [...connectedPeers.entries()]
     .filter(([, peer]) => peer.role !== 'host')
     .map(([peerId]) => peerId)
@@ -398,7 +403,7 @@ function shouldClaimPermanentTransportHost() {
 }
 
 async function restartPermanentTransportAsHost() {
-  if (currentRoomType !== 'permanent' || !currentRoomId) return;
+  if (!isPermanentLike() || !currentRoomId) return;
 
   const roomId = currentRoomId;
   const username = myUsername;
@@ -452,13 +457,33 @@ function handleIncomingConnection(conn) {
         const msg = JSON.parse(raw);
         if (msg.type !== 'join_request') { conn.close(); return; }
 
-        // For permanent rooms — verify password
-        if (currentRoomType === 'permanent') {
+        // For permanent/contact rooms — verify password
+        if (isPermanentLike()) {
           if (!msg.passwordHash) {
             conn.send(JSON.stringify({ type: 'join_response', accepted: false, reason: 'Missing password' }));
             conn.close();
             return;
           }
+
+          // Contact rooms: verify locally using hash of our own stored password
+          if (currentRoomType === 'contact') {
+            try {
+              const localPw = permanentRoomPassword || '';
+              const localHash = await sha256(localPw);
+              if (localHash === msg.passwordHash) {
+                finalizeJoin(conn, msg.username, true);
+              } else {
+                conn.send(JSON.stringify({ type: 'join_response', accepted: false, reason: 'Invalid password' }));
+                conn.close();
+              }
+            } catch (e) {
+              conn.send(JSON.stringify({ type: 'join_response', accepted: false, reason: 'Verification error' }));
+              conn.close();
+            }
+            return;
+          }
+
+          // Permanent rooms: verify against server
           try {
             const res = await fetch(`${CONFIG.API_BASE}/rooms/verify-password`, {
               method: 'POST',
@@ -525,7 +550,7 @@ function finalizeJoin(conn, username, accepted) {
 
     connectedPeers.set(conn.peer, { conn, username, role: 'guest' });
     setupConnection(conn);
-    if (currentRoomType !== 'permanent') {
+    if (!isPermanentLike()) {
       conn.send(JSON.stringify({ type: 'room_sync', roomKey }));
     }
     broadcastUserList();
@@ -595,7 +620,7 @@ async function handleIncomingMessage(msg, conn) {
       conn.send(JSON.stringify({ type: 'join_response', accepted: true }));
       return;
     }
-    if (currentRoomType === 'permanent') {
+    if (isPermanentLike()) {
       finalizeJoin(conn, msg.username, true);
       return;
     }
@@ -635,7 +660,7 @@ async function handleIncomingMessage(msg, conn) {
 
   // ── NORMAL MESSAGES ──────────────────────────
   if (msg.type === 'room_sync') {
-    if (myRole !== 'host' && currentRoomType !== 'permanent' && msg.roomKey) {
+    if (myRole !== 'host' && !isPermanentLike() && msg.roomKey) {
       setRoomKeys(msg.roomKey, [currentRoomId, ...roomKeyCandidates]);
     }
     return;
@@ -788,7 +813,7 @@ function broadcastUserList() {
   users.push({
     peerId: peerInstance.id,
     username: myUsername,
-    role: currentRoomType === 'permanent' ? 'guest' : 'host',
+    role: isPermanentLike() ? 'guest' : 'host',
     fingerprint: typeof getIdentityFingerprintSync === 'function' ? getIdentityFingerprintSync() : ''
   });
   broadcastToPeers({ type: 'user_list', users });
@@ -809,7 +834,7 @@ function handlePeerDisconnect(peerId) {
   lastSequenceBySender.delete(peerId);
   activeRatchets.delete(peerId);
   removeUserFromPanel(peerId);
-  addSystemMessage(p.role === 'host' && currentRoomType === 'permanent'
+  addSystemMessage(p.role === 'host' && isPermanentLike()
     ? `${p.username} disconnected`
     : `${p.username} left`);
   if (myRole === 'host') broadcastUserList();
@@ -835,7 +860,7 @@ function handlePeerDisconnect(peerId) {
     return;
   }
 
-  if (currentRoomType === 'permanent') {
+  if (isPermanentLike()) {
     hideModal('waiting-host-modal');
     if (shouldClaimPermanentTransportHost()) {
       restartPermanentTransportAsHost().catch(handlePeerError);
@@ -851,14 +876,14 @@ function handlePeerDisconnect(peerId) {
 
 // ── Host transfer ─────────────────────────────────────────────────
 function considerHostTransfer() {
-  if (myRole === 'host' || currentRoomType === 'permanent') return;
+  if (myRole === 'host' || isPermanentLike()) return;
   const all = [...connectedPeers.keys(), peerInstance.id].sort();
   if (all[0] === peerInstance.id) becomeHost();
 }
 
 function becomeHost() {
   myRole = 'host';
-  if (currentRoomType === 'permanent') {
+  if (isPermanentLike()) {
     if (typeof syncPermanentParticipantUI === 'function') syncPermanentParticipantUI();
     broadcastUserList();
     return;

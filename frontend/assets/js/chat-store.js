@@ -72,6 +72,9 @@
 
   async function saveMessage(message) {
     if (!message?.id || !message?.conversationId) return null;
+    // Private rooms are ephemeral — do NOT persist to IndexedDB
+    const roomType = message.roomType || global.currentRoomType || 'private';
+    if (roomType === 'private') return null;
     const payload = {
       id: message.id,
       conversationId: message.conversationId,

@@ -8,12 +8,13 @@
   <meta name="theme-color" content="#e4ece3" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="assets/css/main.css?v=20260408" />
-  <link rel="stylesheet" href="assets/css/home.css?v=20260408" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&family=Outfit:wght@600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/css/main.css?v=20260410" />
+  <link rel="stylesheet" href="assets/css/home.css?v=20260410" />
   <link rel="stylesheet" href="assets/css/anti-surveillance.css?v=20260331" />
+  <link rel="stylesheet" href="assets/css/wallpaper.css?v=20260410" />
 </head>
-<body data-page="home">
+<body data-page="home" data-theme="dark">
 
   <!-- System banners -->
   <div id="network-banner">Offline — reconnect to resume.</div>
@@ -22,6 +23,13 @@
     <div class="cold-start-bar"></div>
   </div>
   <div id="toast-container"></div>
+  <!-- Animated mesh orbs -->
+  <div class="bg-mesh" aria-hidden="true">
+    <div class="bg-mesh-orb"></div>
+    <div class="bg-mesh-orb"></div>
+    <div class="bg-mesh-orb"></div>
+    <div class="bg-mesh-orb"></div>
+  </div>
 
   <!-- Privacy tip ticker -->
   <div id="privacy-banner">
@@ -44,7 +52,7 @@
     <aside class="home-sidebar glass-panel" id="home-sidebar">
       <a class="sidebar-brand brand-link brand-pulse-once" href="index.html" aria-label="Mychat home">
         <span class="brand-mark-wrap">
-          <img class="brand-mark" src="assets/brand/logo.png" alt="" />
+          <img class="brand-mark" src="assets/brand/logo-icon.svg" alt="" />
         </span>
         <span class="brand-wordmark">
           <span class="brand-name">Mychat</span>
@@ -108,7 +116,7 @@
         </button>
         <a class="mobile-brand brand-link brand-link-compact" href="index.html" aria-label="Mychat home">
           <span class="brand-mark-wrap">
-            <img class="brand-mark" src="assets/brand/logo.png" alt="" />
+            <img class="brand-mark" src="assets/brand/logo-icon.svg" alt="" />
           </span>
           <span class="brand-wordmark">
             <span class="brand-name">Mychat</span>

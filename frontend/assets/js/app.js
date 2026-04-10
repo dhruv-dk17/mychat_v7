@@ -729,16 +729,18 @@ async function refreshContactsPanel(query = '') {
         }
 
         const sorted = [myFp, contact.fingerprint].sort();
-        const deterministicIdHex = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode('room|' + sorted.join('|')))))
+        const deterministicIdHex = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode('contact-room|' + sorted.join('|')))))
           .map(b => b.toString(16).padStart(2, '0')).join('');
-        const deterministicId = deterministicIdHex.substring(0, 16);
-        const deterministicPassword = 'pwd' + deterministicIdHex.substring(16, 48);
+        const deterministicId = 'c-' + deterministicIdHex.substring(0, 14);
+        const deterministicPassword = 'cpwd-' + deterministicIdHex.substring(14, 46);
 
         const session = typeof getUserSession === 'function' ? getUserSession() : null;
-        const currentName = (typeof myUsername !== 'undefined' && myUsername) ? myUsername : (session?.username || 'User');
+        const currentName = (typeof myUsername !== 'undefined' && myUsername) ? myUsername : (session?.username || 'User-' + myFp.slice(-4));
         
+        // Store auto-derived password for this contact room (no server registration needed)
         sessionStorage.setItem('joinPassword_' + deterministicId, deterministicPassword);
-        navigateToChat(deterministicId, 'permanent', currentName, 'guest', undefined, undefined);
+        // 'contact' type = permanent P2P mesh, local IndexedDB history, no server registration
+        navigateToChat(deterministicId, 'contact', currentName, 'guest', undefined, undefined);
       } catch (err) {
         showToast('Failed to open chat: ' + err.message, 'error');
       }
@@ -1087,7 +1089,9 @@ async function initChatPage() {
   await getIdentityMaterial();
 
   currentRoomType = params.type || 'private';
-  const isPerm  = params.type === 'permanent';
+  // 'contact' rooms behave like 'permanent' P2P mesh but with local-only history
+  const isPerm  = params.type === 'permanent' || params.type === 'contact';
+  const isContact = params.type === 'contact';
 
   const contactsSection = document.getElementById('sidebar-contacts-section');
   if (contactsSection) {
@@ -1100,7 +1104,15 @@ async function initChatPage() {
   const gId     = guestPeerId(params.roomId, isPerm);
   let storedPermPassword = isPerm ? (sessionStorage.getItem('joinPassword_' + params.roomId) || '') : '';
 
-  if (isPerm && !storedPermPassword) {
+  // Contact rooms use auto-derived local passwords — skip server verification
+  if (isContact && !storedPermPassword) {
+    showToast('Contact room key missing — please reopen from your Contacts list', 'error');
+    setTimeout(navigateHome, 1500);
+    return;
+  }
+
+  // Permanent rooms verify password against server if not already cached
+  if (params.type === 'permanent' && !storedPermPassword) {
     const promptedPassword = prompt(`Enter the password for permanent room "${params.roomId}"`);
     if (!promptedPassword) { navigateHome(); return; }
 
@@ -1170,7 +1182,8 @@ async function initChatPage() {
     await initializeStoredConversation(params.roomId, params.type || 'private');
   }
 
-  if (isPerm && storedPermPassword) {
+  if (isPerm && storedPermPassword && !isContact) {
+    // Server-synced history only for actual permanent rooms (not contact rooms)
     await loadPermanentHistoryOnce(params.roomId, storedPermPassword);
     startPermanentHistoryPolling(params.roomId, storedPermPassword);
   }

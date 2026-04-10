@@ -1,5 +1,5 @@
 databases:
-  - name: mychat-v7-db
+  - name: mychat-db
     databaseName: mychat
     user: mychat_user
     plan: free
@@ -7,7 +7,7 @@ databases:
 services:
   # 1. Backend Web Service (Node.js API)
   - type: web
-    name: mychat-v7-api
+    name: mychat-api
     runtime: node
     rootDir: backend
     buildCommand: npm install
@@ -24,7 +24,7 @@ services:
         sync: false
       - key: DATABASE_URL
         fromDatabase:
-          name: mychat-v7-db
+          name: mychat-db
           property: connectionString
       - key: ALLOWED_ORIGIN
         # Tells the backend to strictly only allow requests from the frontend
@@ -35,7 +35,7 @@ services:
 
   # 2. Frontend Static Site
   - type: web
-    name: mychat-v7-frontend
+    name: mychat-frontend
     env: static
     rootDir: frontend
     # This automatically injects the backend's URL into config.js during the build!
@@ -47,5 +47,5 @@ services:
         # Grabs the backend URL dynamically
         fromService:
           type: web
-          name: mychat-v7-api
+          name: mychat-api
           envVarKey: RENDER_EXTERNAL_URL

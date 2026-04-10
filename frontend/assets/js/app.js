@@ -857,7 +857,7 @@ async function refreshInboxList() {
       const row = document.createElement('div');
       row.style.cssText = 'display:flex; justify-content:space-between; align-items:center; padding:0.5rem; border-bottom:1px solid rgba(255,255,255,0.05);';
       const name = document.createElement('div');
-      name.textContent = r.fromUsername;
+      name.textContent = r.from_username;
       const actions = document.createElement('div');
       actions.style.cssText = 'display:flex; gap:0.5rem;';
       
@@ -868,7 +868,7 @@ async function refreshInboxList() {
         btnAccept.disabled = true;
         try {
           await apiRespondContactRequest(r.id, true);
-          showToast('Accepted request from ' + r.fromUsername, 'success');
+          showToast('Accepted request from ' + r.from_username, 'success');
           refreshInboxList();
           refreshContactsPanel();
         } catch(e) { showToast(e.message, 'error'); btnAccept.disabled = false; }
@@ -881,7 +881,7 @@ async function refreshInboxList() {
         btnReject.disabled = true;
         try {
           await apiRespondContactRequest(r.id, false);
-          showToast('Rejected request from ' + r.fromUsername, 'success');
+          showToast('Rejected request from ' + r.from_username, 'success');
           refreshInboxList();
         } catch(e) { showToast(e.message, 'error'); btnReject.disabled = false; }
       };

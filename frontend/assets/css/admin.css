@@ -1,26 +1,26 @@
 :root {
-  --admin-bg: #efe8dc;
-  --admin-bg-soft: #f7f2ea;
-  --admin-surface: rgba(255, 252, 247, 0.86);
-  --admin-surface-strong: #fffdf9;
-  --admin-border: rgba(45, 72, 59, 0.12);
-  --admin-border-strong: rgba(45, 72, 59, 0.2);
-  --admin-text: #18261f;
-  --admin-text-strong: #0f1814;
-  --admin-text-dim: #526257;
-  --admin-text-faint: #7b8a7f;
-  --admin-accent: #1f8f5f;
-  --admin-accent-2: #c48b3a;
-  --admin-warning: #c48b3a;
-  --admin-danger: #b64242;
-  --admin-success: #1d8d5c;
-  --admin-shadow: 0 26px 60px rgba(39, 48, 41, 0.12);
+  --admin-bg: #0c1322;
+  --admin-bg-soft: #111827;
+  --admin-surface: rgba(17, 24, 39, 0.75);
+  --admin-surface-strong: #1f2937;
+  --admin-border: rgba(124, 58, 237, 0.15);
+  --admin-border-strong: rgba(124, 58, 237, 0.3);
+  --admin-text: #f3f4f6;
+  --admin-text-strong: #ffffff;
+  --admin-text-dim: #9ca3af;
+  --admin-text-faint: #6b7280;
+  --admin-accent: #7c3aed;
+  --admin-accent-2: #3b82f6;
+  --admin-warning: #f59e0b;
+  --admin-danger: #ef4444;
+  --admin-success: #10b981;
+  --admin-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
   --admin-head: 'Outfit', sans-serif;
-  --admin-body: 'Outfit', sans-serif;
+  --admin-body: 'Inter', sans-serif;
   --admin-mono: 'JetBrains Mono', monospace;
-  --admin-radius-xl: 30px;
-  --admin-radius-lg: 22px;
-  --admin-radius-md: 16px;
+  --admin-radius-xl: 24px;
+  --admin-radius-lg: 16px;
+  --admin-radius-md: 12px;
 }
 
 * { box-sizing: border-box; }
@@ -32,9 +32,9 @@ body.admin-page {
   color: var(--admin-text);
   font-family: var(--admin-body);
   background:
-    radial-gradient(circle at 12% 12%, rgba(31, 143, 95, 0.12), transparent 26%),
-    radial-gradient(circle at 92% 8%, rgba(196, 139, 58, 0.12), transparent 26%),
-    linear-gradient(180deg, var(--admin-bg-soft) 0%, var(--admin-bg) 100%);
+    radial-gradient(circle at 12% 12%, rgba(124, 58, 237, 0.08), transparent 30%),
+    radial-gradient(circle at 92% 8%, rgba(59, 130, 246, 0.08), transparent 30%),
+    var(--admin-bg);
 }
 
 body.admin-page::before {
@@ -82,11 +82,13 @@ textarea:focus-visible {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 18px 20px;
-  margin-bottom: 16px;
+  padding: 18px 24px;
+  margin-bottom: 24px;
   border: 1px solid var(--admin-border);
   border-radius: var(--admin-radius-xl);
-  background: rgba(255, 252, 247, 0.72);
+  background: rgba(17, 24, 39, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   box-shadow: var(--admin-shadow);
 }
 
@@ -100,15 +102,15 @@ textarea:focus-visible {
 .brand-mark {
   width: 46px;
   height: 46px;
-  border-radius: 16px;
+  border-radius: 14px;
   display: grid;
   place-items: center;
   font-family: var(--admin-head);
-  font-weight: 700;
+  font-weight: 800;
   letter-spacing: 0.08em;
   color: #fff;
-  background: linear-gradient(135deg, var(--admin-accent), #217550);
-  box-shadow: 0 14px 30px rgba(31, 143, 95, 0.18);
+  background: linear-gradient(135deg, var(--admin-accent), #4c1d95);
+  box-shadow: 0 0 20px rgba(124, 58, 237, 0.3);
   flex: 0 0 auto;
 }
 
@@ -407,12 +409,12 @@ thead th {
   z-index: 2;
   text-align: left;
   padding: 14px 18px;
-  color: var(--admin-text-dim);
+  color: var(--admin-text-faint);
   font-size: 0.74rem;
   text-transform: uppercase;
   letter-spacing: 0.14em;
-  background: rgba(247, 242, 234, 0.96);
-  border-bottom: 1px solid rgba(45, 72, 59, 0.08);
+  background: #111827;
+  border-bottom: 1px solid var(--admin-border);
 }
 
 thead th.align-right,

@@ -3,9 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Mychat — Private Rooms</title>
+  <title>Mychat | Secure Communication</title>
   <meta name="description" content="Mychat v7: private P2P rooms, group rooms, and password-protected operations rooms with encrypted delivery." />
-  <meta name="theme-color" content="#e4ece3" />
+  <meta name="theme-color" content="#7C3AED" />
+  <link rel="manifest" href="manifest.json" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="apple-touch-icon" href="assets/brand/logo.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&family=Outfit:wght@600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
@@ -98,7 +102,11 @@
           <span class="version-pill">v7</span>
         </div>
         <div class="sidebar-auth">
-          <button id="open-auth-btn" class="btn btn-primary w-100" type="button">Sign In</button>
+          <button id="open-auth-btn" class="btn btn-primary w-100" type="button" style="margin-bottom:0.5rem;">Sign In</button>
+          <a href="https://github.com/dhruv-dk17/mychat_v7/releases" target="_blank" class="btn btn-ghost w-100 btn-sm" style="font-size:0.75rem; border:1px solid rgba(124,58,237,0.3);">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Download APK
+          </a>
           <div id="user-profile-dropdown" style="display:none; cursor:pointer;"></div>
         </div>
       </div>
@@ -120,7 +128,7 @@
           </span>
           <span class="brand-wordmark">
             <span class="brand-name">Mychat</span>
-            <span class="brand-subtitle">Private rooms</span>
+            <span class="brand-subtitle">Private &amp; Encrypted</span>
           </span>
         </a>
         <span class="version-pill">v7</span>
@@ -155,7 +163,7 @@
               </button>
             </div>
 
-            <div id="requests-panel" class="hidden room-form" style="margin-bottom:1rem; padding:1rem; border:1px solid var(--border); border-radius:var(--r-md); background:rgba(255,255,255,0.4);">
+            <div id="requests-panel" class="hidden room-form" style="margin-bottom:1rem; padding:1rem; border:1px solid rgba(124,58,237,0.2); border-radius:var(--r-md); background:rgba(15,23,42,0.6); backdrop-filter:blur(8px);">
               <div class="input-label" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
                 <span>Pending Requests</span>
                 <button id="refresh-requests-btn" class="btn btn-sm btn-ghost" style="padding:0.25rem 0.5rem; min-height:0;">Refresh</button>
@@ -165,8 +173,8 @@
               </div>
             </div>
 
-            <div class="room-tabs" style="display:flex; gap:0.5rem; margin-bottom:1rem; padding:4px; background:rgba(15, 23, 42, 0.04); border-radius:var(--r-md);">
-               <button class="btn w-100 btn-sm tab-btn active" id="tab-my-contacts" style="background:#fff; color:var(--text); box-shadow:var(--shadow-sm);">My Contacts</button>
+            <div class="room-tabs" style="display:flex; gap:0.5rem; margin-bottom:1rem; padding:4px; background:rgba(15, 23, 42, 0.4); border-radius:var(--r-md); border:1px solid rgba(124,58,237,0.15);">
+               <button class="btn w-100 btn-sm tab-btn active" id="tab-my-contacts" style="background:rgba(124,58,237,0.25); color:#d2bbff; box-shadow:0 0 8px rgba(124,58,237,0.2);">My Contacts</button>
                <button class="btn w-100 btn-sm tab-btn" id="tab-global-search" style="background:transparent; color:var(--text-muted);">Global Search</button>
             </div>
 
@@ -195,8 +203,15 @@
 
             <button class="btn btn-primary room-create-btn" id="create-private-btn" type="button">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              Create New Room
+              Create Identity & Unlock
             </button>
+            <div style="margin-top:1.5rem; text-align:center;">
+              <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:0.75rem;">Prefer the dedicated mobile experience?</p>
+              <a href="https://github.com/dhruv-dk17/mychat_v7/releases" target="_blank" class="btn btn-sm btn-ghost" style="border:1px solid rgba(124,58,237,0.2); padding:0.5rem 1rem;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:6px; vertical-align:middle;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-15"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Download Mychat APK
+              </a>
+            </div>
 
             <div class="divider">or join existing</div>
 
@@ -476,7 +491,7 @@
     document.getElementById('tab-my-contacts')?.addEventListener('click', (e) => {
       currentTab = 'my-contacts';
       document.querySelectorAll('.tab-btn').forEach(btn => { btn.style.background='transparent'; btn.style.color='var(--text-muted)'; btn.style.boxShadow='none'; });
-      e.target.style.background='#fff'; e.target.style.color='var(--text)'; e.target.style.boxShadow='var(--shadow-sm)';
+      e.target.style.background='rgba(124,58,237,0.25)'; e.target.style.color='#d2bbff'; e.target.style.boxShadow='0 0 8px rgba(124,58,237,0.2)';
       document.getElementById('contacts-view-search-input').placeholder = 'Search my contacts...';
       document.getElementById('contacts-view-search-input').value = '';
       if (typeof getAllContacts === 'function') getAllContacts().then(renderContacts);
@@ -485,7 +500,7 @@
     document.getElementById('tab-global-search')?.addEventListener('click', (e) => {
       currentTab = 'global-search';
       document.querySelectorAll('.tab-btn').forEach(btn => { btn.style.background='transparent'; btn.style.color='var(--text-muted)'; btn.style.boxShadow='none'; });
-      e.target.style.background='#fff'; e.target.style.color='var(--text)'; e.target.style.boxShadow='var(--shadow-sm)';
+      e.target.style.background='rgba(124,58,237,0.25)'; e.target.style.color='#d2bbff'; e.target.style.boxShadow='0 0 8px rgba(124,58,237,0.2)';
       document.getElementById('contacts-view-search-input').placeholder = 'Find username on network...';
       document.getElementById('contacts-view-search-input').value = '';
       renderGlobalResults([]); // Clear results
@@ -624,10 +639,34 @@
           <div class="contact-avatar" style="background:var(--accent);">${initials}</div>
           <div class="contact-info">
             <span class="contact-name">${c.username}</span>
-            <span class="contact-fp">Global Network</span>
+            <h3 class="panel-title">Mychat Search</h3>
           </div>
           ${actionHTML}
          `;
+
+         row.querySelector('.accept-q-btn')?.addEventListener('click', async (e) => {
+              const btn = e.target;
+              btn.disabled = true;
+              btn.textContent = 'Approving...';
+              try {
+                 // Find the pending request for this user and accept it
+                 const reqs = typeof apiGetPendingRequests === 'function' ? await apiGetPendingRequests() : [];
+                 const matching = reqs.find(r => r.from_username === c.username);
+                 if (matching) {
+                   await apiRespondContactRequest(matching.id, true);
+                   btn.className = 'btn btn-ghost btn-sm disabled';
+                   btn.textContent = 'Added';
+                   if (typeof showToast === 'function') showToast(`Accepted ${c.username}`, 'success');
+                   refreshRequests();
+                 } else {
+                   btn.textContent = 'Not Found';
+                 }
+              } catch(err) {
+                 btn.disabled = false;
+                 btn.textContent = 'Approve';
+                 if (typeof showToast === 'function') showToast(err.message || 'Failed to approve', 'error');
+              }
+         });
 
          row.querySelector('.add-q-btn')?.addEventListener('click', async (e) => {
              const btn = e.target;
@@ -675,9 +714,26 @@
           <button class="btn btn-primary btn-sm contact-chat-btn" data-fp="${c.fingerprint}" type="button">Chat</button>
           <button class="btn btn-ghost btn-sm contact-remove-btn" data-fp="${c.fingerprint}" type="button">Remove</button>
         `;
-        row.querySelector('.contact-chat-btn')?.addEventListener('click', () => {
-          if (typeof navigateToChat === 'function') {
-            navigateToChat(c.fingerprint, 'private', c.displayName || 'User', 'guest');
+        row.querySelector('.contact-chat-btn')?.addEventListener('click', async () => {
+          try {
+            const myFp = typeof getIdentityFingerprintSync === 'function' ? getIdentityFingerprintSync() : '';
+            if (!myFp || !c.fingerprint) {
+              if (typeof showToast === 'function') showToast('Cannot open chat without identity', 'error');
+              return;
+            }
+            const sorted = [myFp, c.fingerprint].sort();
+            const hashBuf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('contact-room|' + sorted.join('|')));
+            const hex = Array.from(new Uint8Array(hashBuf)).map(b => b.toString(16).padStart(2, '0')).join('');
+            const roomId = 'c-' + hex.substring(0, 14);
+            const password = 'cpwd-' + hex.substring(14, 46);
+            sessionStorage.setItem('joinPassword_' + roomId, password);
+            const session = typeof getUserSession === 'function' ? getUserSession() : null;
+            const displayName = session?.username || c.displayName || 'User';
+            if (typeof navigateToChat === 'function') {
+              navigateToChat(roomId, 'contact', displayName, 'guest');
+            }
+          } catch (err) {
+            if (typeof showToast === 'function') showToast('Failed to open chat: ' + err.message, 'error');
           }
         });
         row.querySelector('.contact-remove-btn')?.addEventListener('click', async () => {
@@ -704,6 +760,12 @@
       refreshRequests();
     });
   })();
+  </script>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(e => console.warn('[SW] Registration failed', e));
+    }
   </script>
 
 </body>

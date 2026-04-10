@@ -19,6 +19,7 @@ function resolveApiBase() {
     return 'http://localhost:10000/api';
   }
 
+  // Default relative API path - Render build will replace this with full URL
   return '/api';
 }
 

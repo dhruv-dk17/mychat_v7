@@ -1,5 +1,5 @@
 {
-  "name": "mychat_v7",
+  "name": "mychat",
   "version": "1.0.0",
   "description": "Mychat is a private, professional messaging platform designed for high-integrity communication using Peer-to-Peer (P2P) technology and end-to-end encryption (E2EE) via the Web Crypto API.",
   "main": "index.js",
@@ -11,16 +11,16 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/dhruv-dk17/mychat_v7.git"
+    "url": "git+https://github.com/dhruv-dk17/mychat.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "bugs": {
-    "url": "https://github.com/dhruv-dk17/mychat_v7/issues"
+    "url": "https://github.com/dhruv-dk17/mychat/issues"
   },
-  "homepage": "https://github.com/dhruv-dk17/mychat_v7#readme",
+  "homepage": "https://github.com/dhruv-dk17/mychat#readme",
   "dependencies": {
     "@capacitor/android": "^8.3.0",
     "@capacitor/cli": "^8.3.0",

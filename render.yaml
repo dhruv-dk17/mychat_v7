@@ -30,12 +30,12 @@ services:
         # Tells the backend to strictly only allow requests from the frontend
         fromService:
           type: web
-          name: mychat-v7-frontend
+          name: mychat
           envVarKey: RENDER_EXTERNAL_URL
 
   # 2. Frontend Static Site
   - type: web
-    name: mychat-frontend
+    name: mychat
     env: static
     rootDir: frontend
     # This automatically injects the backend's URL into config.js during the build!

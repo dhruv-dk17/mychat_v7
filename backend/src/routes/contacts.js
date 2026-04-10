@@ -37,6 +37,7 @@ router.get('/search', requireAuth, async (req, res) => {
   if (!q) return res.json({ success: true, results: [] });
 
   try {
+    logger.info('contact_search_executing', { query: q, userId: req.user.username });
     const result = await pool.query(`
       SELECT username
       FROM users
@@ -45,6 +46,8 @@ router.get('/search', requireAuth, async (req, res) => {
         AND username != $2
       LIMIT 10
     `, [`%${q}%`, req.user.username]);
+    
+    logger.info('contact_search_results', { query: q, count: result.rows.length });
     
     // Check if there's already a request or contact
     const usernames = result.rows.map(r => r.username);
@@ -89,7 +92,6 @@ router.get('/search', requireAuth, async (req, res) => {
     res.json({ success: true, results: enriched });
   } catch (e) {
     logger.error('contact_search_failed', { error: e.message });
-    res.status(500).json({ error: 'Search failed' });
   }
 });
 

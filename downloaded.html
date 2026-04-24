@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Obsidian Luminary - Desktop Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "secondary-container": "#3e495d",
+                        "background": "#0b1326",
+                        "primary": "#4cd7f6",
+                        "on-surface": "#dae2fd",
+                        "primary-fixed-dim": "#4cd7f6",
+                        "on-primary-fixed": "#001f26",
+                        "on-primary": "#003640",
+                        "on-error": "#690005",
+                        "primary-fixed": "#acedff",
+                        "primary-container": "#06b6d4",
+                        "surface-tint": "#4cd7f6",
+                        "tertiary-fixed-dim": "#7bd0ff",
+                        "on-tertiary-container": "#00415a",
+                        "on-background": "#dae2fd",
+                        "tertiary-container": "#23b2ec",
+                        "surface-container-high": "#222a3d",
+                        "on-tertiary-fixed-variant": "#004c69",
+                        "surface-bright": "#31394d",
+                        "surface": "#0b1326",
+                        "error": "#ffb4ab",
+                        "on-secondary-fixed": "#111c2d",
+                        "on-tertiary": "#00354a",
+                        "tertiary": "#7bd0ff",
+                        "on-surface-variant": "#bcc9cd",
+                        "on-secondary-container": "#aeb9d0",
+                        "error-container": "#93000a",
+                        "inverse-surface": "#dae2fd",
+                        "on-secondary": "#263143",
+                        "on-primary-container": "#00424f",
+                        "secondary-fixed-dim": "#bcc7de",
+                        "outline": "#869397",
+                        "on-tertiary-fixed": "#001e2c",
+                        "secondary-fixed": "#d8e3fb",
+                        "surface-container-highest": "#2d3449",
+                        "outline-variant": "#3d494c",
+                        "inverse-on-surface": "#283044",
+                        "surface-container": "#171f33",
+                        "surface-dim": "#0b1326",
+                        "tertiary-fixed": "#c4e7ff",
+                        "inverse-primary": "#00687a",
+                        "on-error-container": "#ffdad6",
+                        "on-secondary-fixed-variant": "#3c475a",
+                        "surface-container-low": "#131b2e",
+                        "surface-variant": "#2d3449",
+                        "surface-container-lowest": "#060e20",
+                        "secondary": "#bcc7de",
+                        "on-primary-fixed-variant": "#004e5c"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Manrope"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-surface text-on-surface font-body antialiased h-screen w-screen overflow-hidden flex selection:bg-primary-container selection:text-on-primary-container">
+<!-- Mobile Nav (Hidden on Desktop) -->
+<nav class="md:hidden bg-slate-900/60 backdrop-blur-2xl font-inter text-xs uppercase tracking-widest fixed bottom-0 w-full z-50 pb-safe shadow-[0_-4px_20px_rgba(0,0,0,0.4)] flex justify-around items-center h-20 px-4">
+<div class="flex flex-col items-center justify-center text-cyan-400 after:content-[''] after:w-1 after:h-1 after:bg-cyan-400 after:rounded-full after:mt-1 after:shadow-[0_0_8px_#06b6d4] hover:text-cyan-300 transition-all active:scale-95 duration-200">
+<span class="material-symbols-outlined" data-icon="chat_bubble">chat_bubble</span>
+</div>
+<div class="flex flex-col items-center justify-center text-slate-500 hover:text-cyan-300 transition-all active:scale-95 duration-200">
+<span class="material-symbols-outlined" data-icon="explore">explore</span>
+</div>
+<div class="flex flex-col items-center justify-center text-slate-500 hover:text-cyan-300 transition-all active:scale-95 duration-200">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+</div>
+<div class="flex flex-col items-center justify-center text-slate-500 hover:text-cyan-300 transition-all active:scale-95 duration-200">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</div>
+</nav>
+<!-- Top App Bar (Mobile Only) -->
+<header class="md:hidden bg-slate-950/70 backdrop-blur-xl font-manrope tracking-tight font-bold fixed top-0 w-full z-50 shadow-[0_0_15px_rgba(6,182,212,0.04)] flex justify-between items-center px-6 h-16">
+<img alt="user_profile_avatar" class="w-8 h-8 rounded-full object-cover scale-95 active:scale-90 transition-transform" data-alt="close up of a professional headshot of a person, soft cinematic lighting, dark background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD-gwxJNw_rCZegpcF82k-1DoIuLzXcyMnJcbNWbOMW-5mAScjUAvYUKoXxRUqAJuY5YbcCHzueUYTPRNHDlVhVPp06FOtiwhi7kpFjRE1Ye8hRCznay8mm9HxupLasEsL1kGVyOWiaEp1RZhPutEwnwjoCqTa5ZlwARuMWAS1gGgmceGF2XoJZKcsnc--e9gVL_C1dYHCsmS0t6OFGKWhPuYQqsZOMPrjD2XqTA4ZN4sCYfyIHjyTV5fsGeuoJcdfyJvgEYlahBko"/>
+<span class="text-xl font-black text-cyan-500 tracking-tighter">Obsidian</span>
+<button class="text-slate-400 hover:bg-slate-800/50 transition-colors duration-200 p-2 rounded-full scale-95 active:scale-90 transition-transform">
+<span class="material-symbols-outlined" data-icon="search">search</span>
+</button>
+</header>
+<!-- Left Rail: Side Nav (Desktop) -->
+<aside class="hidden md:flex flex-col w-20 bg-surface-container-low h-full py-8 items-center justify-between border-r border-outline-variant/15 shrink-0 z-10">
+<div class="flex flex-col items-center gap-8">
+<!-- Brand Logo Mark -->
+<div class="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary-container flex items-center justify-center shadow-[0_0_15px_rgba(76,215,246,0.3)] mb-4">
+<span class="material-symbols-outlined text-surface-lowest" data-icon="auto_awesome" data-weight="fill">auto_awesome</span>
+</div>
+<!-- Nav Items -->
+<nav class="flex flex-col gap-6 w-full items-center">
+<button class="w-12 h-12 rounded-xl bg-surface-container-high text-primary flex items-center justify-center relative shadow-[0_8px_20px_rgba(0,0,0,0.3)] hover:bg-surface-container-highest transition-colors duration-200">
+<span class="material-symbols-outlined" data-icon="chat_bubble" data-weight="fill">chat_bubble</span>
+<div class="absolute -right-1 -top-1 w-3 h-3 bg-primary rounded-full shadow-[0_0_8px_#4cd7f6]"></div>
+</button>
+<button class="w-12 h-12 rounded-xl text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors duration-200 flex items-center justify-center">
+<span class="material-symbols-outlined" data-icon="explore">explore</span>
+</button>
+<button class="w-12 h-12 rounded-xl text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors duration-200 flex items-center justify-center">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+</button>
+<button class="w-12 h-12 rounded-xl text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors duration-200 flex items-center justify-center">
+<span class="material-symbols-outlined" data-icon="bar_chart">bar_chart</span>
+</button>
+</nav>
+</div>
+<div class="flex flex-col items-center gap-6">
+<button class="w-12 h-12 rounded-xl text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors duration-200 flex items-center justify-center">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+<button class="w-10 h-10 rounded-full overflow-hidden hover:ring-2 hover:ring-primary transition-all duration-200">
+<img alt="User Profile" class="w-full h-full object-cover" data-alt="close up of a professional headshot of a person, soft cinematic lighting, dark background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBuSlNrcjuot5037VVzZMV_gwewzX0EiRYfwVMvItm70SZ_KKECi9j7nUQw4ik8MSu7v7W3DyZhD1LMp1_LAnV4TDTxeWaPOWakXK_0MKhKQpOAtawN4ylj_b2i3LO9_uuGYNqcE0EHvWA9zBQpYP-QZeypKYKafavHAjXSzzpy6jJ99g1hlO-_wRXd6Pc52YEHOKVrKZZm5CAb6DQVLAOr45mk26wydvt3BrTdQF25XvzSUMvF_0NAGOoLVfusTESGPjZ9mL18VdY"/>
+</button>
+</div>
+</aside>
+<!-- Middle Pane: Chat List -->
+<section class="hidden md:flex flex-col w-80 bg-surface h-full border-r border-outline-variant/15 shrink-0 z-0 pt-20 md:pt-0">
+<!-- Header & Search -->
+<div class="p-6 pb-4">
+<div class="flex justify-between items-center mb-6">
+<h1 class="font-headline text-2xl font-bold tracking-tight text-on-surface">Messages</h1>
+<button class="w-8 h-8 rounded-full bg-surface-container-high flex items-center justify-center text-on-surface hover:bg-surface-container-highest transition-colors">
+<span class="material-symbols-outlined text-sm" data-icon="edit_square">edit_square</span>
+</button>
+</div>
+<div class="relative w-full">
+<div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+<span class="material-symbols-outlined text-on-surface-variant text-lg" data-icon="search">search</span>
+</div>
+<input class="w-full bg-surface-container-lowest text-on-surface text-sm rounded border-outline-variant/15 border py-2.5 pl-10 pr-4 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all shadow-inner placeholder-on-surface-variant/50" placeholder="Search conversations..." type="text"/>
+</div>
+</div>
+<!-- Filter Chips -->
+<div class="px-6 pb-2 flex gap-2 overflow-x-auto no-scrollbar">
+<button class="px-3 py-1 rounded-full bg-surface-container-high text-primary text-xs font-semibold whitespace-nowrap shadow-[0_2px_8px_rgba(0,0,0,0.2)]">All Messages</button>
+<button class="px-3 py-1 rounded-full bg-surface-container text-on-surface-variant text-xs font-medium whitespace-nowrap hover:bg-surface-container-high transition-colors">Unread</button>
+<button class="px-3 py-1 rounded-full bg-surface-container text-on-surface-variant text-xs font-medium whitespace-nowrap hover:bg-surface-container-high transition-colors">Archived</button>
+</div>
+<!-- Chat List Items -->
+<div class="flex-1 overflow-y-auto px-3 py-2 space-y-1">
+<!-- Active Item -->
+<button class="w-full p-3 rounded-lg bg-surface-container-high flex items-center gap-3 text-left shadow-[0_4px_12px_rgba(0,0,0,0.2)] relative group transition-all">
+<div class="relative">
+<img alt="Alex Jenkins" class="w-12 h-12 rounded-full object-cover ring-2 ring-primary shadow-[0_0_10px_rgba(76,215,246,0.3)]" data-alt="professional headshot of a woman with dark hair, studio lighting, neutral background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuClgyN9OB19AaiJpLhaPQIE8dgNsucy4rZKNo6jv4iR4-XkectwK4De18I5XcpmGbXojFGoWx68iNWZdrcp12EauJMmmXsbCoZGy4d3kXS81pV2n3s_LnFWkPJJG-d6QjhqraIMvuOsedoTC-XQsYMgPdh3B3nKw84nwvUeunRgI-S2Glq15tMAxBSAkOJ7eckhfn7yV0W7lJD1pbpNp6LMl3N_AryCBdTveEbiZtFC5V7dfaLjq1Ss4s1-3P6E4MgKGKIewmiSugU"/>
+<div class="absolute bottom-0 right-0 w-3 h-3 bg-green-400 rounded-full border-2 border-surface-container-high"></div>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex justify-between items-baseline mb-0.5">
+<span class="font-headline font-bold text-on-surface truncate pr-2">Alex Jenkins</span>
+<span class="font-label text-[10px] text-primary font-medium shrink-0">10:42 AM</span>
+</div>
+<p class="text-sm text-primary-fixed-dim truncate font-medium">I've uploaded the new wireframes.</p>
+</div>
+</button>
+<!-- Inactive Items -->
+<button class="w-full p-3 rounded-lg hover:bg-surface-container flex items-center gap-3 text-left transition-colors group">
+<div class="relative">
+<img alt="Marcus Chen" class="w-12 h-12 rounded-full object-cover" data-alt="headshot of a man wearing glasses, urban environment background, natural light" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDnL7uBn1dJSmb-COV77cW6bHE2a51bnsxBFo60xBhbssUFWTnXNCCzwiRLO4OAjpBtscIPwgBdbRYSg9IiItzP_jpuWroIXVTQ7xa2bwS_kE4PGuYFFNSKm51YXVVo8rw9a7A8S_HEsTwI7uKmVbrkZDOuY2oXRP0qZWaExivG5sE-BN8BM7AHU52liwzo_COdMFO9WY0j_292-d-RDfxdUH1Hz0pjWDWWevEmKX3KQ89FCrZtI7robBQZT-bXUeVO4YLy7qgng5M"/>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex justify-between items-baseline mb-0.5">
+<span class="font-headline font-bold text-on-surface truncate pr-2">Marcus Chen</span>
+<span class="font-label text-[10px] text-on-surface-variant shrink-0">Yesterday</span>
+</div>
+<p class="text-sm text-on-surface-variant truncate">Sounds good, let's sync up tomorrow.</p>
+</div>
+</button>
+<button class="w-full p-3 rounded-lg hover:bg-surface-container flex items-center gap-3 text-left transition-colors group">
+<div class="relative">
+<div class="w-12 h-12 rounded-full bg-surface-container-highest flex items-center justify-center text-on-surface font-headline font-bold text-lg">
+                        DP
+                    </div>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex justify-between items-baseline mb-0.5">
+<span class="font-headline font-bold text-on-surface truncate pr-2">Design Portal Sync</span>
+<span class="font-label text-[10px] text-on-surface-variant shrink-0">Mon</span>
+</div>
+<p class="text-sm text-on-surface-variant truncate">Sarah: Are we still on track for Friday?</p>
+</div>
+</button>
+<button class="w-full p-3 rounded-lg hover:bg-surface-container flex items-center gap-3 text-left transition-colors group">
+<div class="relative">
+<img alt="Elena Rostova" class="w-12 h-12 rounded-full object-cover" data-alt="headshot of a smiling woman, outdoor natural lighting, blurred greenery background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDisyPbxD1mtCJ_42ngfIMs6xEpw_C2Lgb2wdwRCJJ4okzsX4jzDrHFKHTADU7FsHYFALpyAonJZtfnMHGz-ibSpnNXPyA9qqFDVU4dXKFccEXIqTIhbD9zzUHwfKhKbfbj2WImZTGKW8dEAh-jYHClpxaDtOcc1AC0VqQrpzsb1i_bCt4KekffUOpxTbHQYLJYsJg4HieVgjeFk1E0lZQqVXHo8bqI1EEr5z-SukaZzOBdh8dKSDNl13O-uZYWvZZSw-3uQxiM5-U"/>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex justify-between items-baseline mb-0.5">
+<span class="font-headline font-bold text-on-surface truncate pr-2">Elena Rostova</span>
+<span class="font-label text-[10px] text-on-surface-variant shrink-0">Mon</span>
+</div>
+<p class="text-sm text-on-surface-variant truncate">Thanks for the update!</p>
+</div>
+</button>
+</div>
+</section>
+<!-- Right Pane: Active Conversation -->
+<main class="flex-1 flex flex-col h-full bg-surface relative pt-16 md:pt-0">
+<!-- Conversation Header -->
+<header class="h-20 border-b border-outline-variant/15 flex items-center justify-between px-6 bg-surface/80 backdrop-blur-md z-10 sticky top-0">
+<div class="flex items-center gap-4">
+<img alt="Alex Jenkins" class="w-10 h-10 rounded-full object-cover" data-alt="professional headshot of a woman with dark hair, studio lighting, neutral background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA3ei9tAl_y44Pp_tklNwXnPHSx_wwm4z6gRnzRuHT0dlTiMtcYOlAcb9QirbPAwCZPO4crjC5RzftUt8GU2JdjoKDuNojDg9lRPI0UoUdhryfKaNcE4UYi-WE8iprDYbtA_6H60NSLa3TwZ7KTYMRNipFzhMN4Mr3NxVf_mRafL06rehKQ6zPQM4aSdtrRTvPaGKMkYxGOI0rAb8oZwyt-Ez6ptdnSKdeXT4dZ5F_hC29t5uoNsPb0UFo58L9YQ4Z5f5l04CP2N2o"/>
+<div>
+<h2 class="font-headline font-bold text-lg text-on-surface leading-tight">Alex Jenkins</h2>
+<div class="flex items-center gap-1.5 mt-0.5">
+<div class="w-2 h-2 bg-green-400 rounded-full shadow-[0_0_5px_#4ade80]"></div>
+<span class="text-xs font-label text-on-surface-variant">Online</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<button class="w-10 h-10 rounded-full hover:bg-surface-container flex items-center justify-center text-on-surface-variant hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined" data-icon="videocam">videocam</span>
+</button>
+<button class="w-10 h-10 rounded-full hover:bg-surface-container flex items-center justify-center text-on-surface-variant hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined" data-icon="call">call</span>
+</button>
+<div class="w-px h-6 bg-outline-variant/30 mx-1"></div>
+<button class="w-10 h-10 rounded-full hover:bg-surface-container flex items-center justify-center text-on-surface-variant hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined" data-icon="more_vert">more_vert</span>
+</button>
+</div>
+</header>
+<!-- Message Stream -->
+<div class="flex-1 overflow-y-auto p-6 flex flex-col gap-6">
+<!-- Date Divider -->
+<div class="flex justify-center my-2">
+<span class="bg-surface-container text-on-surface-variant text-[10px] font-label font-medium px-3 py-1 rounded-full border border-outline-variant/15">Today</span>
+</div>
+<!-- Incoming Message Block -->
+<div class="flex flex-col gap-1 items-start max-w-[70%]">
+<div class="flex items-end gap-2">
+<img alt="Alex Jenkins" class="w-6 h-6 rounded-full object-cover mb-1" data-alt="professional headshot of a woman with dark hair, studio lighting, neutral background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBvYBqfqWb8GysXwmE-LwHhyNte73pB7kkmTVQGOfmKdEkU6vC73-yg0BZuB5RxAH2VIqgTa4npuF_Do92H20UaHcjYuGk1Y2X4eGq0lwQ7-qG2Hm_sSHUKeoaLbQjNI6sbQNcIDhowfuzrD5M8w30dpHvgr_PusWFBbL8dTlxk59Bl1AFDvxuywRipzTPmEH_DBKtgJ9cm5D10PN0MTuWjcewhk_GuB7zVH31R1YAMuDhIZjtwafbkm_faCCJ1Z_JqqdiXbvelHCY"/>
+<div class="bg-surface-container-high text-on-surface p-4 rounded-lg rounded-bl-none shadow-[0_4px_12px_rgba(0,0,0,0.1)] border border-outline-variant/10">
+<p class="text-sm">Hey! Did you get a chance to review the new design system files I sent over yesterday?</p>
+</div>
+</div>
+<span class="text-[10px] text-on-surface-variant font-label ml-8 mt-1">10:30 AM</span>
+</div>
+<!-- Outgoing Message Block -->
+<div class="flex flex-col gap-1 items-end self-end max-w-[70%]">
+<div class="bg-gradient-to-br from-primary to-primary-container text-on-primary-container p-4 rounded-lg rounded-br-none shadow-[0_4px_15px_rgba(76,215,246,0.15)]">
+<p class="text-sm font-medium">Yes, taking a look right now. The dark mode palette is stunning.</p>
+</div>
+<span class="text-[10px] text-on-surface-variant font-label mr-1 mt-1 flex items-center gap-1">
+                    10:35 AM
+                    <span class="material-symbols-outlined text-[12px] text-primary" data-icon="done_all">done_all</span>
+</span>
+</div>
+<!-- Outgoing Message Block (Consecutive) -->
+<div class="flex flex-col gap-1 items-end self-end max-w-[70%] -mt-4">
+<div class="bg-gradient-to-br from-primary to-primary-container text-on-primary-container p-4 rounded-lg rounded-br-none shadow-[0_4px_15px_rgba(76,215,246,0.15)]">
+<p class="text-sm font-medium">I particularly love the "No-Line" rule implementation.</p>
+</div>
+<span class="text-[10px] text-on-surface-variant font-label mr-1 mt-1 flex items-center gap-1">
+                    10:36 AM
+                    <span class="material-symbols-outlined text-[12px] text-primary" data-icon="done_all">done_all</span>
+</span>
+</div>
+<!-- Incoming Message Block w/ Attachment -->
+<div class="flex flex-col gap-1 items-start max-w-[70%]">
+<div class="flex items-end gap-2">
+<img alt="Alex Jenkins" class="w-6 h-6 rounded-full object-cover mb-1" data-alt="professional headshot of a woman with dark hair, studio lighting, neutral background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB675N2O2olDzWmNJiIbsuyZSy2fXLE0-uAkJBg9dQJHc0wINofax4HqaIk4kIQWHK3S0peXjqjhHk1-BdzNyepa5o_Ne_oqkQxaBM1nUgHdXDuENFIoUoKjlkHQ3ApQEL2J8SMogNV3Aw9CVtmEdbdRgiHLcLPfd11JUghLNmIGu1u9rUD9jVkz7D_guETgZc7rhi7K4nefAE-BYN_UdIE8-H2hz6z9iRTcEw03sMPO3rG_zJOTTNKyL_4tfvpvpQP84rtFfrB4Do"/>
+<div class="bg-surface-container-high text-on-surface p-4 rounded-lg rounded-bl-none shadow-[0_4px_12px_rgba(0,0,0,0.1)] border border-outline-variant/10">
+<p class="text-sm mb-3">Awesome! I've uploaded the new wireframes for the dashboard section as well. Let me know what you think of the right pane layout.</p>
+<!-- File Attachment Card -->
+<div class="bg-surface-container-lowest p-3 rounded flex items-center gap-3 border border-outline-variant/20 hover:border-primary/50 transition-colors cursor-pointer group">
+<div class="w-10 h-10 rounded bg-primary-container/20 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined" data-icon="insert_drive_file">insert_drive_file</span>
+</div>
+<div class="flex-1 overflow-hidden">
+<p class="text-sm font-semibold text-on-surface truncate group-hover:text-primary transition-colors">dashboard_v2_dark.fig</p>
+<p class="text-xs text-on-surface-variant">4.2 MB • Figma File</p>
+</div>
+<button class="text-on-surface-variant hover:text-primary transition-colors p-1">
+<span class="material-symbols-outlined text-sm" data-icon="download">download</span>
+</button>
+</div>
+</div>
+</div>
+<span class="text-[10px] text-on-surface-variant font-label ml-8 mt-1">10:42 AM</span>
+</div>
+<!-- Typing Indicator (Ambient) -->
+<div class="flex items-end gap-2 max-w-[70%] mt-2">
+<img alt="Alex Jenkins" class="w-6 h-6 rounded-full object-cover mb-1 opacity-50" data-alt="professional headshot of a woman with dark hair, studio lighting, neutral background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA-By7gwFke4VB2kls7m69OHwua5Qd0lOymF2NcHxL3kpkZs_qi-cpaIuGW8mbp2jtE7bKGYm1JUu2mTwisklspHavFhoDj6SZetpd7Bc5ENqgE2QhUMGuuuwQvfwJFzotxS8FuZ4PGufgUvIGJUvUeM1lW_1KTKdydnlgs-CkRC9LyeEKDJaNBYmJBm21kjP5fZMqLW6ks1H_WygaBjaG7350tSEcpaa6tZXa95mBjbBeI5mQGet5PUecFhRuH2b3wsT3g42h27C0"/>
+<div class="bg-surface-container-high p-3 rounded-lg rounded-bl-none flex items-center gap-1.5 w-16 h-10">
+<div class="w-1.5 h-1.5 bg-on-surface-variant rounded-full animate-bounce" style="animation-delay: 0ms;"></div>
+<div class="w-1.5 h-1.5 bg-on-surface-variant rounded-full animate-bounce" style="animation-delay: 150ms;"></div>
+<div class="w-1.5 h-1.5 bg-on-surface-variant rounded-full animate-bounce" style="animation-delay: 300ms;"></div>
+</div>
+</div>
+</div>
+<!-- Input Area (The Obsidian Well) -->
+<div class="p-6 pt-2 pb-8 md:pb-6 bg-surface">
+<div class="bg-surface-container-lowest rounded flex items-end gap-2 p-2 border border-outline-variant/15 focus-within:border-primary focus-within:shadow-[inset_0_0_4px_rgba(76,215,246,0.2)] transition-all relative">
+<button class="p-2 rounded hover:bg-surface-container-high text-on-surface-variant hover:text-primary transition-colors self-end mb-1">
+<span class="material-symbols-outlined" data-icon="add_circle">add_circle</span>
+</button>
+<div class="flex-1 max-h-32 overflow-y-auto no-scrollbar">
+<textarea class="w-full bg-transparent text-on-surface text-sm p-3 resize-none focus:outline-none placeholder-on-surface-variant/50 min-h-[48px]" placeholder="Type a message..." rows="1"></textarea>
+</div>
+<div class="flex items-center gap-1 self-end mb-1 mr-1">
+<button class="p-2 rounded hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface transition-colors hidden sm:block">
+<span class="material-symbols-outlined text-sm" data-icon="sentiment_satisfied">sentiment_satisfied</span>
+</button>
+<button class="w-10 h-10 rounded bg-gradient-to-br from-primary to-primary-container flex items-center justify-center text-on-primary-container shadow-[0_4px_12px_rgba(76,215,246,0.2)] hover:shadow-[0_0_15px_#4cd7f6] hover:scale-95 transition-all active:scale-90 ml-1">
+<span class="material-symbols-outlined text-lg" data-icon="send">send</span>
+</button>
+</div>
+</div>
+</div>
+</main>
+</body></html>

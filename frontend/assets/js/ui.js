@@ -5,7 +5,6 @@ let _toastRunning = false;
 let _audioCtx = null;
 let soundMuted = false;
 
-const THEMES = ['default', 'sunset', 'hacker'];
 const PRIVACY_TIPS = [
   '🛡️ Tip: Keep room aliases separate from your real-world identity.',
   '🔄 Tip: Rotate room passwords when the operation changes.',
@@ -13,31 +12,128 @@ const PRIVACY_TIPS = [
   '📅 Tip: Operations room history stays encrypted and expires automatically after 7 days.'
 ];
 
-function initTheme() {
-  const saved = localStorage.getItem('mychat_theme') || 'default';
-  applyTheme(saved);
+const THEME_STORAGE_KEY = 'mychat-theme';
+
+function updateThemeButtonLabel(themeName) {
+  const button = document.getElementById('theme-btn');
+  if (!button) return;
+  button.textContent = themeName === 'dark' ? 'Theme: Dark' : 'Theme: Light';
 }
 
-function applyTheme(themeName) {
-  if (themeName === 'default') {
-    document.documentElement.removeAttribute('data-theme');
-    return;
-  }
+function syncThemeMeta(themeName) {
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (!meta) return;
+  meta.setAttribute('content', themeName === 'dark' ? '#111815' : '#efe8dc');
+}
+
+function initTheme() {
+  let themeName = 'light';
+  try {
+    const stored = localStorage.getItem(THEME_STORAGE_KEY);
+    if (stored === 'dark' || stored === 'light') themeName = stored;
+  } catch (error) {}
   document.documentElement.setAttribute('data-theme', themeName);
+  updateThemeButtonLabel(themeName);
+  syncThemeMeta(themeName);
+}
+
+// ── Accessibility ────────────────────────────────────────────────
+window.announce = function(msg, assertive = false) {
+  const el = document.getElementById('announcer');
+  if (!el) return;
+  el.setAttribute('aria-live', assertive ? 'assertive' : 'polite');
+  // Briefly clear to trigger screen reader
+  el.textContent = '';
+  setTimeout(() => el.textContent = msg, 50);
+};
+
+window.initKeyboardNavigation = function() {
+  document.addEventListener('keydown', e => {
+    // Escape to close modals or cancel actions
+    if (e.key === 'Escape') {
+      const openModal = document.querySelector('.modal-visible');
+      if (openModal) {
+        hideModal(openModal.id);
+        return;
+      }
+      const editPreview = document.getElementById('edit-preview');
+      if (editPreview && !editPreview.hidden) {
+        document.getElementById('edit-cancel-btn')?.click();
+        return;
+      }
+      const replyPreview = document.getElementById('reply-preview');
+      if (replyPreview && !replyPreview.hidden) {
+        document.getElementById('reply-cancel-btn')?.click();
+        return;
+      }
+      if (typeof closeContextMenu === 'function') closeContextMenu();
+    }
+
+    // Ctrl+Shift+N for New Conversation
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'n') {
+      e.preventDefault();
+      navigateHome();
+    }
+
+    // Arrow keys for message navigation if focus is inside chat feed
+    if ((e.key === 'ArrowUp' || e.key === 'ArrowDown') && document.activeElement) {
+      const feed = document.getElementById('chat-feed');
+      if (feed && feed.contains(document.activeElement)) {
+        const msgs = Array.from(feed.querySelectorAll('.msg-bubble, .media-bubble'));
+        const idx = msgs.indexOf(document.activeElement);
+        if (idx !== -1) {
+          e.preventDefault();
+          const nextIdx = e.key === 'ArrowUp' ? idx - 1 : idx + 1;
+          if (nextIdx >= 0 && nextIdx < msgs.length) {
+            msgs[nextIdx].focus();
+          }
+        }
+      }
+    }
+  });
+
+  // Trap focus inside visible modals
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Tab') {
+      const openModal = document.querySelector('.modal-visible');
+      if (!openModal) return;
+
+      const focusable = openModal.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+      if (!focusable.length) return;
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+
+      if (e.shiftKey && document.activeElement === first) {
+        last.focus();
+        e.preventDefault();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        first.focus();
+        e.preventDefault();
+      }
+    }
+  });
+};
+
+function applyTheme(themeName) {
+  const nextTheme = themeName === 'dark' ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', nextTheme);
+  updateThemeButtonLabel(nextTheme);
+  syncThemeMeta(nextTheme);
+  try {
+    localStorage.setItem(THEME_STORAGE_KEY, nextTheme);
+  } catch (error) {}
 }
 
 function cycleTheme() {
-  const current = document.documentElement.getAttribute('data-theme') || 'default';
-  let index = THEMES.indexOf(current);
-  if (index === -1) index = 0;
-  const next = THEMES[(index + 1) % THEMES.length];
-  applyTheme(next);
-  localStorage.setItem('mychat_theme', next);
-  showToast(`🎨 Theme changed to ${next.charAt(0).toUpperCase() + next.slice(1)}`, 'info');
+  const currentTheme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+  const nextTheme = currentTheme === 'dark' ? 'light' : 'dark';
+  applyTheme(nextTheme);
+  showToast(`Switched to ${nextTheme} theme`, 'info');
 }
 
-function showToast(message, type = 'info') {
-  _toastQueue.push({ message, type });
+function showToast(message, type = 'info', actions = []) {
+  _toastQueue.push({ message, type, actions: Array.isArray(actions) ? actions : [] });
   if (!_toastRunning) processToastQueue();
 }
 
@@ -47,7 +143,7 @@ function processToastQueue() {
     return;
   }
   _toastRunning = true;
-  const { message, type } = _toastQueue.shift();
+  const { message, type, actions } = _toastQueue.shift();
   const container = document.getElementById('toast-container');
   if (!container) {
     _toastRunning = false;
@@ -56,25 +152,60 @@ function processToastQueue() {
 
   const el = document.createElement('div');
   el.className = `toast toast-${type}`;
-  el.textContent = message;
+  const copy = document.createElement('span');
+  copy.className = 'toast-copy';
+  copy.textContent = message;
+  el.appendChild(copy);
+
+  if (actions.length) {
+    const actionRow = document.createElement('div');
+    actionRow.className = 'toast-actions';
+    actions.forEach(action => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'toast-action-btn';
+      button.textContent = action?.label || 'Action';
+      button.addEventListener('click', async event => {
+        event.stopPropagation();
+        try {
+          await action?.onClick?.();
+        } finally {
+          closeToast();
+        }
+      });
+      actionRow.appendChild(button);
+    });
+    el.appendChild(actionRow);
+  }
   container.appendChild(el);
 
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => el.classList.add('toast-show'));
-  });
-
-  setTimeout(() => {
+  let toastClosed = false;
+  const closeToast = () => {
+    if (toastClosed) return;
+    toastClosed = true;
     el.classList.remove('toast-show');
     setTimeout(() => {
       el.remove();
       processToastQueue();
     }, 350);
-  }, 3000);
+  };
+
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => el.classList.add('toast-show'));
+  });
+
+  setTimeout(closeToast, actions.length ? 5000 : 3000);
 }
 
 function showModal(id) {
   const el = document.getElementById(id);
-  if (el) el.classList.add('modal-visible');
+  if (el) {
+    el.classList.add('modal-visible');
+    el.setAttribute('role', 'dialog');
+    el.setAttribute('aria-modal', 'true');
+    const focusable = el.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+    if (focusable.length) focusable[0].focus();
+  }
 }
 
 function hideModal(id) {
@@ -105,8 +236,11 @@ function navigateHome() {
   setTimeout(() => { window.location.href = 'index.html'; }, 300);
 }
 
-function navigateToChat(roomId, type, username, role, key) {
-  const params = new URLSearchParams({ roomId, type, username, role });
+function navigateToChat(roomId, type, username, role, key, hostFingerprint) {
+  const safeRoomId = typeof normalizeRoomAlias === 'function' ? normalizeRoomAlias(roomId) : roomId;
+  const safeUsername = typeof normalizeDisplayName === 'function' ? normalizeDisplayName(username, 'User') : username;
+  const params = new URLSearchParams({ roomId: safeRoomId, type, username: safeUsername, role });
+  if (hostFingerprint) params.set('hostFingerprint', hostFingerprint);
   let url = `chat.html?${params.toString()}`;
   if (key) url += `#${key}`;
   if (typeof isNavigating !== 'undefined') isNavigating = true;
@@ -117,10 +251,11 @@ function navigateToChat(roomId, type, username, role, key) {
 function getChatParams() {
   const params = new URLSearchParams(window.location.search);
   return {
-    roomId: params.get('roomId'),
+    roomId: typeof normalizeRoomAlias === 'function' ? normalizeRoomAlias(params.get('roomId')) : params.get('roomId'),
     type: params.get('type'),
-    username: params.get('username'),
+    username: typeof normalizeDisplayName === 'function' ? normalizeDisplayName(params.get('username'), 'User') : params.get('username'),
     role: params.get('role'),
+    hostFingerprint: params.get('hostFingerprint'),
     key: window.location.hash.slice(1)
   };
 }
@@ -249,12 +384,18 @@ function updateOnlineCount(count) {
   const nextCount = count !== undefined ? count : connectedPeers.size + 1;
   const el = document.getElementById('online-count');
   if (el) {
-    el.innerHTML = `<span class="dot dot-green"></span> ${nextCount} online`;
+    el.replaceChildren();
+    const dot = document.createElement('span');
+    dot.className = 'dot dot-green';
+    el.append(dot, document.createTextNode(` ${nextCount} online`));
   }
   const mobileEl = document.getElementById('online-count-mobile');
   if (mobileEl) {
     mobileEl.style.display = '';
-    mobileEl.innerHTML = `<span class="dot dot-green"></span> ${nextCount}`;
+    mobileEl.replaceChildren();
+    const dot = document.createElement('span');
+    dot.className = 'dot dot-green';
+    mobileEl.append(dot, document.createTextNode(` ${nextCount}`));
   }
 }
 
@@ -265,7 +406,7 @@ function syncPermanentParticipantUI() {
 }
 
 function updateHostUI() {
-  if (typeof currentRoomType !== 'undefined' && currentRoomType === 'permanent') {
+  if (typeof currentRoomType !== 'undefined' && (currentRoomType === 'permanent' || currentRoomType === 'contact')) {
     syncPermanentParticipantUI();
     return;
   }
@@ -291,25 +432,49 @@ function addUserToPanel(peerId, username, role) {
   const list = document.getElementById('user-list');
   if (!list) return;
 
-  document.getElementById(`user-${CSS.escape(peerId)}`)?.remove();
+  const existing = document.getElementById(`user-${peerId}`);
+  if (existing) existing.remove();
 
   const row = document.createElement('div');
-  row.className = 'user-row';
+  row.className = 'user-row entrance-scale';
   row.id = `user-${peerId}`;
 
-  const initials = String(username || '?').slice(0, 2).toUpperCase();
-  const isHost = role === 'host' && currentRoomType !== 'permanent';
-  row.innerHTML = `
-    <div class="user-avatar">${escHtml(initials)}</div>
-    <div class="user-info">
-      <div class="user-name">${escHtml(username)}</div>
-      <div class="user-role ${isHost ? 'host' : ''}">${isHost ? 'Host' : 'Member'}</div>
-    </div>
-    <div class="dot dot-green" id="ping-${CSS.escape(peerId)}"></div>
-    ${myRole === 'host' && currentRoomType !== 'permanent' && peerId !== peerInstance?.id
-      ? `<button class="user-menu-btn" onclick="toggleUserMenu('${peerId}','${escHtml(username)}',this)" type="button">...</button>`
-      : ''}
-  `;
+  const safeUsername = typeof normalizeDisplayName === 'function' ? normalizeDisplayName(username, '?') : String(username || '?');
+  const isHost = role === 'host' && currentRoomType !== 'permanent' && currentRoomType !== 'contact';
+
+  const avatar = document.createElement('div');
+  avatar.className = 'user-avatar';
+  avatar.textContent = safeUsername.slice(0, 2).toUpperCase();
+
+  const info = document.createElement('div');
+  info.className = 'user-info';
+  
+  const nameEl = document.createElement('div');
+  nameEl.className = 'user-name';
+  nameEl.textContent = safeUsername;
+  
+  const badge = document.createElement('span');
+  badge.className = `badge ${isHost ? 'badge-host' : 'badge-member'}`;
+  badge.textContent = isHost ? 'Host' : 'Member';
+  
+  info.append(nameEl, badge);
+
+  const dot = document.createElement('div');
+  dot.className = 'dot dot-green dot-pulse';
+  dot.id = `ping-${peerId}`;
+  dot.title = 'Online';
+
+  row.append(avatar, info, dot);
+
+  if (myRole === 'host' && currentRoomType !== 'permanent' && currentRoomType !== 'contact' && peerId !== peerInstance?.id) {
+    const btn = document.createElement('button');
+    btn.className = 'user-menu-btn';
+    btn.type = 'button';
+    btn.innerHTML = '•••';
+    btn.onclick = (e) => { e.stopPropagation(); toggleUserMenu(peerId, safeUsername, btn); };
+    row.appendChild(btn);
+  }
+  
   list.appendChild(row);
 }
 
@@ -321,11 +486,21 @@ function toggleUserMenu(peerId, username, btnEl) {
   document.querySelectorAll('.user-menu-dropdown').forEach(el => el.remove());
   const menu = document.createElement('div');
   menu.className = 'user-menu-dropdown';
-  menu.innerHTML = `
-    <button onclick="muteUser('${peerId}')" type="button">Mute</button>
-    <button onclick="kickUser('${peerId}')" type="button">Kick</button>
-    <button onclick="promoteUser('${peerId}')" type="button">Promote to Host</button>
-  `;
+  [
+    { label: 'Mute', action: () => muteUser(peerId) },
+    { label: 'Kick', action: () => kickUser(peerId) },
+    { label: 'Promote to Host', action: () => promoteUser(peerId) }
+  ].forEach(item => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.textContent = item.label;
+    button.addEventListener('click', event => {
+      event.stopPropagation();
+      item.action();
+      menu.remove();
+    });
+    menu.appendChild(button);
+  });
   btnEl.parentElement.style.position = 'relative';
   btnEl.parentElement.appendChild(menu);
   setTimeout(() => document.addEventListener('click', () => menu.remove(), { once: true }), 0);
@@ -415,17 +590,43 @@ function initSearchUI() {
   const topBar = document.getElementById('top-bar');
   if (!buttons.length || !feed) return;
 
+  // If the new global SearchEngine is available, wire buttons to it
+  if (typeof SearchEngine !== 'undefined') {
+    buttons.forEach(btn => {
+      if (btn.dataset.searchBound === 'true') return;
+      btn.dataset.searchBound = 'true';
+      btn.addEventListener('click', () => {
+        SearchEngine.toggle();
+        // Close sidebar/panels
+        document.getElementById('chat-sidebar')?.classList.remove('csidebar-open');
+        document.getElementById('chat-sidebar-overlay')?.classList.remove('overlay-visible');
+        document.getElementById('user-panel')?.classList.remove('panel-visible');
+      });
+    });
+    return;
+  }
+
+  // Fallback: legacy inline search bar
   let searchBar = document.getElementById('search-bar');
   if (!searchBar) {
     searchBar = document.createElement('div');
     searchBar.id = 'search-bar';
     searchBar.hidden = true;
-    searchBar.innerHTML = `
-      <div style="display:flex; gap:10px; align-items:center;">
-        <input type="text" id="search-input" placeholder="Search messages" style="flex:1; padding:10px 12px; border-radius: var(--r-md); border: 1px solid var(--border-dim); background: rgba(255, 255, 255, 0.04); color: var(--text);" />
-        <button class="btn btn-sm" id="search-close-btn" style="padding:8px 12px; font-size:0.8rem;" type="button">Close</button>
-      </div>
-    `;
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex; gap:10px; align-items:center;';
+    const inputEl = document.createElement('input');
+    inputEl.type = 'text';
+    inputEl.id = 'search-input';
+    inputEl.placeholder = 'Search messages';
+    inputEl.style.cssText = 'flex:1; padding:10px 12px; border-radius: var(--r-md); border: 1px solid var(--border-dim); background: rgba(255, 255, 255, 0.04); color: var(--text);';
+    const closeEl = document.createElement('button');
+    closeEl.className = 'btn btn-sm';
+    closeEl.id = 'search-close-btn';
+    closeEl.style.cssText = 'padding:8px 12px; font-size:0.8rem;';
+    closeEl.type = 'button';
+    closeEl.textContent = 'Close';
+    row.append(inputEl, closeEl);
+    searchBar.appendChild(row);
     if (topBar && topBar.parentNode === feed) {
       feed.insertBefore(searchBar, topBar.nextSibling);
     } else {
@@ -483,5 +684,16 @@ document.addEventListener('DOMContentLoaded', () => {
   initPrivacyTicker();
   initVideoCallChrome();
   initSearchUI();
+  document.querySelectorAll('a[href]').forEach(link => {
+    try {
+      const url = new URL(link.getAttribute('href'), window.location.href);
+      if (url.origin === window.location.origin) return;
+      const rel = new Set(String(link.getAttribute('rel') || '').split(/\s+/).filter(Boolean));
+      rel.add('noopener');
+      rel.add('noreferrer');
+      link.setAttribute('rel', Array.from(rel).join(' '));
+      if (link.target === '_blank') link.referrerPolicy = 'no-referrer';
+    } catch (error) {}
+  });
   document.getElementById('theme-btn')?.addEventListener('click', cycleTheme);
 });

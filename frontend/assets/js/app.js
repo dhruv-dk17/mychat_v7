@@ -4,7 +4,7 @@
 // APP ENTRY POINT
 // ════════════════════════════════════════════
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   const page = document.body.dataset.page;
   if (page === 'home') {
     document.title = 'Mychat - Private Operations Rooms';
@@ -14,7 +14,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
   initKeepAlive();
   initNetworkWatcher();
-  getIdentityMaterial().catch(() => {});
+  if (window.initKeyboardNavigation) window.initKeyboardNavigation();
+  try {
+    await initIdentity();
+    await getIdentityMaterial();
+  } catch (error) {
+    console.error('Identity bootstrap failed', error);
+  }
 
   if (page === 'home') initHomePage();
   if (page === 'chat') initChatPage();
@@ -112,9 +118,15 @@ function parseInviteHash(rawHash) {
 }
 
 function buildInviteUrl(roomId, type) {
+  const safeRoomId = typeof normalizeRoomAlias === 'function' ? normalizeRoomAlias(roomId) : roomId;
   const currentUrl = window.location.href.split('#')[0].split('?')[0];
   const localBase = currentUrl.replace(/(chat|index)\.html$/i, 'index.html');
-  return `${localBase}#${type}:${roomId}`;
+  const params = new URLSearchParams();
+  const chatParams = typeof getChatParams === 'function' ? getChatParams() : null;
+  const hostFingerprint = chatParams?.hostFingerprint || (typeof getIdentityFingerprintSync === 'function' ? getIdentityFingerprintSync() : '');
+  if (hostFingerprint) params.set('hostFingerprint', hostFingerprint);
+  const query = params.toString();
+  return `${localBase}${query ? `?${query}` : ''}#${type}:${safeRoomId}`;
 }
 
 // ════════════════════════════════════════════
@@ -129,16 +141,17 @@ async function initHomePage() {
 
   // Pre-fill join inputs from shared invite hash.
   const invite = parseInviteHash(window.location.hash.slice(1));
+  const inviteHostFingerprint = new URLSearchParams(window.location.search).get('hostFingerprint') || '';
   if (invite?.roomId) {
     if (invite.type === 'group') {
       const groupEl = document.getElementById('join-group-id');
-      if (groupEl) groupEl.value = invite.roomId;
+      if (groupEl) groupEl.value = typeof normalizeRoomAlias === 'function' ? normalizeRoomAlias(invite.roomId) : invite.roomId;
     } else if (invite.type === 'permanent') {
       const permEl = document.getElementById('join-perm-id');
-      if (permEl) permEl.value = invite.roomId;
+      if (permEl) permEl.value = typeof normalizeRoomAlias === 'function' ? normalizeRoomAlias(invite.roomId) : invite.roomId;
     } else {
       const privateEl = document.getElementById('join-room-id');
-      if (privateEl) privateEl.value = invite.roomId;
+      if (privateEl) privateEl.value = typeof normalizeRoomAlias === 'function' ? normalizeRoomAlias(invite.roomId) : invite.roomId;
     }
   }
 
@@ -288,21 +301,25 @@ async function initHomePage() {
   async function loadDashboardRooms() {
     const list = document.getElementById('dashboard-rooms-list');
     if (!list) return;
-    list.innerHTML = '<center>Loading...</center>';
+    list.replaceChildren(createTextLine('Loading...'));
     try {
       const rooms = await fetchUserRooms();
       if (rooms.length === 0) {
-        list.innerHTML = '<center style="color:var(--text-dim);font-size:0.85rem;">You have no active rooms.</center>';
+        const empty = createTextLine('You have no active rooms.');
+        empty.style.cssText = 'color:var(--text-dim);font-size:0.85rem;text-align:center;';
+        list.replaceChildren(empty);
         return;
       }
       
-      list.innerHTML = '';
+      list.replaceChildren();
       rooms.forEach(r => {
         const row = buildDashboardRoomRow(r);
         list.appendChild(row);
       });
     } catch (e) {
-      list.innerHTML = '<center style="color:var(--red);">Failed to load rooms</center>';
+      const error = createTextLine('Failed to load rooms');
+      error.style.cssText = 'color:var(--red);text-align:center;';
+      list.replaceChildren(error);
     }
   }
 
@@ -368,33 +385,43 @@ async function initHomePage() {
     btn.disabled = true; btn.textContent = 'Creating...';
     const room = createTempRoom('private');
     const username = 'Host_' + randomToken(2);
-    navigateToChat(room.id, 'private', username, 'host');
+    navigateToChat(room.id, 'private', username, 'host', undefined, typeof getIdentityFingerprintSync === 'function' ? getIdentityFingerprintSync() : '');
   });
 
   document.getElementById('join-private-btn')?.addEventListener('click', async () => {
-    const id = document.getElementById('join-room-id')?.value.trim();
+    const id = typeof normalizeRoomAlias === 'function'
+      ? normalizeRoomAlias(document.getElementById('join-room-id')?.value)
+      : document.getElementById('join-room-id')?.value.trim();
     if (!id || !/^[a-z0-9-]{3,32}$/.test(id)) {
       showToast('Enter a valid Room ID', 'warning'); return;
     }
-    const username = document.getElementById('join-username')?.value.trim() || 'Guest_' + randomToken(2);
+    const username = typeof normalizeDisplayName === 'function'
+      ? normalizeDisplayName(document.getElementById('join-username')?.value, 'Guest_' + randomToken(2))
+      : (document.getElementById('join-username')?.value.trim() || 'Guest_' + randomToken(2));
     const legacyKey = invite?.type === 'private' && invite.roomId === id ? invite.key : '';
-    navigateToChat(id, 'private', username, 'guest', legacyKey || undefined);
+    const hostFingerprint = invite?.type === 'private' && invite.roomId === id ? inviteHostFingerprint : '';
+    navigateToChat(id, 'private', username, 'guest', legacyKey || undefined, hostFingerprint || undefined);
   });
 
   // ── Group Room ───────────────────────────────
-  document.getElementById('create-group-btn')?.addEventListener('click', () => {
+  document.getElementById('create-group-btn')?.addEventListener('click', async () => {
     const room = createTempRoom('group');
     const username = 'Host_' + randomToken(2);
-    navigateToChat(room.id, 'group', username, 'host');
+    navigateToChat(room.id, 'group', username, 'host', undefined, typeof getIdentityFingerprintSync === 'function' ? getIdentityFingerprintSync() : '');
   });
 
   document.getElementById('join-group-btn')?.addEventListener('click', () => {
-    const id   = document.getElementById('join-group-id')?.value.trim();
-    const name = document.getElementById('join-group-username')?.value.trim();
+    const id = typeof normalizeRoomAlias === 'function'
+      ? normalizeRoomAlias(document.getElementById('join-group-id')?.value)
+      : document.getElementById('join-group-id')?.value.trim();
+    const name = typeof normalizeDisplayName === 'function'
+      ? normalizeDisplayName(document.getElementById('join-group-username')?.value)
+      : document.getElementById('join-group-username')?.value.trim();
     if (!id || !/^[a-z0-9-]{3,32}$/.test(id))   { showToast('Enter a valid Room ID', 'warning'); return; }
     if (!name || !/^[a-zA-Z0-9_]{3,32}$/.test(name)) { showToast('Enter a valid username', 'warning'); return; }
     const legacyKey = invite?.type === 'group' && invite.roomId === id ? invite.key : '';
-    navigateToChat(id, 'group', name, 'guest', legacyKey || undefined);
+    const hostFingerprint = invite?.type === 'group' && invite.roomId === id ? inviteHostFingerprint : '';
+    navigateToChat(id, 'group', name, 'guest', legacyKey || undefined, hostFingerprint || undefined);
   });
 
 
@@ -411,9 +438,13 @@ async function initHomePage() {
 
   // ── Join permanent room ───────────────────────
   document.getElementById('join-perm-btn')?.addEventListener('click', async () => {
-    const slug = document.getElementById('join-perm-id')?.value.trim();
+    const slug = typeof normalizeRoomAlias === 'function'
+      ? normalizeRoomAlias(document.getElementById('join-perm-id')?.value)
+      : document.getElementById('join-perm-id')?.value.trim();
     const pw   = document.getElementById('join-perm-pw')?.value;
-    const name = document.getElementById('join-perm-username')?.value.trim();
+    const name = typeof normalizeDisplayName === 'function'
+      ? normalizeDisplayName(document.getElementById('join-perm-username')?.value)
+      : document.getElementById('join-perm-username')?.value.trim();
     const err  = document.getElementById('join-perm-error');
     const btn  = document.getElementById('join-perm-btn');
 
@@ -559,6 +590,429 @@ function stopPermanentHistoryPolling() {
   }
 }
 
+async function refreshIdentityPanel() {
+  // UI Element removed
+}
+
+function formatLastSeen(lastSeen) {
+  if (!lastSeen) return 'Never seen';
+  const value = Number(lastSeen);
+  if (!Number.isFinite(value) || value <= 0) return 'Never seen';
+  return `Last seen ${new Date(value).toLocaleString()}`;
+}
+
+function getPresenceMeta(fingerprint) {
+  const status = typeof getPresenceStatus === 'function'
+    ? getPresenceStatus(fingerprint)
+    : 'offline';
+  return {
+    status,
+    label: status === 'online' ? 'Online now' : status === 'away' ? 'Away' : 'Offline'
+  };
+}
+
+function formatConversationTime(ts) {
+  const value = Number(ts);
+  if (!Number.isFinite(value) || value <= 0) return '';
+  const when = new Date(value);
+  const now = new Date();
+  const sameDay = when.toDateString() === now.toDateString();
+  return sameDay
+    ? when.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+    : when.toLocaleDateString([], { month: 'short', day: 'numeric' });
+}
+
+function refreshHeaderRoomStatus() {
+  const statusEl = document.getElementById('header-room-status');
+  if (!statusEl) return;
+  const snapshot = typeof getPresenceSnapshot === 'function' ? getPresenceSnapshot() : [];
+  const active = snapshot.filter(item => item && item.status !== 'offline' && !item.isLocal);
+  if (active.length === 1) {
+    statusEl.textContent = active[0].status === 'away' ? `${active[0].displayName} away` : `${active[0].displayName} online`;
+    statusEl.dataset.status = active[0].status;
+    return;
+  }
+  if (active.length > 1) {
+    statusEl.textContent = `${active.length} online`;
+    statusEl.dataset.status = 'online';
+    return;
+  }
+  statusEl.textContent = currentRoomId ? 'Encrypted room' : 'Waiting';
+  statusEl.dataset.status = 'offline';
+}
+
+async function refreshContactsPanel(query = '') {
+  const list = document.getElementById('contacts-list');
+  if (!list) return;
+  const contacts = await searchContacts(query);
+  window.__mychatContactCache = new Map(contacts.map(contact => [contact.fingerprint, contact]));
+  list.replaceChildren();
+
+  if (!contacts.length) {
+    const empty = document.createElement('div');
+    empty.className = 'sidebar-empty';
+    empty.textContent = query ? 'No contacts matched that search.' : 'No contacts yet. Share or import an identity card to start.';
+    list.appendChild(empty);
+    return;
+  }
+
+  contacts.forEach(contact => {
+    const presence = getPresenceMeta(contact.fingerprint);
+    const row = document.createElement('div');
+    row.className = 'contact-row';
+    row.dataset.fingerprint = contact.fingerprint;
+    const safeName = typeof normalizeDisplayName === 'function'
+      ? normalizeDisplayName(contact.displayName, contact.fingerprint)
+      : (contact.displayName || contact.fingerprint);
+
+    const avatar = document.createElement('span');
+    avatar.className = 'contact-avatar';
+    avatar.style.background = contact.avatarColor;
+    const presenceDot = document.createElement('span');
+    presenceDot.className = `contact-presence-dot presence-${presence.status}`;
+    presenceDot.setAttribute('aria-hidden', 'true');
+    avatar.append(presenceDot, document.createTextNode(safeName.slice(0, 2).toUpperCase()));
+
+    const copy = document.createElement('span');
+    copy.className = 'contact-copy';
+    const line = document.createElement('span');
+    line.className = 'contact-line';
+    const name = document.createElement('span');
+    name.className = 'contact-name';
+    name.textContent = safeName;
+    const trust = document.createElement('span');
+    trust.className = `contact-trust trust-${contact.trustLevel || 'added'}`;
+    trust.textContent = contact.trustLevel || 'added';
+    line.append(name, trust);
+    const fingerprint = document.createElement('span');
+    fingerprint.className = 'contact-meta';
+    fingerprint.textContent = contact.fingerprint;
+    const meta = document.createElement('span');
+    meta.className = 'contact-meta';
+    meta.textContent = presence.status === 'offline' ? formatLastSeen(contact.lastSeen) : presence.label;
+    copy.append(line, fingerprint, meta);
+
+    const actions = document.createElement('span');
+    actions.className = 'contact-actions';
+    if (contact.trustLevel !== 'verified') {
+      const verify = document.createElement('button');
+      verify.className = 'contact-verify-btn';
+      verify.type = 'button';
+      verify.dataset.verifyContact = contact.fingerprint;
+      verify.setAttribute('aria-label', 'Verify contact');
+      verify.textContent = 'Verify';
+      actions.appendChild(verify);
+    }
+    const copyBtn = document.createElement('button');
+    copyBtn.className = 'contact-copy-btn';
+    copyBtn.type = 'button';
+    copyBtn.dataset.copyContact = contact.fingerprint;
+    copyBtn.setAttribute('aria-label', 'Copy contact fingerprint');
+    copyBtn.textContent = 'Copy';
+    const removeBtn = document.createElement('button');
+    removeBtn.className = 'contact-remove-btn';
+    removeBtn.type = 'button';
+    removeBtn.dataset.removeContact = contact.fingerprint;
+    removeBtn.setAttribute('aria-label', 'Remove contact');
+    removeBtn.textContent = 'Remove';
+    actions.append(copyBtn, removeBtn);
+
+    row.append(avatar, copy, actions);
+    row.addEventListener('click', async event => {
+      if (event.target.closest('[data-remove-contact]') || event.target.closest('[data-verify-contact]') || event.target.closest('[data-copy-contact]')) return;
+      
+      try {
+        const myFp = typeof getIdentityFingerprintSync === 'function' ? getIdentityFingerprintSync() : '';
+        if (!myFp || !contact.fingerprint) {
+          showToast('Cannot generate room ID without identities', 'error');
+          return;
+        }
+
+        const sorted = [myFp, contact.fingerprint].sort();
+        const deterministicIdHex = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode('contact-room|' + sorted.join('|')))))
+          .map(b => b.toString(16).padStart(2, '0')).join('');
+        const deterministicId = 'c-' + deterministicIdHex.substring(0, 14);
+        const deterministicPassword = 'cpwd-' + deterministicIdHex.substring(14, 46);
+
+        const session = typeof getUserSession === 'function' ? getUserSession() : null;
+        const currentName = (typeof myUsername !== 'undefined' && myUsername) ? myUsername : (session?.username || 'User-' + myFp.slice(-4));
+        
+        // Store auto-derived password for this contact room (no server registration needed)
+        sessionStorage.setItem('joinPassword_' + deterministicId, deterministicPassword);
+        // 'contact' type = permanent P2P mesh, local IndexedDB history, no server registration
+        navigateToChat(deterministicId, 'contact', currentName, 'guest', undefined, undefined);
+      } catch (err) {
+        showToast('Failed to open chat: ' + err.message, 'error');
+      }
+    });
+    row.querySelector('[data-copy-contact]')?.addEventListener('click', event => {
+      event.preventDefault();
+      event.stopPropagation();
+      copyToClipboard(contact.fingerprint);
+    });
+    row.querySelector('[data-verify-contact]')?.addEventListener('click', async event => {
+      event.preventDefault();
+      event.stopPropagation();
+      await verifyContact(contact.fingerprint);
+      await refreshContactsPanel(document.getElementById('contacts-search')?.value || '');
+      showToast('Contact marked as verified', 'success');
+    });
+    row.querySelector('[data-remove-contact]')?.addEventListener('click', async event => {
+      event.preventDefault();
+      event.stopPropagation();
+      await removeContact(contact.fingerprint);
+      await refreshContactsPanel(document.getElementById('contacts-search')?.value || '');
+      showToast('Contact removed', 'success');
+    });
+    list.appendChild(row);
+  });
+}
+
+async function refreshConversationPanel() {
+  const list = document.getElementById('conversation-list');
+  if (!list || typeof getStoredConversationList !== 'function') return;
+  const conversations = await getStoredConversationList();
+  list.replaceChildren();
+  if (!conversations.length) {
+    const empty = document.createElement('div');
+    empty.className = 'sidebar-empty';
+    empty.textContent = 'Stored conversations will appear here after you start chatting.';
+    list.appendChild(empty);
+    return;
+  }
+
+  conversations.forEach(conversation => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'conversation-row';
+    const preview = (conversation.lastMessage?.text || conversation.lastMessage?.content || conversation.lastMessage?.type || 'Stored conversation').slice(0, 64);
+    const copy = document.createElement('span');
+    copy.className = 'conversation-copy';
+    const line = document.createElement('span');
+    line.className = 'conversation-line';
+    const name = document.createElement('span');
+    name.className = 'conversation-name';
+    name.textContent = typeof normalizeDisplayName === 'function'
+      ? normalizeDisplayName(conversation.title || conversation.roomId || conversation.conversationId, conversation.roomId || conversation.conversationId)
+      : (conversation.title || conversation.roomId || conversation.conversationId);
+    const time = document.createElement('span');
+    time.className = 'conversation-time';
+    time.textContent = formatConversationTime(conversation.lastMessage?.ts);
+    line.append(name, time);
+    if (conversation.unreadCount) {
+      const unread = document.createElement('span');
+      unread.className = 'conversation-unread';
+      unread.textContent = String(conversation.unreadCount);
+      line.appendChild(unread);
+    }
+    const meta = document.createElement('span');
+    meta.className = 'conversation-meta';
+    meta.textContent = preview;
+    copy.append(line, meta);
+    button.appendChild(copy);
+    button.addEventListener('click', async () => {
+      if (conversation.roomId && conversation.roomId !== currentRoomId) {
+        const currentName = (typeof myUsername !== 'undefined' && myUsername) ? myUsername : 'User';
+        navigateToChat(conversation.roomId, conversation.roomType || 'private', currentName, 'guest');
+        return;
+      }
+      if (typeof markStoredConversationRead === 'function' && conversation.conversationId) {
+        await markStoredConversationRead(conversation.conversationId);
+      }
+      if (typeof loadEarlierStoredMessages === 'function') {
+        loadEarlierStoredMessages(true).catch(error => console.warn('Failed to open conversation history', error));
+      }
+      refreshConversationPanel().catch(() => {});
+    });
+    list.appendChild(button);
+  });
+}
+
+async function bootstrapPhase123Panels() {
+  await refreshIdentityPanel();
+  if (typeof apiSyncContacts === 'function') {
+    await apiSyncContacts(); // Initial sync of backend contacts
+  }
+  await refreshContactsPanel(document.getElementById('contacts-search')?.value || '');
+  await refreshConversationPanel();
+  refreshHeaderRoomStatus();
+  updateInboxBadge();
+}
+
+async function refreshInboxList() {
+  const container = document.getElementById('inbox-list');
+  if (!container) return;
+  container.replaceChildren(createTextLine('Loading requests...'));
+  try {
+    const reqs = await apiGetPendingRequests();
+    updateInboxBadge(reqs.length);
+    if (reqs.length === 0) {
+      const msg = createTextLine('No pending requests');
+      msg.style.cssText = 'text-align:center;color:var(--text-muted);font-size:0.9rem;margin-top:1rem;';
+      container.replaceChildren(msg);
+      return;
+    }
+    container.replaceChildren();
+    for (const r of reqs) {
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex; justify-content:space-between; align-items:center; padding:0.5rem; border-bottom:1px solid rgba(255,255,255,0.05);';
+      const name = document.createElement('div');
+      name.textContent = r.from_username;
+      const actions = document.createElement('div');
+      actions.style.cssText = 'display:flex; gap:0.5rem;';
+      
+      const btnAccept = document.createElement('button');
+      btnAccept.className = 'btn btn-sm btn-primary';
+      btnAccept.textContent = 'Accept';
+      btnAccept.onclick = async () => {
+        btnAccept.disabled = true;
+        try {
+          await apiRespondContactRequest(r.id, true);
+          showToast('Accepted request from ' + r.from_username, 'success');
+          refreshInboxList();
+          refreshContactsPanel();
+        } catch(e) { showToast(e.message, 'error'); btnAccept.disabled = false; }
+      };
+
+      const btnReject = document.createElement('button');
+      btnReject.className = 'btn btn-sm btn-danger-ghost';
+      btnReject.textContent = 'Reject';
+      btnReject.onclick = async () => {
+        btnReject.disabled = true;
+        try {
+          await apiRespondContactRequest(r.id, false);
+          showToast('Rejected request from ' + r.from_username, 'success');
+          refreshInboxList();
+        } catch(e) { showToast(e.message, 'error'); btnReject.disabled = false; }
+      };
+
+      actions.append(btnReject, btnAccept);
+      row.append(name, actions);
+      container.appendChild(row);
+    }
+  } catch(e) {
+    container.replaceChildren(createTextLine('Error: ' + e.message));
+  }
+}
+
+let _inboxPollTimer = null;
+async function updateInboxBadge(knownCount) {
+  const badge = document.getElementById('inbox-badge');
+  if (!badge) return;
+  const session = typeof getUserSession === 'function' ? getUserSession() : null;
+  if (!session) { badge.style.display = 'none'; return; }
+
+  let count = knownCount;
+  if (count === undefined) {
+    try {
+      const reqs = await apiGetPendingRequests();
+      count = reqs.length;
+    } catch(e) {
+      count = 0;
+    }
+  }
+  
+  if (count > 0) {
+    badge.textContent = count;
+    badge.style.display = 'inline-block';
+  } else {
+    badge.style.display = 'none';
+  }
+
+  if (!_inboxPollTimer) {
+    _inboxPollTimer = setInterval(() => updateInboxBadge(), 30000); // Poll every 30s
+  }
+}
+
+function bindPhase123ChatControls() {
+  if (!document.body.dataset.phase123PresenceBound) {
+    document.body.dataset.phase123PresenceBound = 'true';
+    window.addEventListener('mychat:presencechange', () => {
+      refreshHeaderRoomStatus();
+      refreshContactsPanel(document.getElementById('contacts-search')?.value || '').catch(() => {});
+    });
+  }
+
+  document.getElementById('identity-copy-btn')?.addEventListener('click', async () => {
+    const identity = await getIdentity();
+    copyToClipboard(identity.fingerprint);
+  });
+  document.getElementById('header-identity-copy-btn')?.addEventListener('click', async () => {
+    const identity = await getIdentity();
+    copyToClipboard(identity.fingerprint);
+  });
+
+
+
+  document.getElementById('contacts-search')?.addEventListener('input', event => {
+    refreshContactsPanel(event.target.value).catch(error => console.warn('Contact search failed', error));
+  });
+
+  document.getElementById('search-users-btn')?.addEventListener('click', () => {
+    const session = getUserSession();
+    if (!session) { showToast('You must be logged in to search users', 'warning'); return; }
+    showModal('search-users-modal');
+  });
+
+  document.getElementById('global-user-search-btn')?.addEventListener('click', async () => {
+    const input = document.getElementById('global-user-search-input');
+    const query = input?.value.trim();
+    const resultsContainer = document.getElementById('global-user-search-results');
+    if (!resultsContainer) return;
+
+    if (!query) { resultsContainer.replaceChildren(createTextLine('Enter a username to search.')); return; }
+    resultsContainer.replaceChildren(createTextLine('Searching...'));
+    try {
+      if (typeof apiSearchContacts !== 'function') throw new Error('API wrapper not loaded');
+      const results = await apiSearchContacts(query);
+      if (results.length === 0) {
+        resultsContainer.replaceChildren(createTextLine('No users found.'));
+        return;
+      }
+      resultsContainer.replaceChildren();
+      for (const r of results) {
+        const row = document.createElement('div');
+        row.style.cssText = 'display:flex; justify-content:space-between; align-items:center; padding:0.5rem; border-bottom:1px solid rgba(255,255,255,0.05);';
+        const name = document.createElement('div');
+        name.textContent = r.username;
+        const btn = document.createElement('button');
+        btn.className = 'btn btn-sm btn-ghost';
+        btn.textContent = 'Add';
+        btn.onclick = async () => {
+          btn.disabled = true; btn.textContent = 'Sending...';
+          try {
+            await apiSendContactRequest(r.username);
+            btn.textContent = 'Sent';
+            showToast('Request sent to ' + r.username, 'success');
+          } catch(e) {
+            btn.textContent = 'Error';
+            showToast(e.message, 'error');
+          }
+        };
+        row.append(name, btn);
+        resultsContainer.appendChild(row);
+      }
+    } catch(err) {
+      resultsContainer.replaceChildren(createTextLine('Error: ' + err.message));
+    }
+  });
+
+  document.getElementById('inbox-btn')?.addEventListener('click', async () => {
+    const session = getUserSession();
+    if (!session) { showToast('You must be logged in to view your inbox', 'warning'); return; }
+    showModal('inbox-modal');
+    refreshInboxList();
+  });
+
+
+
+  document.getElementById('load-earlier-btn')?.addEventListener('click', () => {
+    if (typeof loadEarlierStoredMessages === 'function') {
+      loadEarlierStoredMessages(false).catch(error => console.warn('Failed to load stored history', error));
+    }
+  });
+}
+
 async function persistCurrentRoomEvent(event) {
   if (currentRoomType !== 'permanent' || !currentRoomId || !currentPermanentPassword) return;
   const eventId = buildPermanentEventId(event);
@@ -605,6 +1059,9 @@ function startPermanentHistoryPolling(roomId, password) {
 
 function leaveCurrentRoom() {
   stopPermanentHistoryPolling();
+  if (typeof stopPresenceMonitoring === 'function') {
+    stopPresenceMonitoring({ broadcastOffline: true }).catch(() => {});
+  }
   if (currentRoomType === 'private' && myRole === 'host') {
     endRoom(true);
     return;
@@ -615,6 +1072,9 @@ function leaveCurrentRoom() {
 
 function handlePageUnload() {
   stopPermanentHistoryPolling();
+  if (typeof stopPresenceMonitoring === 'function') {
+    stopPresenceMonitoring({ broadcastOffline: true, detach: true }).catch(() => {});
+  }
   if (currentRoomType === 'private' && myRole === 'host') {
     endRoom(false);
   } else {
@@ -629,13 +1089,30 @@ async function initChatPage() {
   await getIdentityMaterial();
 
   currentRoomType = params.type || 'private';
-  const isPerm  = params.type === 'permanent';
+  // 'contact' rooms behave like 'permanent' P2P mesh but with local-only history
+  const isPerm  = params.type === 'permanent' || params.type === 'contact';
+  const isContact = params.type === 'contact';
+
+  const contactsSection = document.getElementById('sidebar-contacts-section');
+  if (contactsSection) {
+    contactsSection.style.display = isPerm ? 'grid' : 'none';
+  }
+
   let isHost  = params.role === 'host' && !isPerm;
+  const ownFingerprint = typeof getIdentityFingerprintSync === 'function' ? getIdentityFingerprintSync() : '';
   const hId     = hostPeerId(params.roomId, isPerm);
   const gId     = guestPeerId(params.roomId, isPerm);
   let storedPermPassword = isPerm ? (sessionStorage.getItem('joinPassword_' + params.roomId) || '') : '';
 
-  if (isPerm && !storedPermPassword) {
+  // Contact rooms use auto-derived local passwords — skip server verification
+  if (isContact && !storedPermPassword) {
+    showToast('Contact room key missing — please reopen from your Contacts list', 'error');
+    setTimeout(navigateHome, 1500);
+    return;
+  }
+
+  // Permanent rooms verify password against server if not already cached
+  if (params.type === 'permanent' && !storedPermPassword) {
     const promptedPassword = prompt(`Enter the password for permanent room "${params.roomId}"`);
     if (!promptedPassword) { navigateHome(); return; }
 
@@ -659,6 +1136,8 @@ async function initChatPage() {
   permanentHistoryCursor = 0;
   handledPermanentEventIds = new Set();
   stopPermanentHistoryPolling();
+  await bootstrapPhase123Panels();
+  bindPhase123ChatControls();
 
   const fallbackRoomKeys = [];
   const e2eeKey = isPerm ? storedPermPassword : (params.key || params.roomId);
@@ -673,6 +1152,7 @@ async function initChatPage() {
   }
   const topBarName = document.getElementById('top-bar-room-id-mirror');
   if (topBarName) topBarName.textContent = params.roomId;
+  document.getElementById('local-storage-indicator')?.classList.remove('hidden');
   
   const badge = document.querySelector('.badge-purple'); // Group/Private badge
   if (badge) badge.textContent = (params.type || 'PRIVATE').toUpperCase();
@@ -693,13 +1173,53 @@ async function initChatPage() {
     updateGuestUI();
   }
 
-  if (isPerm && storedPermPassword) {
+  if (typeof startPresenceMonitoring === 'function') {
+    await startPresenceMonitoring();
+    refreshHeaderRoomStatus();
+  }
+
+  if (typeof initializeStoredConversation === 'function') {
+    await initializeStoredConversation(params.roomId, params.type || 'private');
+  }
+
+  if (isPerm && storedPermPassword && !isContact) {
+    // Server-synced history only for actual permanent rooms (not contact rooms)
     await loadPermanentHistoryOnce(params.roomId, storedPermPassword);
     startPermanentHistoryPolling(params.roomId, storedPermPassword);
   }
 
   // Protect chat feed
   initChatProtection(document.getElementById('chat-feed'));
+
+  // ── Phase 15: Global search engine ────────────────────────────
+  if (typeof SearchEngine !== 'undefined') {
+    SearchEngine.init();
+  }
+
+  // ── Phase 14: Notification system ─────────────────────────────
+  if (typeof NotificationManager !== 'undefined') {
+    NotificationManager.init();
+  }
+
+  // ── Phase 17: Network reliability engine ──────────────────────
+  if (typeof NetReliability !== 'undefined') {
+    NetReliability.init();
+  }
+
+  // ── Phase 11: Encrypted identity vault ────────────────────────
+  if (typeof VaultManager !== 'undefined') {
+    VaultManager.init();
+  }
+
+  // ── Phase 13: Group management ────────────────────────────────
+  if (typeof GroupManager !== 'undefined') {
+    GroupManager.init();
+  }
+
+  // ── Phase 18: Performance engine ──────────────────────────────
+  if (typeof PerfEngine !== 'undefined') {
+    PerfEngine.init();
+  }
 
   // ── Input bar events ──────────────────────────
   const input = document.getElementById('msg-input');
@@ -829,8 +1349,12 @@ async function initChatPage() {
     const url = buildInviteUrl(params.roomId, params.type || 'private');
     const qr  = document.getElementById('qr-container');
     if (qr && window.QRCode) {
-      qr.innerHTML = '';
+      qr.replaceChildren();
       new QRCode(qr, { text: url, width: 180, height: 180, colorDark: '#6D28D9', colorLight: '#fff' });
+    }
+    const qrLinkText = document.getElementById('qr-room-link-text');
+    if (qrLinkText) {
+      qrLinkText.textContent = url;
     }
     showModal('qr-modal');
   });
@@ -839,7 +1363,13 @@ async function initChatPage() {
   window.addEventListener('beforeunload', handlePageUnload);
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) activateBlurShield('Tab switched');
-    else                 deactivateBlurShield();
+    else {
+      deactivateBlurShield();
+      // Reset notification badge when user returns to tab
+      if (typeof NotificationManager !== 'undefined') {
+        NotificationManager.resetUnread();
+      }
+    }
   });
 
   // Initial shield — green

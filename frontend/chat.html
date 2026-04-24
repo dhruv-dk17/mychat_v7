@@ -3,66 +3,85 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Mychat - Chat Room</title>
-  <meta name="description" content="Mychat v7 secure chat room" />
-  <meta name="theme-color" content="#080810" />
+  <style>
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border-width: 0;
+    }
+  </style>
+  <title>Mychat | Secure Session</title>
+  <meta name="description" content="Mychat secure room UI" />
+  <meta name="theme-color" content="#7C3AED" />
+  <link rel="manifest" href="manifest.json" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="apple-touch-icon" href="assets/brand/logo.png" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
 
-  <link rel="stylesheet" href="assets/css/main.css?v=20260331" />
-  <link rel="stylesheet" href="assets/css/chat.css?v=20260331" />
+  <link rel="stylesheet" href="assets/css/main.css?v=20260410" />
+  <link rel="stylesheet" href="assets/css/chat.css?v=20260410" />
   <link rel="stylesheet" href="assets/css/anti-surveillance.css?v=20260331" />
+  <link rel="stylesheet" href="assets/css/wallpaper.css?v=20260410" />
 </head>
-<body data-page="chat">
+<body data-page="chat" data-theme="dark">
   <div id="toast-container"></div>
+  <div id="announcer" class="sr-only" aria-live="polite"></div>
 
   <div id="privacy-banner">
-    <span id="privacy-tip">🛡️ Tip: Keep room aliases separate from your real-world identity.</span>
+    <span id="privacy-tip">Tip: keep room aliases separate from real-world identity.</span>
   </div>
 
   <div id="blur-shield">
-    <div class="blur-shield-icon">🛡️</div>
-    <div class="blur-shield-title">🔒 Chat Protected</div>
-    <div class="blur-shield-reason" id="blur-reason">Privacy activated</div>
+    <div class="blur-shield-icon">PR</div>
+    <div class="blur-shield-title">Chat Protected</div>
+    <div class="blur-shield-reason" id="blur-reason">Privacy mode active</div>
     <div class="blur-shield-tap">Tap or click to resume</div>
   </div>
 
   <div id="wipe-screen">
-    <div class="wipe-icon">🔒</div>
+    <div class="wipe-icon">LOCK</div>
     <div class="wipe-title">SESSION WIPED</div>
-    <div class="wipe-sub">All data cleared. Redirecting home...</div>
+    <div class="wipe-sub">All room data has been cleared. Redirecting home.</div>
   </div>
 
   <div id="video-call-overlay" hidden>
     <div class="video-call-shell">
-      <div class="video-call-topbar glass-panel">
-        <a class="brand-link brand-link-compact overlay-home-link" href="index.html" aria-label="Mychat home">
+      <div class="video-call-topbar">
+        <a class="sidebar-brand brand-link" href="index.html" aria-label="Mychat home">
           <span class="brand-mark-wrap">
-            <img class="brand-mark" src="assets/brand/mychat-mark.svg" alt="Mychat" />
+            <img class="brand-mark" src="assets/brand/logo-icon.svg" alt="" />
           </span>
           <span class="brand-wordmark">
             <span class="brand-name">Mychat</span>
-            <span class="brand-subtitle">📞 Room call</span>
+            <span class="brand-subtitle">Private Session</span>
           </span>
         </a>
         <div class="video-call-summary">
-          <div class="video-call-title" id="video-call-title">📞 Room Call</div>
-          <div class="video-call-status" id="video-call-status">✨ Waiting for people to join</div>
+          <div class="video-call-title" id="video-call-title">Room Call</div>
+          <div class="video-call-status" id="video-call-status">Waiting for participants</div>
         </div>
-        <button class="glass-pill-btn" id="video-chat-return-btn" type="button" title="Return to chat">⬅️ Back to Chat</button>
+        <button class="glass-pill-btn" id="video-chat-return-btn" type="button" title="Return to chat">Back To Chat</button>
       </div>
 
       <div class="video-call-stage">
         <div id="remote-video-grid" aria-live="polite"></div>
-        <div id="video-call-empty" class="video-call-empty glass-panel">
-          <span class="video-call-empty-kicker">📞 Live room call</span>
-          <strong>✨ Waiting for people to join...</strong>
-          <span>Invite people in the room to join the call. The first 6 participants are supported.</span>
+        <div id="video-call-empty" class="video-call-empty">
+          <span class="video-call-empty-kicker">Live room call</span>
+          <strong>Waiting for people to join</strong>
+          <span>The room call supports the first six participants who join the session.</span>
         </div>
 
-        <div id="local-video-container" class="video-pip glass-panel" aria-label="Your camera preview">
+        <div id="local-video-container" class="video-pip" aria-label="Your camera preview">
           <div class="video-pip-header">
             <span class="presence-pill" id="local-video-state">Camera on</span>
             <span class="presence-pill presence-pill-muted" id="local-audio-state">Mic live</span>
@@ -75,149 +94,184 @@
         </div>
       </div>
 
-      <div class="video-call-controls glass-panel" id="video-call-controls">
+      <div class="video-call-controls" id="video-call-controls">
         <div class="video-call-meta-strip">
           <span class="video-call-chip" id="video-call-count-chip">1 participant</span>
           <span class="video-call-chip" id="video-call-duration-chip">00:00</span>
         </div>
         <div class="video-call-button-row">
-          <button class="btn-icon call-control-btn" id="vc-flip-btn" title="Flip camera" type="button">🔄 Flip</button>
-          <button class="btn-icon call-control-btn" id="vc-video-btn" title="Toggle camera" type="button">📷 Camera</button>
-          <button class="btn-icon call-control-btn" id="vc-mute-btn" title="Toggle microphone" type="button">🎙️ Mic</button>
-          <button class="btn-icon call-control-btn danger" id="vc-end-btn" title="Leave or end call" type="button">📵 End</button>
+          <button class="btn-icon call-control-btn" id="vc-flip-btn" title="Flip camera" type="button">Flip</button>
+          <button class="btn-icon call-control-btn" id="vc-video-btn" title="Toggle camera" type="button">Camera</button>
+          <button class="btn-icon call-control-btn" id="vc-mute-btn" title="Toggle microphone" type="button">Mic</button>
+          <button class="btn-icon call-control-btn danger" id="vc-end-btn" title="Leave call" type="button">End</button>
         </div>
       </div>
     </div>
   </div>
 
   <div class="chat-shell">
-    <aside class="chat-sidebar glass-panel" id="chat-sidebar">
+    <aside class="chat-sidebar" id="chat-sidebar" aria-label="Chat sidebar">
       <div class="csidebar-topbar">
         <a class="brand-link brand-link-compact" href="index.html" aria-label="Mychat home">
           <span class="brand-mark-wrap">
-            <img class="brand-mark" src="assets/brand/mychat-mark.svg" alt="Mychat" />
+            <img class="brand-mark" src="assets/brand/logo-icon.svg" alt="Mychat" />
           </span>
           <span class="brand-wordmark">
             <span class="brand-name">Mychat</span>
-            <span class="brand-subtitle">🔐 Secure room</span>
+            <span class="brand-subtitle" id="room-id-display" title="Click to copy room ID">Connecting...</span>
           </span>
         </a>
-        <button class="btn-icon" id="close-chat-sidebar-btn" title="Close sidebar" type="button">✕</button>
-      </div>
-
-      <div class="csidebar-section">
-        <div class="csidebar-section-label">Room</div>
-        <div class="csidebar-room-info">
-          <div class="csidebar-room-id-wrap">
-            <span id="room-id-display" title="Click to copy Room ID"></span>
-            <span class="room-type-badge badge badge-purple"></span>
-          </div>
-          <div class="csidebar-online">
-            <span class="online-count" id="online-count">
-              <span class="dot dot-green"></span> 1 online
-            </span>
-          </div>
-        </div>
-        <span class="badge badge-amber" id="host-badge" style="display:none; margin-top:0.5rem;">Host</span>
-      </div>
-
-      <div class="csidebar-section">
-        <div class="csidebar-section-label">Security</div>
-        <div class="shield-indicator" title="Privacy shield status">
-          🛡️ Shield <span class="shield-dot shield-green"></span>
+        <div class="csidebar-top-actions">
+          <span class="shield-indicator" title="Privacy shield status" aria-label="Privacy shield status">
+            <span class="shield-dot shield-green"></span>
+          </span>
+          <button class="btn-icon" id="close-chat-sidebar-btn" title="Close sidebar" type="button">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
         </div>
       </div>
 
-      <div class="csidebar-section">
-        <div class="csidebar-section-label">Actions</div>
+      <div class="csidebar-room-status">
+        <span class="room-type-badge badge badge-purple"></span>
+        <span class="online-count" id="online-count">
+          <span class="dot dot-green"></span> 1 online
+        </span>
+        <span class="badge badge-amber" id="host-badge" style="display:none;">Host</span>
+      </div>
+
+      <div class="csidebar-nav-tabs">
+        <button class="nav-tab active" data-target="conversations-view">Chats</button>
+        <button class="nav-tab" data-target="contacts-view">Contacts</button>
+        <button class="nav-tab" data-target="tools-view">Tools</button>
+      </div>
+
+      <div class="csidebar-view active-view" id="conversations-view">
+        <div id="conversation-list" class="sidebar-list"></div>
+      </div>
+
+      <div class="csidebar-view" id="contacts-view" style="display:none;">
+        <div class="sidebar-stack">
+          <input class="input-field sidebar-search-input" id="contacts-search" placeholder="Search contacts" aria-label="Search contacts" />
+          <div id="contacts-list" class="sidebar-list"></div>
+          <div class="contacts-actions">
+            <button class="btn btn-ghost w-100 btn-sm" id="search-users-btn" type="button">Add Contact</button>
+            <button class="btn btn-ghost w-100 btn-sm" id="inbox-btn" type="button">
+              Inbox <span id="inbox-badge" style="display:none;background:var(--red);color:white;border-radius:9px;padding:2px 6px;font-size:0.75rem;margin-left:5px;">0</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="csidebar-view" id="tools-view" style="display:none;">
         <nav class="csidebar-actions">
-          <button class="csidebar-action-btn" id="search-btn" title="Search messages" type="button">
-            <span>🔍 Search</span>
+          <button class="csidebar-action-btn" id="search-btn" type="button">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <span>Search Messages</span>
           </button>
-          <button class="csidebar-action-btn" id="sound-btn" title="Toggle sound" type="button">
-            <span>🔔 Sound</span>
+          <button class="csidebar-action-btn" id="sound-btn" type="button">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+            <span>Toggle Sound</span>
           </button>
-          <button class="csidebar-action-btn" id="qr-btn" title="QR code" type="button">
-            <span>📷 QR Code</span>
+          <button class="csidebar-action-btn" id="qr-btn" type="button">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><line x1="14" y1="14" x2="14" y2="17"/><line x1="17" y1="14" x2="17" y2="14"/><line x1="20" y1="14" x2="20" y2="17"/><line x1="14" y1="20" x2="17" y2="20"/><line x1="20" y1="20" x2="20" y2="20"/></svg>
+            <span>Share Room QR</span>
           </button>
-          <button class="csidebar-action-btn" id="voice-btn" title="Start room call" type="button">
-            <span>📞 Room Call</span>
+          <button class="csidebar-action-btn" id="voice-btn" type="button">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.6 3.18 2 2 0 0 1 3.58 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.1a16 16 0 0 0 6 6l.92-.92a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+            <span>Start Voice/Video Call</span>
           </button>
-          <button class="csidebar-action-btn" id="privacy-tips-btn" title="Privacy tips" type="button">
-            <span>🛡️ Privacy</span>
+          <button class="csidebar-action-btn" id="theme-btn" type="button">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+            <span>Toggle Theme</span>
           </button>
-          <button class="csidebar-action-btn" id="theme-btn" title="Change theme" type="button">
-            <span>🎨 Theme</span>
+          <button class="csidebar-action-btn" id="users-btn" type="button">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            <span>Participants List</span>
           </button>
-          <button class="csidebar-action-btn" id="users-btn" title="Participants" type="button">
-            <span>👥 Members</span>
+          <button class="csidebar-action-btn" id="privacy-tips-btn" type="button">
+             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+             <span>Privacy Notes</span>
           </button>
+
+          <div id="host-controls-section" style="display:none; margin-top:1rem; padding-top:1rem; border-top:1px solid var(--border);">
+            <div style="font-size: 0.72rem; font-weight: 700; color: var(--text-faint); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em;">Host Controls</div>
+            <button class="csidebar-action-btn host-only" id="lock-btn" style="display:none;" type="button">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              <span>Lock Room</span>
+            </button>
+            <button class="csidebar-action-btn host-only" id="disappearing-btn" style="display:none;" type="button">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              <span id="disappearing-label">Disappear: OFF</span>
+            </button>
+            <button class="csidebar-action-btn host-only danger" id="end-room-btn" style="display:none;" type="button">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+              <span>End Room</span>
+            </button>
+          </div>
         </nav>
       </div>
 
-      <div class="csidebar-section csidebar-host-section" id="host-controls-section" style="display:none;">
-        <div class="csidebar-section-label">Host Controls</div>
-        <nav class="csidebar-actions">
-          <button class="csidebar-action-btn host-only" id="lock-btn" title="Lock or unlock room" style="display:none;" type="button">
-            <span>🔒 Lock Room</span>
-          </button>
-          <button class="csidebar-action-btn host-only" id="disappearing-btn" title="Toggle disappearing mode" style="display:none;" type="button">
-            <span id="disappearing-label">💨 Disappear: OFF</span>
-          </button>
-          <button class="csidebar-action-btn host-only danger" id="end-room-btn" title="End room for all" style="display:none;" type="button">
-            <span>🚫 End Room</span>
-          </button>
-        </nav>
-      </div>
-
-      <div style="flex:1;"></div>
-
-      <div class="csidebar-section" style="margin-top: auto; padding-top: 1rem; padding-bottom: 2rem;">
-        <nav class="csidebar-actions">
-          <button class="csidebar-action-btn danger" id="back-btn" title="Leave room" type="button">
-            <span>🚪 Leave Room</span>
-          </button>
-        </nav>
+      <div class="csidebar-footer">
+        <button class="csidebar-action-btn danger" id="back-btn" type="button" style="width: 100%;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18.36" y1="5.64" x2="5.64" y2="18.36"/><line x1="5.64" y1="5.64" x2="18.36" y2="18.36"/></svg>
+          <span>Leave Room</span>
+        </button>
       </div>
     </aside>
 
     <div class="chat-sidebar-overlay" id="chat-sidebar-overlay"></div>
 
     <div class="chat-main-wrap">
-      <header id="top-bar" class="glass-panel">
+      <header id="top-bar">
         <div class="top-bar-left">
-          <button class="btn-icon mobile-only" id="chat-sidebar-toggle" title="Menu" type="button">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+          <button class="btn-icon mobile-only" id="chat-sidebar-toggle" title="Open sidebar" type="button">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
           </button>
           <a class="brand-link brand-link-compact top-bar-brand" href="index.html" aria-label="Mychat home">
             <span class="brand-mark-wrap">
-              <img class="brand-mark" src="assets/brand/mychat-mark.svg" alt="Mychat" />
+              <img class="brand-mark" src="assets/brand/logo.png" alt="Mychat" />
             </span>
           </a>
           <div class="top-bar-room-info">
-            <span class="top-bar-hash">#</span>
-            <span id="top-bar-room-id-mirror" class="top-bar-room-name">...</span>
+            <span id="top-bar-room-id-mirror" class="top-bar-room-name">Room</span>
+            <span id="header-room-status" class="header-room-status" title="Room connection state">Waiting</span>
+            <span id="connection-status" class="header-room-status" title="Transport state">Connecting</span>
+            <span class="top-bar-identity">
+              <span id="header-identity-badge" class="header-identity-badge" title="Compact fingerprint">MC-0000-0000</span>
+              <button id="header-identity-copy-btn" class="header-identity-copy-btn" type="button" title="Copy fingerprint" aria-label="Copy fingerprint">Copy</button>
+            </span>
           </div>
           <span class="online-count mobile-only" id="online-count-mobile" style="display:none;">
             <span class="dot dot-green"></span>
           </span>
         </div>
+
         <div class="top-bar-right">
-          <button class="btn-icon mobile-only" id="search-btn-mobile" title="Search" type="button">🔍</button>
-          <button class="btn-icon mobile-only" id="users-btn-mobile" title="Members" type="button">👥</button>
+          <button class="btn-icon mobile-only" id="search-btn-mobile" title="Search" type="button">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          </button>
+          <button class="btn-icon mobile-only" id="users-btn-mobile" title="Participants" type="button">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </button>
           <div class="shield-indicator desktop-only" title="Privacy shield status">
-            🛡️ Shield <span class="shield-dot shield-green"></span>
+            Shield <span class="shield-dot shield-green"></span>
           </div>
+          <button class="btn btn-ghost btn-sm" id="leave-btn" type="button">Leave</button>
         </div>
       </header>
 
       <div id="chat-main">
         <div id="typing-indicator">
           <div class="typing-dots"><span></span><span></span><span></span></div>
-          <span id="typing-name"></span> is typing...
+          <span id="typing-name">Someone is typing...</span>
         </div>
 
-        <div id="chat-feed" role="log" aria-live="polite" aria-label="Chat messages"></div>
+        <div id="history-tools">
+          <button class="btn btn-ghost btn-sm" id="load-earlier-btn" type="button">Load Earlier Messages</button>
+          <span id="local-storage-indicator" class="history-indicator hidden">Encrypted locally</span>
+        </div>
+
+        <div id="chat-feed" role="log" aria-live="polite" aria-label="Chat messages" tabindex="0"></div>
 
         <div id="recording-indicator" hidden>
           <div class="recording-info">
@@ -226,49 +280,71 @@
             <strong id="recording-timer">0:00</strong>
           </div>
           <div class="recording-controls">
-            <button class="rec-btn-preview" id="rec-play-btn" title="Preview" type="button" hidden>Play</button>
-            <button class="rec-btn-delete" id="rec-delete-btn" title="Discard" type="button">Delete</button>
-            <button class="rec-btn-send" id="rec-send-btn" title="Send voice message" type="button" hidden>Send</button>
-            <button class="rec-btn-stop" id="rec-stop-btn" title="Stop recording" type="button">Stop</button>
+            <button class="rec-btn-preview" id="rec-play-btn" aria-label="Preview voice message" type="button" hidden>Play</button>
+            <button class="rec-btn-delete" id="rec-delete-btn" aria-label="Discard voice message" type="button">Delete</button>
+            <button class="rec-btn-send" id="rec-send-btn" aria-label="Send voice message" type="button" hidden>Send</button>
+            <button class="rec-btn-stop" id="rec-stop-btn" aria-label="Stop recording" type="button">Stop</button>
           </div>
         </div>
 
-        <div id="multi-select-bar" style="display:none; position:absolute; bottom: 80px; left:50%; transform:translateX(-50%); background:var(--surface-high); padding:0.5rem 1rem; border-radius:var(--r-full); box-shadow:0 10px 30px rgba(0,0,0,0.8); z-index:100; align-items:center; gap:1rem; border:1px solid rgba(255,255,255,0.1);">
-          <span id="select-count" style="font-size:0.85rem;font-weight:600;">0 selected</span>
-          <button class="btn btn-danger-ghost" style="padding:0.4rem 0.8rem;font-size:0.8rem;" id="multi-delete-btn" type="button">Delete</button>
-          <button class="btn btn-ghost" style="padding:0.4rem 0.8rem;font-size:0.8rem;" id="multi-cancel-btn" type="button">Cancel</button>
+        <div id="multi-select-bar" style="display:none; position:absolute; bottom:80px; left:50%; transform:translateX(-50%); padding:0.55rem 0.95rem; border-radius:999px; z-index:100; align-items:center; gap:1rem;">
+          <span id="select-count" style="font-size:0.85rem;font-weight:700;">0 selected</span>
+          <button class="btn btn-danger-ghost btn-sm" id="multi-delete-btn" type="button">Delete</button>
+          <button class="btn btn-ghost btn-sm" id="multi-cancel-btn" type="button">Cancel</button>
         </div>
 
         <footer id="input-bar">
           <div id="extra-bar">
-            <button class="extra-action danger" id="clear-btn" title="Clear chat for everyone" type="button">🗑️ Clear Chat</button>
-            <button class="extra-action" id="copy-room-btn" title="Copy Room ID" type="button">📋 Copy ID</button>
+            <button class="extra-action danger" id="clear-btn" type="button">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="vertical-align:middle;margin-right:4px"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+              Clear Chat
+            </button>
+            <button class="extra-action" id="copy-room-btn" type="button">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="vertical-align:middle;margin-right:4px"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              Copy Room ID
+            </button>
           </div>
+
+          <div id="edit-preview" hidden>
+            <div class="reply-preview-copy">
+              <span id="edit-preview-label">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="vertical-align:middle;margin-right:4px"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                Editing message
+              </span>
+              <span id="edit-preview-text"></span>
+            </div>
+            <button class="btn-icon" id="edit-cancel-btn" title="Cancel edit" type="button">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+
           <div id="reply-preview" hidden>
             <div class="reply-preview-copy">
               <span id="reply-preview-from"></span>
               <span id="reply-preview-text"></span>
             </div>
-            <button class="btn-icon" id="reply-cancel-btn" title="Cancel reply" type="button">Close</button>
+            <button class="btn-icon" id="reply-cancel-btn" title="Cancel reply" type="button">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
           </div>
+
           <div class="input-row glass-panel">
-            <label class="btn-icon" for="file-input" title="Share file" style="cursor:pointer">
-              📎 Attach
+            <label class="btn-icon" for="file-input" title="Share file" style="cursor:pointer;">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
               <input type="file" id="file-input" style="display:none" />
             </label>
-            <button class="btn-icon" id="media-drawer-btn" title="Emojis, GIFs, stickers" type="button">😊</button>
-            <button class="btn-icon" id="mic-btn" title="Hold to record voice message" type="button">🎙️</button>
-            <textarea
-              id="msg-input"
-              placeholder="Message..."
-              rows="1"
-              autocomplete="off"
-              spellcheck="true"
-              aria-label="Type a message"
-            ></textarea>
-            <button class="btn-icon" id="call-btn" title="Start room call" type="button">📞</button>
+            <button class="btn-icon" id="media-drawer-btn" title="Emoji and media" type="button">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+            </button>
+            <button class="btn-icon" id="mic-btn" title="Hold to record voice message" type="button">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+            </button>
+            <textarea id="msg-input" placeholder="Type a message…" rows="1" autocomplete="off" spellcheck="true" aria-label="Type a message"></textarea>
+            <button class="btn-icon" id="call-btn" title="Start room call" type="button">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.6 3.18 2 2 0 0 1 3.58 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.1a16 16 0 0 0 6 6l.92-.92a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+            </button>
             <button id="send-btn" title="Send message" aria-label="Send" type="button">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
             </button>
           </div>
         </footer>
@@ -276,50 +352,58 @@
 
       <aside id="user-panel" aria-label="Participants" class="glass-panel">
         <div class="user-panel-header">
-          <span class="user-panel-title">Participants</span>
-          <button class="btn-icon" id="close-panel-btn" type="button">✕</button>
+          <span class="user-panel-title">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" style="vertical-align:middle;margin-right:6px"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            Participants
+          </span>
+          <button class="btn-icon" id="close-panel-btn" type="button">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
         </div>
         <div id="user-list" role="list"></div>
       </aside>
     </div>
   </div>
 
-  <div class="modal-backdrop" id="incoming-call-modal">
-    <div class="modal-box" style="text-align:center">
-      <div class="call-avatar-large">📞</div>
+  <div class="modal-backdrop" id="incoming-call-modal" role="dialog" aria-modal="true" aria-labelledby="caller-name" aria-describedby="incoming-call-subtitle">
+    <div class="modal-box" style="text-align:center;">
+      <div class="call-avatar-large">Call</div>
       <div class="modal-title" id="caller-name">Unknown</div>
-      <div class="modal-subtitle" id="incoming-call-subtitle">✨ Incoming room call</div>
+      <div class="modal-subtitle" id="incoming-call-subtitle">Incoming room call</div>
       <div class="call-incoming-actions">
-        <button class="btn-decline-call" id="decline-call-btn" title="Decline" type="button">❌ Decline</button>
-        <button class="btn-accept-call" id="accept-call-btn" title="Accept" type="button">✅ Join</button>
+        <button class="btn-decline-call" id="decline-call-btn" type="button">Decline</button>
+        <button class="btn-accept-call" id="accept-call-btn" type="button">Join</button>
       </div>
     </div>
   </div>
 
-  <div class="modal-backdrop" id="qr-modal">
-    <div class="modal-box" style="text-align:center">
-      <div class="modal-title">📷 Share Room QR</div>
-      <div class="modal-subtitle">📱 Scan to join this room</div>
-      <div id="qr-container"></div>
-      <div class="modal-actions" style="justify-content:center; flex-direction:column; gap:0.5rem; align-items:center;">
-        <button class="btn w-100" id="copy-room-link-btn" onclick="copyToClipboard(window.location.href, this)" style="display:flex; justify-content:center; gap:0.5rem;" type="button">📋 Copy Room Link</button>
+  <div class="modal-backdrop" id="qr-modal" role="dialog" aria-modal="true" aria-label="Share room QR">
+    <div class="modal-box" style="text-align:center;">
+      <div class="modal-title">Share Room QR</div>
+      <div class="modal-subtitle">Use this link or QR code to join the current room.</div>
+      <div id="qr-container-wrapper" style="background:#fff; padding:1.5rem; border-radius:12px; display:inline-block; margin:1rem auto;">
+        <div id="qr-container"></div>
+      </div>
+      <div id="qr-room-link-text" style="word-break: break-all; margin-bottom: 1rem; color: var(--text-dim); font-size: 0.85rem; user-select: all; font-family: var(--ff-mono);"></div>
+      <div class="modal-actions" style="justify-content:center;">
+        <button class="btn w-100" id="copy-room-link-btn" onclick="copyToClipboard(window.location.href, this)" type="button">Copy Room Link</button>
         <button class="btn btn-ghost w-100" onclick="hideModal('qr-modal')" type="button">Close</button>
       </div>
     </div>
   </div>
 
-  <div class="modal-backdrop" id="timer-modal">
+  <div class="modal-backdrop" id="timer-modal" role="dialog" aria-modal="true" aria-label="Self-destruct timer">
     <div class="modal-box">
-      <div class="modal-title">⏱️ Self-Destruct Timer</div>
-      <div class="modal-subtitle">💨 Choose when this message disappears for everyone</div>
-      <div class="timer-options">
-        <button class="timer-opt" data-seconds="5" type="button">5s</button>
-        <button class="timer-opt" data-seconds="30" type="button">30s</button>
-        <button class="timer-opt" data-seconds="60" type="button">1 min</button>
-        <button class="timer-opt" data-seconds="300" type="button">5 min</button>
-        <button class="timer-opt" data-seconds="600" type="button">10 min</button>
-        <button class="timer-opt" data-seconds="1800" type="button">30 min</button>
-        <button class="timer-opt" data-seconds="3600" type="button">1 hour</button>
+      <div class="modal-title">Self-Destruct Timer</div>
+      <div class="modal-subtitle">Choose when the selected message should disappear.</div>
+      <div class="timer-options" style="display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:0.55rem; margin-top:1rem;">
+        <button class="btn btn-ghost timer-opt" data-seconds="5" type="button">5s</button>
+        <button class="btn btn-ghost timer-opt" data-seconds="30" type="button">30s</button>
+        <button class="btn btn-ghost timer-opt" data-seconds="60" type="button">1 min</button>
+        <button class="btn btn-ghost timer-opt" data-seconds="300" type="button">5 min</button>
+        <button class="btn btn-ghost timer-opt" data-seconds="600" type="button">10 min</button>
+        <button class="btn btn-ghost timer-opt" data-seconds="1800" type="button">30 min</button>
+        <button class="btn btn-ghost timer-opt" data-seconds="3600" type="button">1 hour</button>
       </div>
       <div class="modal-actions">
         <button class="btn btn-ghost w-100" onclick="hideModal('timer-modal')" type="button">Cancel</button>
@@ -327,36 +411,92 @@
     </div>
   </div>
 
-  <div class="modal-backdrop" id="join-request-modal">
-    <div class="modal-box" style="text-align:center">
-      <div style="font-size:3rem; margin-bottom:1rem;">👋</div>
-      <div class="modal-title">✨ Join Request</div>
-      <div class="modal-subtitle"><span id="join-request-name" style="color:var(--accent-bright); font-weight:bold;">Someone</span> wants to join the room.</div>
-      <div class="modal-actions" style="margin-top:2rem; gap:1rem;">
-        <button class="btn btn-danger w-100" id="reject-join-btn" type="button">❌ Reject</button>
-        <button class="btn btn-primary w-100" id="accept-join-btn" type="button">✅ Accept</button>
+  <div class="modal-backdrop" id="join-request-modal" role="dialog" aria-modal="true" aria-label="Join request">
+    <div class="modal-box" style="text-align:center;">
+      <div class="modal-title">Join Request</div>
+      <div class="modal-subtitle"><span id="join-request-name" style="color:var(--accent); font-weight:700;">Someone</span> wants to enter the room.</div>
+      <div class="modal-actions" style="margin-top:1.5rem;">
+        <button class="btn btn-danger w-100" id="reject-join-btn" type="button">Reject</button>
+        <button class="btn btn-primary w-100" id="accept-join-btn" type="button">Accept</button>
       </div>
     </div>
   </div>
 
-  <div class="modal-backdrop" id="waiting-host-modal">
-    <div class="modal-box" style="text-align:center">
-      <div class="loading-spinner" style="margin: 0 auto 1.5rem;"></div>
-      <div class="modal-title">⏳ Please Wait</div>
-      <div class="modal-subtitle">🔒 Securing the room connection and syncing participants...</div>
+  <div class="modal-backdrop" id="waiting-host-modal" role="dialog" aria-modal="true" aria-label="Please wait">
+    <div class="modal-box" style="text-align:center;">
+      <div class="loading-spinner" style="margin:0 auto 1rem;"></div>
+      <div class="modal-title">Please Wait</div>
+      <div class="modal-subtitle">Securing the room connection and syncing participants.</div>
+    </div>
+  </div>
+  </div>
+
+  <div class="modal-backdrop" id="search-users-modal" role="dialog" aria-modal="true" aria-label="Search Users">
+    <div class="modal-box">
+      <div class="modal-title">Search Users</div>
+      <div class="modal-subtitle">Find people by their username.</div>
+      <div style="display:flex; gap:0.5rem; margin-top:1rem;">
+        <input class="input-field" id="global-user-search-input" placeholder="Enter username..." style="flex:1;" />
+        <button class="btn btn-primary" id="global-user-search-btn" type="button">Search</button>
+      </div>
+      <div id="global-user-search-results" class="sidebar-list" style="margin-top:1rem; max-height:200px; overflow-y:auto;"></div>
+      <div class="modal-actions" style="margin-top:1rem;">
+        <button class="btn btn-ghost w-100" onclick="hideModal('search-users-modal')" type="button">Close</button>
+      </div>
     </div>
   </div>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" crossorigin="anonymous"></script>
+  <div class="modal-backdrop" id="inbox-modal" role="dialog" aria-modal="true" aria-label="Contact Requests">
+    <div class="modal-box">
+      <div class="modal-title">Connection Requests</div>
+      <div class="modal-subtitle">People who want to connect with you.</div>
+      <div id="inbox-list" class="sidebar-list" style="margin-top:1rem; max-height:300px; overflow-y:auto; min-height:100px;">
+        <div style="text-align:center;color:var(--text-muted);font-size:0.9rem;margin-top:1rem;">No pending requests</div>
+      </div>
+      <div class="modal-actions" style="margin-top:1rem;">
+        <button class="btn btn-ghost w-100" onclick="hideModal('inbox-modal')" type="button">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="privacy-tips-modal">
+    <div class="modal-box" style="width: 420px;">
+      <div class="modal-title">Privacy Notes</div>
+      <div class="modal-subtitle">A few practices that matter more than decorative security language.</div>
+      <ul class="privacy-tips-list" style="margin: 1rem 0;">
+        <li><strong>Use aliases deliberately.</strong> Do not reuse public handles inside sensitive rooms.</li>
+        <li><strong>Treat links carefully.</strong> Verify before opening unknown media or downloads.</li>
+        <li><strong>Rotate credentials.</strong> Change room passwords if room membership changes.</li>
+        <li><strong>Protect exported identities.</strong> Shared identity cards can be used to reconnect later.</li>
+      </ul>
+      <button class="btn btn-ghost w-100" onclick="hideModal('privacy-tips-modal')" type="button">Close</button>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" crossorigin="anonymous" integrity="sha384-3zSEDfvllQohrq0PHL1fOXJuC/jSOO34H46t6UQfobFOmxE5BpjjaIJY5F2/bMnU" referrerpolicy="no-referrer"></script>
   <script src="assets/js/config.js?v=20260331"></script>
+  <script src="assets/js/storage.js?v=20260402"></script>
+  <script src="assets/js/identity.js?v=20260402"></script>
+  <script src="assets/js/contacts.js?v=20260402"></script>
+  <script src="assets/js/vault.js?v=20260402"></script>
+  <script src="assets/js/groups.js?v=20260402"></script>
+  <script src="assets/js/chat-store.js?v=20260402"></script>
+  <script src="assets/js/reactions.js?v=20260402"></script>
+  <script src="assets/js/delivery.js?v=20260402"></script>
+  <script src="assets/js/presence.js?v=20260402"></script>
   <script src="assets/js/crypto.js?v=20260331"></script>
+  <script src="assets/js/ratchet.js?v=20260402"></script>
   <script src="assets/js/rooms.js?v=20260331"></script>
-  <script src="assets/js/ui.js?v=20260331"></script>
+  <script src="assets/js/ui.js?v=20260407"></script>
   <script src="assets/js/peer.js?v=20260331"></script>
   <script src="assets/js/surveillance.js?v=20260331"></script>
   <script src="assets/js/chat.js?v=20260331"></script>
+  <script src="assets/js/search.js?v=20260402"></script>
+  <script src="assets/js/notifications.js?v=20260402"></script>
+  <script src="assets/js/net-reliability.js?v=20260402"></script>
   <script src="assets/js/media.js?v=20260331"></script>
   <script src="assets/js/rich-media.js?v=20260331"></script>
+  <script src="assets/js/perf.js?v=20260402"></script>
   <script src="assets/js/app.js?v=20260331"></script>
 
   <aside id="media-drawer">
@@ -367,7 +507,7 @@
     </div>
 
     <div class="media-search-wrap">
-      <input type="text" id="media-search-input" placeholder="Search emojis, gifs, stickers..." autocomplete="off">
+      <input type="text" id="media-search-input" placeholder="Search emoji, GIFs, or stickers" autocomplete="off">
     </div>
 
     <div class="media-tab-content" id="tab-emoji"></div>
@@ -381,24 +521,58 @@
 
   <script>
     (function() {
+      // Sidebar Toggle
       document.getElementById('chat-sidebar-toggle')?.addEventListener('click', () => {
         document.getElementById('chat-sidebar')?.classList.toggle('csidebar-open');
         document.getElementById('chat-sidebar-overlay')?.classList.toggle('overlay-visible');
       });
+
       document.getElementById('close-chat-sidebar-btn')?.addEventListener('click', () => {
         document.getElementById('chat-sidebar')?.classList.remove('csidebar-open');
       });
+
       document.getElementById('chat-sidebar-overlay')?.addEventListener('click', () => {
         document.getElementById('chat-sidebar')?.classList.remove('csidebar-open');
         document.getElementById('chat-sidebar-overlay')?.classList.remove('overlay-visible');
       });
 
+      // Synchronize room ID to top mirror
       const ridEl = document.getElementById('room-id-display');
       const mirrorEl = document.getElementById('top-bar-room-id-mirror');
       if (ridEl && mirrorEl) {
-        const observer = new MutationObserver(() => { mirrorEl.textContent = ridEl.textContent; });
+        const observer = new MutationObserver(() => {
+          mirrorEl.textContent = ridEl.textContent;
+        });
         observer.observe(ridEl, { childList: true, characterData: true, subtree: true });
       }
+
+      // Sidebar Tabs Logic
+      const navTabs = document.querySelectorAll('.nav-tab');
+      const sideViews = document.querySelectorAll('.csidebar-view');
+
+      navTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+          // Remove active from all tabs
+          navTabs.forEach(t => t.classList.remove('active'));
+          // Add active to clicked
+          tab.classList.add('active');
+          
+          const target = tab.dataset.target;
+          
+          // Hide all views
+          sideViews.forEach(view => {
+            view.style.display = 'none';
+            view.classList.remove('active-view');
+          });
+          
+          // Show target view
+          const activeView = document.getElementById(target);
+          if (activeView) {
+            activeView.style.display = 'flex';
+            activeView.classList.add('active-view');
+          }
+        });
+      });
     })();
   </script>
 </body>

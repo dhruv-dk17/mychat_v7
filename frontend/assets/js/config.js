@@ -2,17 +2,24 @@
 'use strict';
 
 function resolveApiBase() {
+  const stored = localStorage.getItem('MYCHAT_API_BASE');
+  if (stored) return stored.replace(/\/$/, '');
+
   if (window.__MYCHAT_API_BASE__ && typeof window.__MYCHAT_API_BASE__ === 'string') {
     const base = window.__MYCHAT_API_BASE__.trim();
     if (base) return base.replace(/\/$/, '');
   }
 
-  if (window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-    if (window.location.port === '5500' || window.location.protocol === 'file:') {
-      return 'http://localhost:10000/api';
-    }
+  const hostname = window.location.hostname;
+  const protocol = window.location.protocol;
+  const isLocal = protocol === 'file:' || hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '0.0.0.0';
+  
+  if (isLocal) {
+    // Default to local backend, but allows easy override via localStorage for testing.
+    return 'http://localhost:10000/api';
   }
 
+  // Default relative API path - Render build will replace this with full URL
   return '/api';
 }
 
@@ -59,8 +66,16 @@ const CONFIG = {
   MAX_SCREENSHOT_STRIKES: 3,
   PING_INTERVAL_MS: 10000,
   PING_TIMEOUT_MS: 30000,
+  REACTION_EMOJIS: ['👍', '❤️', '😂', '😮', '😢', '🔥'],
+  REACTION_MAX_UNIQUE: 6,
   TYPING_DEBOUNCE_MS: 2000,
-  TYPING_CLEAR_MS: 3000,
+  TYPING_IDLE_MS: 3000,
+  TYPING_CLEAR_MS: 5000,
+  PRESENCE_AWAY_AFTER_MS: 300000,
+  PRESENCE_HEARTBEAT_MS: 60000,
+  PRESENCE_EXPIRY_MS: 90000,
+  PRESENCE_BROADCAST_THROTTLE_MS: 5000,
+  PRESENCE_MAX_RECORDS: 500,
   VOICE_MAX_MS: 300000,
   PERMANENT_RECONNECT_MS: 4000,
   PERMANENT_HISTORY_POLL_MS: 5000,
@@ -69,5 +84,10 @@ const CONFIG = {
   HEALTH_POLL_MS: 3000,
   KEEPALIVE_MS: 840000,
   MESSAGE_LIMIT: 5000,
-  MAX_VIDEO_PARTICIPANTS: 6
+  MAX_VIDEO_PARTICIPANTS: 6,
+  IDENTITY_DB_NAME: 'mychat_db',
+  IDENTITY_DB_VERSION: 2,
+  IDENTITY_FINGERPRINT_LENGTH: 8,
+  IDENTITY_DISPLAY_NAME_MAX: 32,
+  IDENTITY_KEY_ALGORITHM: { name: 'ECDSA', namedCurve: 'P-256' }
 };

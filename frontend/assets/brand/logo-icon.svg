@@ -1,0 +1,45 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Mychat logo">
+  <defs>
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0D1B3E"/>
+      <stop offset="100%" stop-color="#0A0F24"/>
+    </linearGradient>
+    <linearGradient id="markGrad" x1="12" y1="14" x2="52" y2="52" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#60A5FA"/>
+      <stop offset="50%" stop-color="#3B82F6"/>
+      <stop offset="100%" stop-color="#8B5CF6"/>
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="3" result="blur"/>
+      <feFlood flood-color="#3B82F6" flood-opacity="0.6" result="color"/>
+      <feComposite in="color" in2="blur" operator="in" result="shadow"/>
+      <feMerge><feMergeNode in="shadow"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="innerShadow">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="1.5" result="blur"/>
+      <feOffset dy="1"/>
+      <feComposite in2="SourceAlpha" operator="arithmetic" k2="-1" k3="1"/>
+    </filter>
+  </defs>
+
+  <!-- Card background -->
+  <rect width="64" height="64" rx="18" fill="url(#bgGrad)"/>
+
+  <!-- Subtle border -->
+  <rect x="0.75" y="0.75" width="62.5" height="62.5" rx="17.25" stroke="rgba(96,165,250,0.2)" stroke-width="1.5"/>
+
+  <!-- Glow halo behind mark -->
+  <ellipse cx="32" cy="33" rx="18" ry="16" fill="rgba(59,130,246,0.12)"/>
+
+  <!-- Speech bubble body -->
+  <path d="M16 26C16 21.582 19.582 18 24 18H40C44.418 18 48 21.582 48 26V36C48 40.418 44.418 44 40 44H34L28 50V44H24C19.582 44 16 40.418 16 36V26Z"
+        fill="url(#markGrad)" filter="url(#glow)" opacity="0.95"/>
+
+  <!-- M lettermark inside bubble -->
+  <path d="M23 38V27L29 34L35 27V38M35 27V38" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <path d="M23 38V27L29 34L35 27V38" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+
+  <!-- Lock dot - encryption indicator -->
+  <circle cx="42" cy="22" r="4" fill="#10B981"/>
+  <circle cx="42" cy="22" r="2.5" fill="white"/>
+</svg>

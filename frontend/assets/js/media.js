@@ -75,6 +75,8 @@ async function sendFile(file) {
       mimeType: file.type,
       totalChunks: chunks.length,
       from: myUsername,
+      fromFingerprint: typeof getIdentityFingerprintSync === 'function' ? getIdentityFingerprintSync() : '',
+      replyTo: typeof buildReplyPayload === 'function' ? buildReplyPayload() : null,
       ts: Date.now()
     });
 
@@ -90,15 +92,26 @@ async function sendFile(file) {
 
     const blob = new Blob([event.target.result], { type: file.type });
     const url = URL.createObjectURL(blob);
-    renderFileMessage({
+    const localMessage = {
       id: fileId,
+      type: 'file_meta',
       from: myUsername,
       name: file.name,
       size: file.size,
       mimeType: file.type,
       blobUrl: url,
-      ts: Date.now()
-    }, true);
+      ts: Date.now(),
+      replyTo: typeof buildReplyPayload === 'function' ? buildReplyPayload() : null,
+      deliveryState: 'sent',
+      reactions: [],
+      fromFingerprint: typeof getIdentityFingerprintSync === 'function' ? getIdentityFingerprintSync() : ''
+    };
+    renderFileMessage(localMessage, true);
+    if (typeof persistMessageLocally === 'function') {
+      persistMessageLocally({ ...localMessage, blobUrl: '', content: file.name });
+    }
+    if (typeof clearPendingReply === 'function') clearPendingReply();
+    if (typeof stopTypingIndicator === 'function') stopTypingIndicator();
   };
   reader.readAsArrayBuffer(file);
 }
@@ -129,7 +142,15 @@ function assembleFile(fileId) {
   const blob = new Blob([bytes], { type: meta.mimeType || 'application/octet-stream' });
   const url = URL.createObjectURL(blob);
   const isOwn = typeof isOwnMessage === 'function' ? isOwnMessage(meta) : meta.from === myUsername;
-  renderFileMessage({ ...meta, blobUrl: url }, isOwn);
+  const rendered = { ...meta, type: 'file_meta', id: meta.id || meta.fileId, blobUrl: url };
+  renderFileMessage(rendered, isOwn);
+  const renderedEl = document.querySelector(`[data-msg-id="${rendered.id}"]`);
+  if (typeof persistMessageLocally === 'function') {
+    persistMessageLocally({ ...rendered, blobUrl: '', content: meta.name || '' });
+  }
+  if (!isOwn && typeof acknowledgeIncomingMessage === 'function') {
+    acknowledgeIncomingMessage(rendered, renderedEl);
+  }
 
   fileTransfers.delete(fileId);
   fileTransfers.delete(`${fileId}_meta`);
@@ -138,47 +159,84 @@ function assembleFile(fileId) {
 function renderFileMessage(msg, isOwn) {
   const feed = document.getElementById('chat-feed');
   if (!feed) return;
+  const messageId = msg.id || msg.fileId;
+  if (!messageId || document.querySelector(`[data-msg-id="${messageId}"]`)) return;
 
   const isImage = msg.mimeType?.startsWith('image/');
-  const safeBlobUrl = typeof normalizeMediaUrl === 'function' ? normalizeMediaUrl(msg.blobUrl) : msg.blobUrl;
-  if (!safeBlobUrl) {
+  const safeBlobUrl = msg.blobUrl ? (typeof normalizeMediaUrl === 'function' ? normalizeMediaUrl(msg.blobUrl) : msg.blobUrl) : '';
+  const hasPreview = Boolean(safeBlobUrl);
+  if (msg.blobUrl && !safeBlobUrl) {
     showToast('Blocked unsafe file preview', 'error');
     return;
   }
 
   const el = document.createElement('div');
   el.className = `msg ${isOwn ? 'msg-out' : 'msg-in'}`;
-  el.dataset.msgId = msg.id || msg.fileId;
+  el.dataset.msgId = messageId;
   el.dataset.sender = msg.from;
 
   const icon = getFileIcon(msg.mimeType);
   el.innerHTML = `
     ${!isOwn ? `<span class="msg-user">${escHtml(msg.from)}</span>` : ''}
     <div class="msg-bubble">
+      ${typeof renderReplyBlock === 'function' ? renderReplyBlock(msg.replyTo) : ''}
       <div class="file-msg-wrap">
-        ${isImage ? `<img class="file-thumb" alt="${escHtml(msg.name)}" loading="lazy">` : ''}
+        ${isImage && hasPreview ? `<img class="file-thumb" alt="${escHtml(msg.name)}" loading="lazy">` : ''}
         <div class="file-info-row">
           <span class="file-icon">${icon}</span>
           <div class="file-details">
             <div class="file-name-text" title="${escHtml(msg.name)}">${escHtml(msg.name)}</div>
-            <div class="file-size-text">${fmtBytes(msg.size)}</div>
+            <div class="file-size-text">${fmtBytes(msg.size)}${hasPreview ? '' : ' • metadata only'}</div>
           </div>
-          <a class="file-download-btn" download="${escHtml(msg.name)}" title="Download">Download</a>
+          ${hasPreview ? `<a class="file-download-btn" download="${escHtml(msg.name)}" title="Download">Download</a>` : '<span class="file-download-btn" aria-disabled="true">Stored</span>'}
         </div>
-        <div class="file-progress" id="fp-${msg.id || msg.fileId}">
+        <div class="file-progress" id="fp-${messageId}">
           <div class="file-progress-fill"></div>
         </div>
       </div>
     </div>
-    <span class="msg-time">${fmtTime(msg.ts)}</span>
+    <div class="msg-meta">
+      <span class="msg-time">${fmtTime(msg.ts)}</span>
+      ${typeof getReceiptMarkup === 'function' ? getReceiptMarkup(msg, isOwn) : ''}
+    </div>
+    <div class="msg-reactions" id="reactions-${messageId}"></div>
   `;
 
   el.querySelector('.file-thumb')?.setAttribute('src', safeBlobUrl);
-  el.querySelector('.file-download-btn')?.setAttribute('href', safeBlobUrl);
+  if (hasPreview) {
+    el.querySelector('.file-download-btn')?.setAttribute('href', safeBlobUrl);
+  }
+  if (!hasPreview) {
+    el.querySelector('.file-progress')?.setAttribute('hidden', '');
+  }
+
+  el.addEventListener('click', event => {
+    if (isMultiSelectMode && isOwn) {
+      event.preventDefault();
+      event.stopPropagation();
+      toggleMessageSelection(messageId, el);
+    }
+  });
+  el.addEventListener('contextmenu', event => {
+    event.preventDefault();
+    showContextMenu(event, { ...msg, id: messageId, type: 'file_meta' }, isOwn);
+  });
+  el.addEventListener('touchstart', event => {
+    const timer = setTimeout(() => showContextMenu(event.touches[0], { ...msg, id: messageId, type: 'file_meta' }, isOwn), 500);
+    el.addEventListener('touchend', () => clearTimeout(timer), { once: true });
+  });
 
   feed.appendChild(el);
   feed.scrollTop = feed.scrollHeight;
-  messages.push({ ...msg, type: 'file' });
+  if (typeof bindReplyScroll === 'function') bindReplyScroll(el);
+  if (typeof refreshMessageMeta === 'function') refreshMessageMeta({ ...msg, id: messageId });
+  if (typeof renderMessageReactions === 'function') renderMessageReactions({ ...msg, id: messageId });
+  const existing = typeof getMessageById === 'function' ? getMessageById(messageId) : null;
+  if (existing) {
+    Object.assign(existing, { ...msg, id: messageId, type: 'file_meta' });
+  } else {
+    messages.push({ ...msg, id: messageId, type: 'file_meta' });
+  }
 }
 
 function updateFileProgress(fileId, pct) {
@@ -945,16 +1003,23 @@ async function sendVoiceMessage() {
     id: crypto.randomUUID(),
     from: myUsername,
     voiceData: b64,
+    fromFingerprint: typeof getIdentityFingerprintSync === 'function' ? getIdentityFingerprintSync() : '',
     ts: Date.now(),
     replyTo: typeof buildReplyPayload === 'function' ? buildReplyPayload() : null,
+    reactions: [],
+    deliveryState: 'sent',
     deliveredAt: null,
     readAt: null
   };
 
   if (typeof rememberMessage === 'function') rememberMessage(msg);
   renderVoiceMessage(msg, true);
+  if (typeof persistMessageLocally === 'function') {
+    persistMessageLocally({ ...msg, content: '[Voice message]' });
+  }
   broadcastOrRelay(msg);
   if (typeof clearPendingReply === 'function') clearPendingReply();
+  if (typeof stopTypingIndicator === 'function') stopTypingIndicator();
   discardRecording();
 }
 
@@ -962,9 +1027,16 @@ function receiveVoiceMessage(msg) {
   if (typeof rememberMessage === 'function' && !rememberMessage(msg)) return;
   const isOwn = typeof isOwnMessage === 'function' ? isOwnMessage(msg) : msg.from === myUsername;
   renderVoiceMessage(msg, isOwn);
-  if (!isOwn) {
+  const voiceEl = document.querySelector(`[data-msg-id="${msg.id}"]`);
+  if (!msg.__fromStore && typeof persistMessageLocally === 'function') {
+    persistMessageLocally({ ...msg, content: '[Voice message]' });
+  }
+  if (!isOwn && !msg.__fromStore) {
     playMessageSound();
-    if (typeof acknowledgeIncomingMessage === 'function') acknowledgeIncomingMessage(msg);
+    if (typeof acknowledgeIncomingMessage === 'function') acknowledgeIncomingMessage(msg, voiceEl);
+  }
+  if (!msg.__fromStore && typeof currentConversationId !== 'undefined' && currentConversationId && typeof markStoredConversationRead === 'function') {
+    markStoredConversationRead(currentConversationId).catch(() => {});
   }
 }
 
@@ -995,12 +1067,29 @@ function renderVoiceMessage(msg, isOwn) {
       <span class="msg-time">${fmtTime(msg.ts)}</span>
       ${typeof getReceiptMarkup === 'function' ? getReceiptMarkup(msg, isOwn) : ''}
     </div>
+    <div class="msg-reactions" id="reactions-${msg.id}"></div>
   `;
 
   const playBtn = el.querySelector('.voice-play-btn');
   const scrubber = el.querySelector('.voice-scrubber');
   const duration = el.querySelector('.voice-duration');
   let audio = null;
+
+  el.addEventListener('click', event => {
+    if (isMultiSelectMode && isOwn) {
+      event.preventDefault();
+      event.stopPropagation();
+      toggleMessageSelection(msg.id, el);
+    }
+  });
+  el.addEventListener('contextmenu', event => {
+    event.preventDefault();
+    showContextMenu(event, msg, isOwn);
+  });
+  el.addEventListener('touchstart', event => {
+    const timer = setTimeout(() => showContextMenu(event.touches[0], msg, isOwn), 500);
+    el.addEventListener('touchend', () => clearTimeout(timer), { once: true });
+  });
 
   const formatSeconds = seconds => {
     const mins = Math.floor(seconds / 60);
@@ -1047,6 +1136,9 @@ function renderVoiceMessage(msg, isOwn) {
 
   feed.appendChild(el);
   feed.scrollTop = feed.scrollHeight;
+  if (typeof bindReplyScroll === 'function') bindReplyScroll(el);
+  if (typeof refreshMessageMeta === 'function') refreshMessageMeta(msg);
+  if (typeof renderMessageReactions === 'function') renderMessageReactions(msg);
 
   const existing = typeof getMessageById === 'function' ? getMessageById(msg.id) : null;
   if (existing) {

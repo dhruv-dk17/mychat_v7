@@ -1,0 +1,29 @@
+{
+  "name": "Mychat — Private & Encrypted",
+  "short_name": "Mychat",
+  "description": "Secure P2P messaging with end-to-end encryption, room persistence, and contact management.",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0c1322",
+  "theme_color": "#7C3AED",
+  "categories": ["communication", "social"],
+  "icons": [
+    {
+      "src": "assets/brand/logo-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "assets/brand/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "screenshots": [],
+  "lang": "en-US",
+  "dir": "ltr",
+  "prefer_related_applications": false
+}

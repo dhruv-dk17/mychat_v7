@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Mychat P2P Harness</title>
+  <style>
+    body { font-family: system-ui, sans-serif; background: #0b0e14; color: #e2e8f0; padding: 20px; }
+    #log { background: #000; padding: 15px; border-radius: 8px; height: 400px; overflow-y: auto; font-family: monospace; border: 1px solid #333; }
+    .info { color: #888; }
+    .success { color: #0f0; }
+    .error { color: #f00; }
+    .msg { color: #aff; }
+    .control { margin-bottom: 20px; display: flex; gap: 10px; }
+    button { padding: 10px 20px; cursor: pointer; border-radius: 6px; border: none; background: #3182ce; color: #fff; font-weight: bold; }
+    input { padding: 10px; border-radius: 6px; border: 1px solid #333; background: #1a1f2e; color: #fff; }
+  </style>
+</head>
+<body>
+  <h1>P2P Protocol Harness</h1>
+  <div class="control">
+    <button id="btn-alice">Alice (Host)</button>
+    <button id="btn-bob">Bob (Join)</button>
+    <input type="text" id="target-room" placeholder="Room ID to join">
+    <button id="btn-send" disabled>Send Test Message</button>
+  </div>
+  <div id="log"></div>
+
+  <script src="../assets/js/config.js"></script>
+  <script src="../assets/js/storage.js"></script>
+  <script src="../assets/js/identity.js"></script>
+  <script src="../assets/js/crypto.js"></script>
+  <script src="../assets/js/ratchet.js"></script>
+  <script src="../assets/js/peer.js"></script>
+  <script src="../assets/js/chat-store.js"></script>
+
+  <script>
+    const logger = document.getElementById('log');
+    function log(msg, type = 'info') {
+      const div = document.createElement('div');
+      div.className = type;
+      div.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+      logger.appendChild(div);
+      logger.scrollTop = logger.scrollHeight;
+      console.log(`[P2P HARNESS] ${msg}`);
+    }
+
+    const aliceBtn = document.getElementById('btn-alice');
+    const bobBtn = document.getElementById('btn-bob');
+    const sendBtn = document.getElementById('btn-send');
+    const targetInput = document.getElementById('target-room');
+
+    let currentPeer = null;
+
+    // Alice logic
+    aliceBtn.onclick = async () => {
+      log('Alice initializing...');
+      localStorage.clear(); // Clean slate for test
+      await initIdentity();
+      const ident = await getIdentity();
+      log(`Identity: ${ident.displayName} (${ident.fingerprint})`, 'success');
+      
+      const roomId = 'p2p-' + Math.random().toString(36).slice(2, 6);
+      log(`Creating Host instance for room: ${roomId}`);
+      
+      // Monkey patch initHost/initGuest to log things
+      const originalOnMessage = window.onPeerMessageReceived;
+      window.onPeerMessageReceived = (msg) => {
+        log(`RECV: "${msg.text}" from ${msg.from}`, 'msg');
+        if (originalOnMessage) originalOnMessage(msg);
+      };
+
+      try {
+        await initHost(roomId, 'Alice');
+        log(`Host ready. Alice PeerID: ${peerInstance.id}`, 'success');
+        aliceBtn.disabled = true;
+        bobBtn.disabled = true;
+        sendBtn.disabled = false;
+        
+        // Expose info for subagent
+        document.body.setAttribute('data-room-id', roomId);
+        document.body.setAttribute('data-peer-id', peerInstance.id);
+      } catch (e) {
+        log(`Host Init Failed: ${e.message}`, 'error');
+      }
+    };
+
+    // Bob logic
+    bobBtn.onclick = async () => {
+      const roomId = targetInput.value.trim();
+      if (!roomId) return log('Enter Room ID first', 'error');
+      
+      log(`Bob joining room ${roomId}...`);
+      localStorage.clear();
+      await initIdentity();
+      const ident = await getIdentity();
+      log(`Identity: ${ident.displayName} (${ident.fingerprint})`, 'success');
+
+      window.onPeerMessageReceived = (msg) => {
+        log(`RECV: "${msg.text}" from ${msg.from}`, 'msg');
+      };
+
+      try {
+          await initGuest(roomId, 'Bob');
+          log('Guest handshake complete.', 'success');
+          bobBtn.disabled = true;
+          aliceBtn.disabled = true;
+          sendBtn.disabled = false;
+      } catch (e) {
+          log(`Guest Join Failed: ${e.message}`, 'error');
+      }
+    };
+
+    sendBtn.onclick = async () => {
+      const text = `Test message at ${Date.now()}`;
+      log(`SEND: "${text}"`, 'success');
+      await broadcastMessage({
+          type: 'msg',
+          text: text,
+          ts: Date.now()
+      });
+    };
+  </script>
+</body>
+</html>

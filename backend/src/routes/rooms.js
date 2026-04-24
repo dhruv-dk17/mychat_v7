@@ -31,7 +31,7 @@ const registerLimiter = rateLimit({
 
 const verifyPasswordLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 15,
+  max: 5,
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many password attempts. Try again later.' }
@@ -102,6 +102,7 @@ router.post('/register', registerLimiter, async (req, res) => {
   if (!validateSlug(slug)) return res.status(400).json({ error: 'Invalid room ID' });
   if (!validateHash(passwordHash)) return res.status(400).json({ error: 'Invalid password hash' });
   if (!validateHash(ownerTokenHash)) return res.status(400).json({ error: 'Invalid owner token hash' });
+  
   if (username && !validateUsername(username)) return res.status(400).json({ error: 'Invalid username' });
   if (token && !validateToken(token)) return res.status(400).json({ error: 'Invalid token' });
 

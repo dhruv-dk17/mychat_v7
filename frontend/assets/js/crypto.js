@@ -1,8 +1,6 @@
 'use strict';
 
 let currentIdentityPeerId = '';
-const IDENTITY_STORAGE_KEY = 'mychat_identity_v3';
-const LEGACY_IDENTITY_STORAGE_KEY = 'mychat_identity_v2';
 const AES_KDF_VERSION = 'mchat-v2';
 const AES_KDF_ITERATIONS = 150000;
 const AES_KDF_SALT_BYTES = 16;
@@ -104,7 +102,7 @@ async function getAesKey(passphrase, salt, iterations = AES_KDF_ITERATIONS) {
 }
 
 async function getLegacyAesKey(passphrase) {
-  const raw = new TextEncoder().encode(String(passphrase).padEnd(32, ' ').slice(0, 32));
+  const raw = new TextEncoder().encode(String(passphrase).padEnd(32, '0').slice(0, 32));
   return crypto.subtle.importKey('raw', raw, 'AES-GCM', false, ['encrypt', 'decrypt']);
 }
 
@@ -136,6 +134,26 @@ function escHtml(t) {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
+}
+
+function stripControlChars(value) {
+  return String(value || '').replace(/[\u0000-\u001F\u007F]/g, '');
+}
+
+function normalizeDisplayName(value, fallback = '') {
+  const max = Number(CONFIG?.IDENTITY_DISPLAY_NAME_MAX || 32);
+  const clean = stripControlChars(value).replace(/\s+/g, ' ').trim();
+  const normalized = clean.slice(0, max);
+  if (normalized) return normalized;
+  return stripControlChars(fallback).replace(/\s+/g, ' ').trim().slice(0, max);
+}
+
+function normalizeRoomAlias(value, fallback = '') {
+  const max = Number(CONFIG?.ROOM_ID_MAX_LENGTH || 32);
+  const clean = stripControlChars(value).toLowerCase().replace(/[^a-z0-9-]/g, '');
+  const normalized = clean.slice(0, max);
+  if (normalized) return normalized;
+  return stripControlChars(fallback).toLowerCase().replace(/[^a-z0-9-]/g, '').slice(0, max);
 }
 
 function fmtBytes(bytes) {
@@ -194,50 +212,19 @@ async function importPublicKeyBase64(base64) {
   return crypto.subtle.importKey('spki', fromBase64(base64), { name: 'ECDSA', namedCurve: 'P-256' }, true, ['verify']);
 }
 
-function getStorageValue(storage, key) {
-  try {
-    return storage.getItem(key);
-  } catch (e) {
-    return null;
-  }
-}
-
-function setStorageValue(storage, key, value) {
-  try {
-    storage.setItem(key, value);
-    return true;
-  } catch (e) {
-    return false;
-  }
-}
-
-function removeStorageValue(storage, key) {
-  try {
-    storage.removeItem(key);
-  } catch (e) {}
-}
-
-function primeIdentityPeerId() {
-  // Ephemeral identity; no longer read from sessionStorage to prevent tab-duplication clones
-}
-
 async function loadIdentityMaterial() {
-  // Legacy identities were stored in localStorage/sessionStorage, which made multiple tabs share
-  // the same signing identity. Drop the shared cache and mint an ephemeral one.
-  removeStorageValue(localStorage, LEGACY_IDENTITY_STORAGE_KEY);
-  removeStorageValue(sessionStorage, IDENTITY_STORAGE_KEY);
-
-  const keyPair = await crypto.subtle.generateKey({ name: 'ECDSA', namedCurve: 'P-256' }, true, ['sign', 'verify']);
-  const publicKey = await exportPublicKeyBase64(keyPair.publicKey);
-  const privateKeyJwk = await crypto.subtle.exportKey('jwk', keyPair.privateKey);
-  const peerId = await sha256(publicKey);
-  const material = { peerId, publicKey, privateKeyJwk };
+  const identity = await window.getIdentity();
+  const peerId = await window.deriveTabPeerId();
   currentIdentityPeerId = peerId;
   return {
-    ...material,
-    publicKeyBase64: publicKey,
-    publicKey: keyPair.publicKey,
-    privateKey: keyPair.privateKey
+    peerId,
+    fingerprint: identity.fingerprint,
+    displayName: identity.displayName,
+    publicKeyBase64: identity.publicKeyBase64,
+    publicKey: identity.publicKey,
+    publicKeyJwk: identity.publicKeyJwk,
+    privateKey: identity.privateKey,
+    privateKeyJwk: identity.privateKeyJwk
   };
 }
 
@@ -250,8 +237,26 @@ async function getIdentityMaterial() {
   return identityMaterialPromise;
 }
 
+async function refreshIdentityMaterial() {
+  identityMaterialPromise = loadIdentityMaterial();
+  return identityMaterialPromise;
+}
+
+function resetIdentityMaterialCache() {
+  currentIdentityPeerId = '';
+  identityMaterialPromise = null;
+}
+
 function getCurrentIdentityPeerId() {
   return currentIdentityPeerId;
+}
+
+async function getPublicKeyFingerprint(publicKeyValue) {
+  return window.getFingerprint(publicKeyValue);
+}
+
+function getFingerprintCompactValue(fingerprint) {
+  return String(fingerprint || '').replace(/[^a-z0-9]/gi, '').slice(-8).toLowerCase();
 }
 
 function getMediaUrlCandidate(url) {
@@ -294,7 +299,9 @@ async function signPayloadEnvelope(payload) {
   const body = canonicalizeForSigning({
     ...payload,
     senderPeerId: identity.peerId,
-    senderPublicKey: identity.publicKeyBase64 || identity.publicKey
+    senderPublicKey: identity.publicKeyBase64 || identity.publicKey,
+    fromFingerprint: payload.fromFingerprint || identity.fingerprint,
+    roomId: window.currentRoomId || ''
   });
   const signatureBytes = await crypto.subtle.sign(
     { name: 'ECDSA', hash: 'SHA-256' },
@@ -309,29 +316,61 @@ async function signPayloadEnvelope(payload) {
 
 async function verifyPayloadEnvelope(payload) {
   if (!payload?.senderPeerId || !payload?.senderPublicKey || !payload?.signature) return false;
-  const expectedPeerId = await sha256(payload.senderPublicKey);
-  if (expectedPeerId !== payload.senderPeerId) return false;
   try {
     const publicKey = await importPublicKeyBase64(payload.senderPublicKey);
     const body = canonicalizeForSigning({ ...payload });
     delete body.signature;
-    return crypto.subtle.verify(
+
+    const verified = await crypto.subtle.verify(
       { name: 'ECDSA', hash: 'SHA-256' },
       publicKey,
       fromBase64(payload.signature),
       new TextEncoder().encode(stableStringify(body))
     );
+    if (!verified) return false;
+
+    // Cross-room replay check
+    if (body.roomId && window.currentRoomId && body.roomId !== window.currentRoomId) {
+      console.warn('Blocked cross-room message replay attempt');
+      return false;
+    }
+
+    const expectedFingerprint = await getPublicKeyFingerprint(payload.senderPublicKey);
+    if (payload.fromFingerprint && expectedFingerprint !== payload.fromFingerprint) return false;
+    const legacyPeerId = await sha256(payload.senderPublicKey);
+    const expectedPeerPrefix = `mc-${getFingerprintCompactValue(expectedFingerprint)}-`;
+    if (String(payload.senderPeerId) !== legacyPeerId && !String(payload.senderPeerId).startsWith(expectedPeerPrefix)) {
+      return false;
+    }
+    return true;
   } catch (e) {
     console.warn('Signature verification throw:', e);
     return false;
   }
 }
 
+window.sha256 = sha256;
+window.randomToken = randomToken;
+window.randomRoomId = randomRoomId;
+window.toBase64 = toBase64;
+window.fromBase64 = fromBase64;
+window.exportPublicKeyBase64 = exportPublicKeyBase64;
+window.importPublicKeyBase64 = importPublicKeyBase64;
+window.loadIdentityMaterial = loadIdentityMaterial;
+window.getIdentityMaterial = getIdentityMaterial;
+window.refreshIdentityMaterial = refreshIdentityMaterial;
+window.resetIdentityMaterialCache = resetIdentityMaterialCache;
+window.getCurrentIdentityPeerId = getCurrentIdentityPeerId;
+window.getPublicKeyFingerprint = getPublicKeyFingerprint;
+window.signPayloadEnvelope = signPayloadEnvelope;
+window.verifyPayloadEnvelope = verifyPayloadEnvelope;
 window.aesEncrypt = aesEncrypt;
 window.aesDecrypt = aesDecrypt;
 window.validateMediaUrl = validateMediaUrl;
 window.normalizeMediaUrl = normalizeMediaUrl;
 window.getMediaUrlCandidate = getMediaUrlCandidate;
+window.normalizeDisplayName = normalizeDisplayName;
+window.normalizeRoomAlias = normalizeRoomAlias;
 
 // Trigger immediate identity discovery/generation on load
 getIdentityMaterial().catch(e => console.error('Failed to prime identity on load', e));

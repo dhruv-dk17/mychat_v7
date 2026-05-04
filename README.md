@@ -7,13 +7,11 @@ Mychat is a private, professional messaging platform designed for high-integrity
 - **E2EE (Double Ratchet)**: Advanced cryptographic state management for secure private chats.
 - **Anti-Surveillance Suite**: Protection against screenshots, unauthorized recording, and session leaking.
 - **Encrypted Vault**: Locally encrypted storage for your digital identity and contacts.
-- **Biometric Ready**: Optimized for mobile distribution with PWA and APK support.
+- **Biometric Ready**: Optimized for mobile distribution with PWA support.
 
 ## 🚀 Deployment
 Deploy your private instance via Render or Docker using the provided `render.yaml` and `docker-compose.yml`.
 
-## 📱 Mobile Access
-Mychat is a Progressive Web App (PWA). You can install it directly from your mobile browser or download the native APK from the private releases tab.
 
 ## ⚖️ License
 **PROPRIETARY — ALL RIGHTS RESERVED**

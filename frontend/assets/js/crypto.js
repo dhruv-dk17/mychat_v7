@@ -102,8 +102,8 @@ async function getAesKey(passphrase, salt, iterations = AES_KDF_ITERATIONS) {
 }
 
 async function getLegacyAesKey(passphrase) {
-  const raw = new TextEncoder().encode(String(passphrase).padEnd(32, '0').slice(0, 32));
-  return crypto.subtle.importKey('raw', raw, 'AES-GCM', false, ['encrypt', 'decrypt']);
+  const salt = new TextEncoder().encode('mychat-legacy-fixed-salt-v1');
+  return getAesKey(passphrase, salt, 100000);
 }
 
 async function hmacSHA256(secret, message) {
@@ -121,8 +121,8 @@ async function hmacSHA256(secret, message) {
     .join('');
 }
 
-async function deriveGhostRoomId(passphrase) {
-  const win = Math.floor(Date.now() / 1000 / CONFIG.TOTP_WINDOW_SECONDS);
+async function deriveGhostRoomId(passphrase, offset = 0) {
+  const win = Math.floor(Date.now() / 1000 / CONFIG.TOTP_WINDOW_SECONDS) + offset;
   const hash = await hmacSHA256(passphrase, String(win));
   const n = BigInt(`0x${hash.slice(0, 16)}`);
   return n.toString(36).toUpperCase().padStart(10, '0').slice(-8);
@@ -352,6 +352,7 @@ async function verifyPayloadEnvelope(payload) {
 window.sha256 = sha256;
 window.randomToken = randomToken;
 window.randomRoomId = randomRoomId;
+window.deriveGhostRoomId = deriveGhostRoomId;
 window.toBase64 = toBase64;
 window.fromBase64 = fromBase64;
 window.exportPublicKeyBase64 = exportPublicKeyBase64;

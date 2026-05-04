@@ -15,7 +15,7 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "https://unpkg.com", "https://cdn.jsdelivr.net"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "https://unpkg.com", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com"],
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://cdn.jsdelivr.net"],
       fontSrc: ["'self'", "https://fonts.gstatic.com", "https://cdn.jsdelivr.net"],
       imgSrc: ["'self'", "data:", "blob:", "https:"],
@@ -30,7 +30,7 @@ app.use(helmet({
 }));
 
 app.set('trust proxy', 1);
-app.use(express.json({ limit: '10kb' }));
+app.use(express.json({ limit: '2mb' }));
 app.use(metricsMiddleware);
 
 function getConfiguredOrigins() {
@@ -69,9 +69,7 @@ function isAllowedCorsOrigin(origin) {
   if (process.env.NODE_ENV !== 'production' && /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
     return true;
   }
-  if (process.env.NODE_ENV !== 'production' && origin === 'null') {
-    return true;
-  }
+
   return false;
 }
 
@@ -115,7 +113,7 @@ app.use('/api/rooms', roomRoutes);
 app.use('/api/health', healthRoutes);
 app.use('/api/users', require('./routes/users'));
 app.use('/api/admin', require('./routes/admin'));
-app.use('/api/contacts', require('./routes/contacts'));
+
 
 app.use((req, res) => res.status(404).json({ error: 'Not found' }));
 

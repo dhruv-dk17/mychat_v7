@@ -94,6 +94,12 @@ class DoubleRatchetSession {
       for (const keyInfo of Object.keys(data.skippedMessageKeys)) {
         session.skippedMessageKeys.set(keyInfo, window.fromBase64(data.skippedMessageKeys[keyInfo]));
       }
+      
+      // Prune old keys on load to limit memory
+      while (session.skippedMessageKeys.size > 200) {
+        const oldestKey = session.skippedMessageKeys.keys().next().value;
+        session.skippedMessageKeys.delete(oldestKey);
+      }
     }
     
     return session;
@@ -316,6 +322,13 @@ async function skipMessageKeys(session, untilNum) {
         session.chainRecv = nextChainKey;
         
         session.skippedMessageKeys.set(`${remoteB64}:${session.indexRecv}`, messageKey);
+        
+        // Prune to prevent infinite growth
+        if (session.skippedMessageKeys.size > 200) {
+          const oldestKey = session.skippedMessageKeys.keys().next().value;
+          session.skippedMessageKeys.delete(oldestKey);
+        }
+        
         session.indexRecv += 1;
       }
   }

@@ -134,7 +134,7 @@ async function prepareOutboundMessage(message) {
 
 async function shouldAcceptInboundMessage(message) {
   if (!message?.type) return false;
-  if (message.system || message.type === 'ping' || message.type === 'pong' || message.type === 'join_request' || message.type === 'join_response' || message.type === 'room_sync' || message.type === 'user_list' || message.type === 'room_locked') {
+  if (message.type === 'ping' || message.type === 'pong' || message.type === 'join_request' || message.type === 'join_response' || message.type === 'room_sync' || message.type === 'user_list' || message.type === 'room_locked') {
     return true;
   }
   const verified = await verifyPayloadEnvelope(message);
@@ -257,7 +257,7 @@ async function initAsHost(peerId, username, roomId, keyForE2EE, fallbackRoomKeys
   hostPeerIdForRoom = peerId;
   permanentRoomPassword = '';
   stopPermanentReconnectLoop();
-  setRoomKeys(keyForE2EE || currentRoomId, fallbackRoomKeys);
+  setRoomKeys(keyForE2EE, fallbackRoomKeys);
 
   peerInstance = await createPeerInstance(
     peerId,
@@ -279,7 +279,7 @@ async function initAsGuest(hostPeerIdStr, myPeerIdStr, username, roomId, passwor
   hostPeerIdForRoom = hostPeerIdStr;
   permanentRoomPassword = passwordForPerm || '';
   stopPermanentReconnectLoop();
-  setRoomKeys(keyForE2EE || currentRoomId, fallbackRoomKeys);
+  setRoomKeys(keyForE2EE, fallbackRoomKeys);
 
   peerInstance = await createPeerInstance(
     myPeerIdStr,
@@ -661,7 +661,7 @@ async function handleIncomingMessage(msg, conn) {
   // ── NORMAL MESSAGES ──────────────────────────
   if (msg.type === 'room_sync') {
     if (myRole !== 'host' && !isPermanentLike() && msg.roomKey) {
-      setRoomKeys(msg.roomKey, [currentRoomId, ...roomKeyCandidates]);
+      setRoomKeys(msg.roomKey, roomKeyCandidates);
     }
     return;
   }

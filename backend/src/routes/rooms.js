@@ -37,6 +37,14 @@ const verifyPasswordLimiter = rateLimit({
   message: { error: 'Too many password attempts. Try again later.' }
 });
 
+const messageRateLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 600,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many message requests. Try again later.' }
+});
+
 function timingSafeEqual(a, b) {
   if (typeof a !== 'string' || typeof b !== 'string' || a.length !== b.length) return false;
   let diff = 0;
@@ -70,6 +78,7 @@ async function authorizeRoomByPasswordHash(slug, passwordHash) {
 }
 
 async function purgeExpiredRoomMessages(roomSlug) {
+  if (Math.random() > 0.05) return;
   const cutoff = Date.now() - PERMANENT_HISTORY_RETENTION_MS;
   await pool.query(
     'DELETE FROM room_messages WHERE room_slug = $1 AND created_at < $2',
@@ -200,7 +209,7 @@ router.get('/user', async (req, res) => {
   }
 });
 
-router.get('/:slug/messages', async (req, res) => {
+router.get('/:slug/messages', messageRateLimiter, async (req, res) => {
   const slug = normalizeSlug(req.params.slug);
   const passwordHash = req.get('X-Room-Password-Hash');
   const sinceId = Number(req.query.sinceId || 0);
@@ -240,7 +249,7 @@ router.get('/:slug/messages', async (req, res) => {
   }
 });
 
-router.post('/:slug/messages', async (req, res) => {
+router.post('/:slug/messages', messageRateLimiter, async (req, res) => {
   const slug = normalizeSlug(req.params.slug);
   const passwordHash = req.get('X-Room-Password-Hash');
   const { eventId, ciphertext, createdAt, envelope } = req.body || {};
